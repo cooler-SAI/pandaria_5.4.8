@@ -24,3 +24,6 @@
 #include "Errors.h"
 #include "TypeList.h"
 #include "TaskScheduler.h"
+#include <memory>
+#include <string>
+#include <vector>
