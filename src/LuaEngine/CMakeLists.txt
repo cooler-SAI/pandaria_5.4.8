@@ -27,7 +27,6 @@ include_directories(
   ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
   ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
   ${CMAKE_SOURCE_DIR}/dep/SFMT
-#  ${CMAKE_SOURCE_DIR}/dep/mersennetwister
   ${CMAKE_SOURCE_DIR}/dep/zlib
   ${CMAKE_SOURCE_DIR}/dep/lualib
   ${CMAKE_SOURCE_DIR}/src/server/shared
@@ -130,20 +129,9 @@ include_directories(
   ${MYSQL_INCLUDE_DIR}
 )
 
-if (Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif()
 add_library(LuaEngine STATIC 
   ${LuaEngine_STAT_SRCS}
-  ${game_STAT_SRCS}
-  ${game_STAT_PCH_SRC}
 )
-
-target_link_libraries(LuaEngine
-  game
-)
-
-add_dependencies(LuaEngine game)
 
 if ( ELUNA )
   if( WIN32 )

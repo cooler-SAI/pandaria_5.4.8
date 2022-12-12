@@ -3535,7 +3535,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT currency FROM character_currency WHERE guid = %u AND currency = %u", GUID_LOPART(guid), cur->ID))
                     {
                         uint64 currencyAmount = (*result)[0].GetUInt32();
-                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %u.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
+                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %lu.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
                     }
                     else
                         handler->PSendSysMessage("Player %s (%u) hasn't currency %s (%u).", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID);
