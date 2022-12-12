@@ -13,7 +13,7 @@ if( USE_COREPCH )
 endif()
 
 file(GLOB_RECURSE sources_Configuration Configuration/*.cpp Configuration/*.h)
-file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h)
+file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h Cryptography/Authentication/*.cpp Cryptography/Authentication/*.h)
 file(GLOB_RECURSE sources_Database Database/*.cpp Database/*.h)
 file(GLOB_RECURSE sources_DataStores DataStores/*.cpp DataStores/*.h)
 file(GLOB_RECURSE sources_Dynamic Dynamic/*.cpp Dynamic/*.h)
@@ -76,6 +76,7 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/Configuration
   ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography
+  ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography/Authentication
   ${CMAKE_CURRENT_SOURCE_DIR}/Database
   ${CMAKE_CURRENT_SOURCE_DIR}/DataStores
   ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
@@ -107,5 +108,5 @@ target_link_libraries(shared
 
 # Generate precompiled header
 if (USE_COREPCH)
-  target_precompile_headers(shared PRIVATE ${shared_STAT_PCH_HDR}) 
+  target_precompile_headers(shared PUBLIC ${shared_STAT_PCH_HDR}) 
 endif ()
