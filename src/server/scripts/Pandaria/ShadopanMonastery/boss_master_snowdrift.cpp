@@ -404,7 +404,9 @@ class boss_master_snowdrift : public CreatureScript
                         case EVENT_DISAPPEAR:
                             {
                                srand(time(0));
-                               std::random_shuffle(randIndex, randIndex + 3);
+                               std::random_device rd;
+                               std::mt19937 g(rd());
+                               std::shuffle(rrandIndex, randIndex + 3, g);                               
                                for (int i = 0; i < 3; ++i)
                                {
                                    if (!isBossSummoned)

@@ -397,7 +397,9 @@ void InstanceSaveManager::LoadResetTimes()
                 if (moguReset < (uint32)newresettime)
                 {
                     std::vector<uint64> stoneGuards = { 59915, 60043, 60047, 60051 };
-                    std::random_shuffle(stoneGuards.begin(), stoneGuards.end());
+                    std::random_device rd;
+                    std::mt19937 g(rd());
+                    std::shuffle(stoneGuards.begin(), stoneGuards.end(), g);                    
                     uint64 const guardExcluded = stoneGuards.back();
 
                     WorldDatabase.DirectPExecute("INSERT INTO `instance_mogushan_system` (`creature_id`, `resettime`) VALUES (%u, %u);", guardExcluded, (uint32)newresettime);
@@ -480,7 +482,9 @@ void InstanceSaveManager::LoadResetTimes()
             if (moguReset < (uint32)t)
             {
                 std::vector<uint64> stoneGuards = { 59915, 60043, 60047, 60051 };
-                std::random_shuffle(stoneGuards.begin(), stoneGuards.end());
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(stoneGuards.begin(), stoneGuards.end(), g);
                 uint64 const guardExcluded = stoneGuards.back();
 
                 WorldDatabase.DirectPExecute("INSERT INTO `instance_mogushan_system` (`creature_id`, `resettime`) VALUES (%u, %u);", guardExcluded, (uint32)t);
@@ -712,7 +716,9 @@ void InstanceSaveManager::_ResetOrWarnAll(uint32 mapid, Difficulty difficulty, b
             if (moguReset < (uint32)now)
             {
                 std::vector<uint64> stoneGuards = { 59915, 60043, 60047, 60051 };
-                std::random_shuffle(stoneGuards.begin(), stoneGuards.end());
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(stoneGuards.begin(), stoneGuards.end(), g);                
                 uint64 const guardExcluded = stoneGuards.back();
 
                 WorldDatabase.DirectPExecute("INSERT INTO `instance_mogushan_system` (`creature_id`, `resettime`) VALUES (%u, %u);", guardExcluded, (uint32)next_reset);
