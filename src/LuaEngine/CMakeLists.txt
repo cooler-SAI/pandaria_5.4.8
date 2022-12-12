@@ -134,7 +134,8 @@ add_library(LuaEngine STATIC
 )
 
 target_link_libraries(LuaEngine
-  lua
+  PRIVATE 
+    lua
 )
 
 if ( ELUNA )
