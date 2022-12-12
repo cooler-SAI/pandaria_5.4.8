@@ -133,6 +133,10 @@ add_library(LuaEngine STATIC
   ${LuaEngine_STAT_SRCS}
 )
 
+target_link_libraries(LuaEngine
+  lua
+)
+
 if ( ELUNA )
   if( WIN32 )
     if ( MSVC )
