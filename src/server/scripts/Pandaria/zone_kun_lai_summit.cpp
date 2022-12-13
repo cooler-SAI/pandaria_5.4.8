@@ -387,7 +387,7 @@ struct npc_nessos_the_oracle : public ScriptedAI
                 case EVENT_VANISH:
                     me->CastSpell(me, SPELL_VANISH, false);
                     events.ScheduleEvent(EVENT_VANISH, 20s);
-                    events.ScheduleEvent(EVENT_SMOKED_BLADE, 0ms, 8s);
+                    events.ScheduleEvent(EVENT_SMOKED_BLADE, 0ms, 8000ms);
                     break;
                 case EVENT_SMOKED_BLADE:
                     if (Unit* target = SelectTarget(SELECT_TARGET_TOPAGGRO))
