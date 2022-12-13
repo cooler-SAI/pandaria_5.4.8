@@ -447,6 +447,20 @@ class EventMap
         }
 
         /**
+        * @name ScheduleEvent
+        * @brief Schedules a new event. An existing event is not canceled.
+        * @param eventId The id of the new event.
+        * @param minTime The minimum time until the event occurs as std::chrono type.
+        * @param maxTime The maximum time until the event occurs as std::chrono type.
+        * @param group The group which the event is associated to. Has to be between 1 and 8. 0 means it has no group.
+        * @param phase The phase in which the event can occur. Has to be between 1 and 8. 0 means it can occur in all phases.
+        */
+        void ScheduleEvent(uint32 eventId, Milliseconds minTime, Milliseconds maxTime, uint32 group = 0, uint32 phase = 0)
+        {
+            ScheduleEvent(eventId, randtime(minTime, maxTime), group, phase);
+        }
+
+        /**
         * @name RescheduleEvent
         * @brief Cancels the given event and reschedules it.
         * @param eventId The id of the event.
@@ -457,6 +471,20 @@ class EventMap
         void RescheduleEvent(uint32 eventId, Milliseconds const& time, uint32 group = 0, uint8 phase = 0)
         {
             RescheduleEvent(eventId, time.count(), group, phase);
+        }
+
+        /**
+        * @name RescheduleEvent
+        * @brief Cancels the given event and reschedules it.
+        * @param eventId The id of the event.
+        * @param minTime The minimum time until the event occurs as std::chrono type.
+        * @param maxTime The maximum time until the event occurs as std::chrono type.
+        * @param group The group which the event is associated to. Has to be between 1 and 8. 0 means it has no group.
+        * @param phase The phase in which the event can occur. Has to be between 1 and 8. 0 means it can occur in all phases.
+        */
+        void RescheduleEvent(uint32 eventId, Milliseconds minTime, Milliseconds maxTime, uint32 group = 0, uint32 phase = 0)
+        {
+            RescheduleEvent(eventId, randtime(minTime, maxTime), group, phase);
         }
 
         /**
@@ -496,6 +524,16 @@ class EventMap
             uint32 eventId = _eventMap.begin()->second;
             _eventMap.erase(_eventMap.begin());
             ScheduleEvent(eventId, time);
+        }
+
+        /**
+        * @name RepeatEvent
+        * @brief Repeats the most recently executed event.
+        * @param minTime The minimum time until the event occurs as std::chrono type.
+        * @param maxTime The maximum time until the event occurs as std::chrono type.
+        */
+        void Repeat(Milliseconds minTime, Milliseconds maxTime){
+            RepeatEvent(randtime(minTime, maxTime));            
         }
 
         /**
