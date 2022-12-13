@@ -1,34 +1,120 @@
-name: GCC
+name: Ubuntu build
 
-on:
-  push:
-  pull_request:
+on: [push]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+  REPO_DIR : ${{github.workspace}}
+  BUILD_DIR: ${{github.workspace}}/bin/builddir
+  BOOST_PLATFORM_VERSION: "20.04"
+  BOOST_VERSION: "1.79.0"
+  BOOST_INSTALL_DIR: "${{github.workspace}}/bin"
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    strategy:
+      matrix:
+       include:
+          - os: ubuntu-20.04
+            COMPILER_CC: gcc
+            COMPILER_PP: g++
+            USE_PCH: ON
+            EXTRA_BUILD: ""
+
+          - os: ubuntu-20.04
+            COMPILER_CC: clang
+            COMPILER_PP: clang++
+            USE_PCH: ON
+            EXTRA_BUILD: "-DBUILD_EXTRACTORS=ON -DBUILD_AHBOT=ON -DBUILD_PLAYERBOT=ON "
+
+          - os: ubuntu-20.04
+            COMPILER_CC: clang
+            COMPILER_PP: clang++
+            USE_PCH: OFF
+            EXTRA_BUILD: ""
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Dependencies
-      run: |
-        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-8
-        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
-    - name: Setup
-      run: |
-        mkdir bin
-        cd bin
-        cmake ../ -DWITH_WARNINGS=1 -DWITH_COREDEBUG=0 -DUSE_COREPCH=1 -DUSE_SCRIPTPCH=1 -DTOOLS=1 -DSCRIPTS=dynamic -DSERVERS=1 -DNOJEM=0 -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS="-Werror" -DCMAKE_CXX_FLAGS="-Werror" -DCMAKE_C_FLAGS_DEBUG="-DNDEBUG" -DCMAKE_CXX_FLAGS_DEBUG="-DNDEBUG" -DCMAKE_INSTALL_PREFIX=check_install -DBUILD_TESTING=1
-        cd ..
-    - name: Build
-      run: |
-        cd bin
-        make -j 4 -k && make install
-    - name: Unit tests
-      run: |
-        cd bin
-        make test
-    - name: Check executables
-      run: |
-        cd bin/check_install/bin
-        ./bnetserver --version
-        ./worldserver --version
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          path: ${{env.REPO_DIR}}
+
+      - name: Create Build Environment
+        run: |
+          echo "GITHUB_SHORT_REV=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "ARCHIVE_FILENAME=${{ github.event.repository.name }}-$(git rev-parse --short HEAD).zip" >> $GITHUB_ENV
+          echo "CC=${{matrix.COMPILER_CC}}" >> $GITHUB_ENV
+          echo "CXX=${{matrix.COMPILER_PP}}" >> $GITHUB_ENV
+          cmake -E make_directory ${{ env.BUILD_DIR }}
+      - name: Cache Windows boost
+        uses: actions/cache@v2
+        id: cache-boost
+        with:
+          path: "${{env.BOOST_INSTALL_DIR}}/boost"
+          key: ${{ runner.os }}-${{ hashFiles('.github/workflows/ubuntu.yml') }}
+
+      - if: steps.cache-boost.outputs.cache-hit != 'true'
+        name: Install boost
+        uses: MarkusJx/install-boost@v2.3.0
+        id: install-boost
+        with:
+          # REQUIRED: Specify the required boost version
+          # A list of supported versions can be found here:
+          # https://github.com/actions/boost-versions/blob/main/versions-manifest.json
+          boost_version: ${{env.BOOST_VERSION}}
+          # OPTIONAL: Specify a platform version
+          platform_version: ${{env.BOOST_PLATFORM_VERSION}}
+          # OPTIONAL: Specify a custom install location
+          boost_install_dir: ${{env.BOOST_INSTALL_DIR}}
+          # OPTIONAL: Specify a toolset
+          toolset: ${{env.COMPILER_CC}}
+          # OPTIONAL: Specify an architecture
+          arch: x86
+
+      - name: Configure
+        env:
+          USE_PCH: ${{ matrix.USE_PCH }}
+          EXTRA_BUILD: ${{ matrix.EXTRA_BUILD }}
+          BOOST_ROOT: "${{env.BOOST_INSTALL_DIR}}/boost/boost"
+        run: cmake -DBoost_ARCHITECTURE=-x64 -DPCH=${{env.USE_PCH}} ${{env.EXTRA_BUILD}}-B ${{env.BUILD_DIR}} -S ${{env.REPO_DIR}}
+
+      - name: Build
+        env:
+          MAKEFLAGS: "-j8"
+        run: cmake --build ${{env.BUILD_DIR}} --config ${{env.BUILD_TYPE}}
+
+  notify:
+    name: Discord Notification
+    runs-on: ubuntu-20.04
+    permissions:
+      contents: none
+    needs: # make sure the notification is sent AFTER the jobs you want included have completed
+      - build
+    if: failure()
+
+    steps:
+      - name: Env
+        run: |
+          echo "GIT_BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+          echo "GIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Notify
+        uses: rjstone/discord-webhook-notify@v1.0.4
+        with:
+          severity: error
+          username: ${{env.EXPENSION_NAME}}-core
+          description: |
+            **Linux buid failed**
+          details: |
+            - **Branch:** ${{env.GIT_BRANCH}}
+            - **Pusher:** ${{github.event.pusher.name}}
+            - **Author:** ${{github.event.head_commit.author.name}}
+            - **Commit:** [${{github.repository}}/${{env.GIT_SHORT_SHA}}](${{github.server_url}}/${{ github.repository }}/commit/${{github.sha}})
+            - **Build log:** [actions/runs/${{github.run_id}}](${{github.server_url}}/${{github.repository}}/actions/runs/${{github.run_id}})
+          footer: Next time ${{github.event.pusher.name}}!
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+          avatarUrl: https://github.githubassets.com/images/modules/logos_page/Octocat.png
