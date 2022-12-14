@@ -841,7 +841,7 @@ class spell_ulduar_stone_grip : public SpellScriptLoader
             {
                 Player* caster = GetCaster() ? GetCaster()->ToPlayer() : 0;
                 if (caster)
-                    caster->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    caster->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
             }
 
             void OnRemoveVehicle(AuraEffect const* /*aurEff*/, AuraEffectHandleModes mode)

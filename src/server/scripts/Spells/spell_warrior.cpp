@@ -1276,7 +1276,7 @@ class spell_warr_enrage_raging_blow : public SpellScript
     void HandleHit()
     {
         if (Player* warrior = GetCaster()->ToPlayer())
-            if (warrior->GetTalentSpecialization() == SPEC_WARRIOR_FURY && warrior->getLevel() >= 30)
+            if (warrior->GetTalentSpecialization() == SPEC_WARRIOR_FURY && warrior->GetLevel() >= 30)
                 warrior->CastSpell(warrior, SPELL_WARRIOR_RAGING_BLOW_ENABLER, true);
     }
 
@@ -1377,7 +1377,7 @@ class spell_warr_shield_slam : public SpellScript
 
     void CalculateDamage(SpellEffIndex)
     {
-        uint32 level = GetCaster()->getLevel();
+        uint32 level = GetCaster()->GetLevel();
         float ap = GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK);
         float apmult = 0.35f;
         if (level >= 80)

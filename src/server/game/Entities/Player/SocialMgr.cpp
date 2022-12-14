@@ -237,7 +237,7 @@ void SocialMgr::GetFriendInfo(Player* player, uint64 friendGUID, FriendInfo& fri
             friendInfo.Status = FRIEND_STATUS_ONLINE;
 
         friendInfo.Area = target->GetZoneId();
-        friendInfo.Level = target->getLevel();
+        friendInfo.Level = target->GetLevel();
         friendInfo.Class = target->getClass();
     }
 }

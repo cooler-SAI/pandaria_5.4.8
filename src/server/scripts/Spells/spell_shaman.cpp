@@ -2522,7 +2522,7 @@ class spell_sha_stormlash_totem : public AuraScript
 
         if (eventInfo.GetSpellInfo() && eventInfo.GetSpellInfo()->Id != actor->GetAutoAttackSpell(attack))
         {
-            uint32 castTime = eventInfo.GetSpellInfo()->CalcCastTime(actor->getLevel());
+            uint32 castTime = eventInfo.GetSpellInfo()->CalcCastTime(actor->GetLevel());
             if (castTime > 1500)
                 damage *= castTime / 1500.0f;
             switch (eventInfo.GetSpellInfo()->Id)
@@ -2807,7 +2807,7 @@ class spell_sha_t16_restoration_4p_heal_trigger : public AuraScript
 
         if (!(eventInfo.GetSpellInfo()->GetExplicitTargetMask() & TARGET_FLAG_UNIT_MASK))   // Targeted
             return false;
-        return eventInfo.GetSpellInfo()->CalcCastTime(GetUnitOwner()->getLevel()) > 0;      // With cast time
+        return eventInfo.GetSpellInfo()->CalcCastTime(GetUnitOwner()->GetLevel()) > 0;      // With cast time
     }
 
     void HandleProc(ProcEventInfo& eventInfo)

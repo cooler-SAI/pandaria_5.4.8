@@ -224,7 +224,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
         case CONDITION_LEVEL:
         {
             if (Unit* unit = object->ToUnit())
-                condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), static_cast<uint32>(unit->getLevel()), ConditionValue1);
+                condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), static_cast<uint32>(unit->GetLevel()), ConditionValue1);
             break;
         }
         case CONDITION_DRUNKENSTATE:
@@ -1288,7 +1288,7 @@ void ConditionMgr::LoadConditions(bool isReload)
         for (auto&& ai : m_vehicleAIs)
             ai->LoadConditions();
 
-        TC_LOG_INFO("server.loading", ">> Reloaded conditions for %u vehicles in %u ms", m_vehicleAIs.size(), GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Reloaded conditions for %lu vehicles in %u ms", m_vehicleAIs.size(), GetMSTimeDiffToNow(oldMSTime));
     }
 }
 

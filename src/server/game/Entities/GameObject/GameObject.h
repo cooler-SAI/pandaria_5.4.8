@@ -978,7 +978,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         uint8 getLevelForTarget(WorldObject const* target) const
         {
             if (Unit* owner = GetOwner())
-                return owner->getLevelForTarget(target);
+                return owner->GetLevelForTarget(target);
 
             return 1;
         }

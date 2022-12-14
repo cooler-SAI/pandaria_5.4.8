@@ -307,7 +307,7 @@ void BattlePayMgr::LoadEntriesFromDb()
 
     m_shopEntryStore.clear();
 
-    QueryResult result = WorldDatabase.Query("SELECT id, productId, groupId, idx, title, description, icon, displayId, banner, flags FROM battle_pay_entry ORDER BY id ASC");
+    QueryResult result = WorldDatabase.Query("SELECT id, productId, groupId, idx, title, description, icon, displayId, banner, `flags` FROM battle_pay_entry ORDER BY id ASC");
     if (!result)
     {
         TC_LOG_INFO("sql.sql", ">> Loaded 0 Battle Pay store entries, table `battle_pay_entry` is empty!");
@@ -332,7 +332,7 @@ void BattlePayMgr::LoadEntriesFromDb()
 
         if (HasEntryId(id))
         {
-            TC_LOG_ERROR("sql.sql", "Entry id %u defined in `battle_pay_entry` already exists, skipped!");
+            TC_LOG_ERROR("sql.sql", "Entry id %u defined in `battle_pay_entry` already exists, skipped!", id);
             continue;
         }
 
