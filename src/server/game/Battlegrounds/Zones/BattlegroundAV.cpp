@@ -1615,22 +1615,22 @@ void BattlegroundAV::SendAVLocalisedString(uint32 textCase, BG_AV_Nodes node, ui
         switch (textCase)
         {
             case 1:
-                sprintf(buf, session->GetTrinityString(LANG_BG_AV_A_CAPTAIN_DEAD).c_str());
+                sprintf(buf, session->GetTrinityString(LANG_BG_AV_A_CAPTAIN_DEAD));
                 break;
             case 2:
-                sprintf(buf, session->GetTrinityString(LANG_BG_AV_H_CAPTAIN_DEAD).c_str());
+                sprintf(buf, session->GetTrinityString(LANG_BG_AV_H_CAPTAIN_DEAD));
                 break;
             case 3:
-                sprintf(buf, session->GetTrinityString(IsTower(node) ? LANG_BG_AV_TOWER_TAKEN : LANG_BG_AV_GRAVE_TAKEN).c_str(), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY).c_str() : session->GetTrinityString(LANG_BG_AV_HORDE).c_str());
+                sprintf(buf, session->GetTrinityString(IsTower(node) ? LANG_BG_AV_TOWER_TAKEN : LANG_BG_AV_GRAVE_TAKEN), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY) : session->GetTrinityString(LANG_BG_AV_HORDE));
                 break;
             case 4:
-                sprintf(buf, session->GetTrinityString(LANG_BG_AV_MINE_TAKEN), session->GetTrinityString((mine == AV_NORTH_MINE) ? LANG_BG_AV_MINE_NORTH : LANG_BG_AV_MINE_SOUTH), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY).c_str() : session->GetTrinityString(LANG_BG_AV_HORDE).c_str());
+                sprintf(buf, session->GetTrinityString(LANG_BG_AV_MINE_TAKEN), session->GetTrinityString((mine == AV_NORTH_MINE) ? LANG_BG_AV_MINE_NORTH : LANG_BG_AV_MINE_SOUTH), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY) : session->GetTrinityString(LANG_BG_AV_HORDE));
                 break;
             case 5:
-                sprintf(buf, session->GetTrinityString((IsTower(node)) ? LANG_BG_AV_TOWER_DEFENDED : LANG_BG_AV_GRAVE_DEFENDED), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY).c_str() : session->GetTrinityString(LANG_BG_AV_HORDE).c_str());
+                sprintf(buf, session->GetTrinityString((IsTower(node)) ? LANG_BG_AV_TOWER_DEFENDED : LANG_BG_AV_GRAVE_DEFENDED), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY) : session->GetTrinityString(LANG_BG_AV_HORDE));
                 break;
             case 6:
-                sprintf(buf, (IsTower(node)) ? session->GetTrinityString(LANG_BG_AV_TOWER_ASSAULTED).c_str() : session->GetTrinityString(LANG_BG_AV_GRAVE_ASSAULTED).c_str(), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY).c_str() : session->GetTrinityString(LANG_BG_AV_HORDE).c_str());
+                sprintf(buf, (IsTower(node)) ? session->GetTrinityString(LANG_BG_AV_TOWER_ASSAULTED) : session->GetTrinityString(LANG_BG_AV_GRAVE_ASSAULTED), GetNodeName(node, session), (team == ALLIANCE) ? session->GetTrinityString(LANG_BG_AV_ALLY) : session->GetTrinityString(LANG_BG_AV_HORDE));
                 break;
         }
 
