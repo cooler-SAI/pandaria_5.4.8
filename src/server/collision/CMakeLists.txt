@@ -19,7 +19,6 @@ file(GLOB sources_localdir *.cpp *.h)
 
 if (USE_COREPCH)
   set(collision_STAT_PCH_HDR PrecompiledHeaders/collisionPCH.h)
-  set(collision_STAT_PCH_SRC PrecompiledHeaders/collisionPCH.cpp)
 endif ()
 
 set(collision_STAT_SRCS

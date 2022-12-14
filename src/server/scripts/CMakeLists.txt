@@ -12,7 +12,6 @@
 
 if (USE_SCRIPTPCH)
   set(scripts_STAT_PCH_HDR PrecompiledHeaders/ScriptPCH.h)
-  set(scripts_STAT_PCH_SRC PrecompiledHeaders/ScriptPCH.cpp)
 endif ()
 
 file(GLOB_RECURSE sources_PrecompiledHeaders PrecompiledHeaders/*.cpp PrecompiledHeaders/*.h)

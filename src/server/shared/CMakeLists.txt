@@ -46,7 +46,6 @@ set(sources_Debugging Debugging/Errors.cpp Debugging/Errors.h)
 
 if (USE_COREPCH)
   set(shared_STAT_PCH_HDR PrecompiledHeaders/sharedPCH.h)
-  set(shared_STAT_PCH_SRC PrecompiledHeaders/sharedPCH.cpp)
 endif()
 
 set(shared_STAT_SRCS
@@ -108,5 +107,5 @@ target_link_libraries(shared
 
 # Generate precompiled header
 if (USE_COREPCH)
-  target_precompile_headers(shared PUBLIC ${shared_STAT_PCH_HDR}) 
+  target_precompile_headers(shared PRIVATE ${shared_STAT_PCH_HDR}) 
 endif ()

@@ -25,7 +25,6 @@ source_group(localdir FILES ${sources_Localdir})
 
 if (USE_COREPCH)
   set(authserver_PCH_HDR PrecompiledHeaders/authPCH.h)
-  set(authserver_PCH_SRC PrecompiledHeaders/authPCH.cpp)
 endif()
 
 set(authserver_SRCS
