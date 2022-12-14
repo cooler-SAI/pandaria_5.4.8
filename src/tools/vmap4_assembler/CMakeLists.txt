@@ -27,6 +27,7 @@ target_link_libraries(vmap4assembler
   collision
   g3dlib
   ${ZLIB_LIBRARIES}
+  Threads::Threads
 )
 
 if( UNIX )

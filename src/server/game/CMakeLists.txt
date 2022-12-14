@@ -113,7 +113,6 @@ source_group(World FILES ${sources_World})
 
 if (USE_COREPCH)
   set(game_STAT_PCH_HDR PrecompiledHeaders/gamePCH.h)
-  set(game_STAT_PCH_SRC PrecompiledHeaders/gamePCH.cpp)
 endif ()
 
 set(game_STAT_SRCS
@@ -316,5 +315,5 @@ add_dependencies(game revision.h)
 
 # Generate precompiled header
 if (USE_COREPCH)
-  target_precompile_headers(game PUBLIC ${game_STAT_PCH_HDR}) 
+  target_precompile_headers(game PRIVATE ${game_STAT_PCH_HDR}) 
 endif ()

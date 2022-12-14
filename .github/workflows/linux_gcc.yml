@@ -1,0 +1,34 @@
+name: GCC
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+    - name: Dependencies
+      run: |
+        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-8 libace-dev
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 100 --slave /usr/bin/g++ g++ /usr/bin/g++-8
+    - name: Setup
+      run: |
+        mkdir bin
+        cd bin
+        cmake ../ -DTOOLS=1 -DELUNA=0 ..
+        cd ..
+    - name: Build
+      run: |
+        cd bin
+        make -j 4 -k && make install
+    - name: Unit tests
+      run: |
+        cd bin
+        make test
+    - name: Check executables
+      run: |
+        cd bin/check_install/bin
+        ./authserver --version
+        ./worldserver --version

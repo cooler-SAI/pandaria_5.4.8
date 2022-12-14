@@ -129,6 +129,10 @@ include_directories(
   ${MYSQL_INCLUDE_DIR}
 )
 
+if (Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
+
 add_library(LuaEngine STATIC 
   ${LuaEngine_STAT_SRCS}
 )

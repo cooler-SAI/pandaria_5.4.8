@@ -43,6 +43,7 @@ target_link_libraries(mmaps_generator
   ${BZIP2_LIBRARIES}
   ${ZLIB_LIBRARIES}
   ${Boost_LIBRARIES}
+  Threads::Threads
 )
 
 if( UNIX )

@@ -22,7 +22,6 @@ if(POLICY CMP0043)
 endif(POLICY CMP0043)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,--gc-sections -s -w")
 # add this options before PROJECT keyword
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
@@ -59,7 +58,7 @@ include(CheckPlatform)
 set(OPENSSL_EXPECTED_VERSION 1.0.0)
 set(ACE_EXPECTED_VERSION 5.8.3)
 
-find_package(PCHSupport)
+#find_package(PCHSupport) Remove old PCH macro
 find_package(ACE REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
@@ -75,6 +74,7 @@ if( UNIX )
 endif()
 
 if(WIN32)
+  add_definitions(-DBOOST_DATE_TIME_NO_LIB -DBOOST_REGEX_NO_LIB -DBOOST_CHRONO_NO_LIB -DBOOST_SERIALIZATION_NO_LIB)
   set(BOOST_DEBUG OFF)
   if(DEFINED ENV{BOOST_ROOT})
     set(BOOST_ROOT $ENV{BOOST_ROOT})

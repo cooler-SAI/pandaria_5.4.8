@@ -26,7 +26,6 @@ source_group(localdir FILES ${sources_localdir})
 
 if (USE_COREPCH)
   set(worldserver_PCH_HDR PrecompiledHeaders/worldPCH.h)
-  set(worldserver_PCH_SRC PrecompiledHeaders/worldPCH.cpp)
 endif()
 
 set(worldserver_SRCS
@@ -224,6 +223,5 @@ endif()
 
 # Generate precompiled header
 if( USE_COREPCH )
-  target_precompile_headers(worldserver PUBLIC ${worldserver_PCH_HDR}) 
-  #add_cxx_pch(worldserver ${worldserver_PCH_HDR} ${worldserver_PCH_SRC})
+  target_precompile_headers(worldserver PRIVATE ${worldserver_PCH_HDR}) 
 endif()
