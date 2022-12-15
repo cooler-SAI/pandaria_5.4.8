@@ -23,7 +23,7 @@ namespace LuaAura
 
     int GetCasterLevel(lua_State* L, Aura* aura)
     {
-        sEluna->Push(L, aura->GetCaster()->getLevel());
+        sEluna->Push(L, aura->GetCaster()->GetLevel());
         return 1;
     }
 

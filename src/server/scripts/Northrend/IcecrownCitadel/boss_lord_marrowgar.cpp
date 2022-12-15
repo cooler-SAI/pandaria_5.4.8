@@ -600,8 +600,8 @@ class npc_bone_spike : public CreatureScript
                 DoCast(summoner, SPELL_IMPALED);
                 summoner->CastSpell(me, SPELL_RIDE_VEHICLE, true);
                 _events.ScheduleEvent(EVENT_FAIL_BONED, 8000);
-                if (summoner->HasUnitState(UNIT_STATE_ON_VEHICLE))
-                    summoner->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                if (summoner->HasUnitState(UNIT_STATE_FOLLOW_FORMATION))
+                    summoner->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                 _hasTrappedUnit = true;
             }
 

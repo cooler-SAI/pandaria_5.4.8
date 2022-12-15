@@ -128,7 +128,7 @@ class spell_item_arcane_shroud : public SpellScriptLoader
 
             void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
             {
-                int32 diff = GetUnitOwner()->getLevel() - 60;
+                int32 diff = GetUnitOwner()->GetLevel() - 60;
                 if (diff > 0)
                     amount += 2 * diff;
             }
@@ -871,7 +871,7 @@ class spell_item_scroll_of_recall : public SpellScriptLoader
                         break;
                 }
 
-                if (caster->getLevel() > maxSafeLevel)
+                if (caster->GetLevel() > maxSafeLevel)
                 {
                     caster->CastSpell(caster, SPELL_LOST, true);
 
@@ -1177,7 +1177,7 @@ class spell_item_the_eye_of_diminution : public SpellScriptLoader
 
             void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
             {
-                int32 diff = GetUnitOwner()->getLevel() - 60;
+                int32 diff = GetUnitOwner()->GetLevel() - 60;
                 if (diff > 0)
                     amount += diff;
             }

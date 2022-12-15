@@ -496,7 +496,7 @@ void KillRewarder::InitGroupData()
             if (Player* member = itr->GetSource())
                 if (member->IsAlive() && member->IsAtGroupRewardDistance(_victim))
                 {
-                    const uint8 lvl = member->getLevel();
+                    const uint8 lvl = member->GetLevel();
                     // 2.1. _count - number of alive group members within reward distance;
                     ++_count;
                     // 2.2. _sumLevel - sum of levels of alive group members within reward distance;
@@ -507,12 +507,12 @@ void KillRewarder::InitGroupData()
                     // 2.4. _maxNotGrayMember - maximum level of alive group member within reward distance,
                     //      for whom victim is not gray;
                     uint32 grayLevel = Trinity::XP::GetGrayLevel(lvl);
-                    if (_victim->getLevel() > grayLevel && (!_maxNotGrayMember || _maxNotGrayMember->getLevel() < lvl))
+                    if (_victim->GetLevel() > grayLevel && (!_maxNotGrayMember || _maxNotGrayMember->GetLevel() < lvl))
                         _maxNotGrayMember = member;
                 }
         // 2.5. _isFullXP - flag identifying that for all group members victim is not gray,
         //      so 100% XP will be rewarded (50% otherwise).
-        _isFullXP = _maxNotGrayMember && (_maxLevel == _maxNotGrayMember->getLevel());
+        _isFullXP = _maxNotGrayMember && (_maxLevel == _maxNotGrayMember->GetLevel());
     }
     else
         _count = 1;
@@ -545,14 +545,14 @@ void KillRewarder::RewardXP(Player* player, float rate)
         //        * set to 0 if player's level is more than maximum level of not gray member;
         //        * cut XP in half if _isFullXP is false.
         if (_maxNotGrayMember && player->IsAlive() &&
-            _maxNotGrayMember->getLevel() >= player->getLevel())
+            _maxNotGrayMember->GetLevel() >= player->GetLevel())
             xp = _isFullXP ?
                 uint32(xp * rate) :             // Reward FULL XP if all group members are not gray.
                 uint32(xp * rate / 2) + 1;      // Reward only HALF of XP if some of group members are gray.
         else
             xp = 0;
 
-        int32 diff = _victim->getLevel() - player->getLevel();
+        int32 diff = _victim->GetLevel() - player->GetLevel();
         if (diff > int32(sWorld->getIntConfig(CONFIG_XP_KILL_LEVEL_DIFFERENCE)))
             xp = 0;
     }
@@ -563,11 +563,11 @@ void KillRewarder::RewardXP(Player* player, float rate)
         for (Unit::AuraEffectList::const_iterator i = auras.begin(); i != auras.end(); ++i)
             AddPct(xp, (*i)->GetAmount());
 
-        int32 diff = _victim->getLevel() - player->getLevel();
+        int32 diff = _victim->GetLevel() - player->GetLevel();
         xp *= diff > int32(sWorld->getIntConfig(CONFIG_XP_KILL_LEVEL_DIFFERENCE)) ? 0 : sWorld->getRate(RATE_XP_KILL, player);
 
         // 4.2.3. Calculate expansion penalty
-        if (_victim->GetTypeId() == TYPEID_UNIT && player->getLevel() >= GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
+        if (_victim->GetTypeId() == TYPEID_UNIT && player->GetLevel() >= GetMaxLevelForExpansion(_victim->ToCreature()->GetCreatureTemplate()->expansion))
             xp = CalculatePct(xp, 10); // Players get only 10% xp for killing creatures of lower expansion levels than himself
 
         // 4.2.4. Give XP to player.
@@ -630,7 +630,7 @@ void KillRewarder::RewardPlayer(Player* player, bool isDungeon)
     if (!_isPvP || _isBattleGround)
     {
         const float rate = _group ?
-            _groupRate * float(player->getLevel()) / _sumLevel : // Group rate depends on summary level.
+            _groupRate * float(player->GetLevel()) / _sumLevel : // Group rate depends on summary level.
             1.0f;                                                // Personal rate is 100%.
         if (_xp)
             // 4.2. Give XP.
@@ -1492,7 +1492,7 @@ void Player::HandleDrowning(uint32 time_diff)
                 m_MirrorTimer[BREATH_TIMER]+= 1*IN_MILLISECONDS;
                 // Calculate and deal damage
                 /// @todo Check this formula
-                uint32 damage = GetMaxHealth() / 5 + urand(0, getLevel()-1);
+                uint32 damage = GetMaxHealth() / 5 + urand(0, GetLevel()-1);
                 EnvironmentalDamage(DAMAGE_DROWNING, damage);
             }
             else if (!(m_MirrorTimerFlagsLast & UNDERWATER_INWATER))      // Update time in client if need
@@ -1535,7 +1535,7 @@ void Player::HandleDrowning(uint32 time_diff)
                 m_MirrorTimer[FATIGUE_TIMER]+= 1*IN_MILLISECONDS;
                 if (IsAlive())                                            // Calculate and deal damage
                 {
-                    uint32 damage = GetMaxHealth() / 5 + urand(0, getLevel()-1);
+                    uint32 damage = GetMaxHealth() / 5 + urand(0, GetLevel()-1);
                     EnvironmentalDamage(DAMAGE_EXHAUSTED, damage);
                 }
                 else if (HasFlag(PLAYER_FIELD_PLAYER_FLAGS, PLAYER_FLAGS_GHOST))       // Teleport ghost to graveyard
@@ -2475,15 +2475,15 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
     }
     else
     {
-        if (getClass() == CLASS_DEATH_KNIGHT && GetMapId() == 609 && !IsGameMaster() && getLevel() < 80 && !HasSpell(50977))
+        if (getClass() == CLASS_DEATH_KNIGHT && GetMapId() == 609 && !IsGameMaster() && GetLevel() < 80 && !HasSpell(50977))
             return false;
-        if (getRace() == RACE_GOBLIN && getClass() != CLASS_DEATH_KNIGHT && GetMapId() == 648 && !IsGameMaster() && getLevel() < 30 && !IsQuestRewarded(25266) && GetQuestStatus(25266) != QUEST_STATUS_COMPLETE)
+        if (getRace() == RACE_GOBLIN && getClass() != CLASS_DEATH_KNIGHT && GetMapId() == 648 && !IsGameMaster() && GetLevel() < 30 && !IsQuestRewarded(25266) && GetQuestStatus(25266) != QUEST_STATUS_COMPLETE)
             return false;
-        if (getRace() == RACE_WORGEN && getClass() != CLASS_DEATH_KNIGHT && GetMapId() == 654 && !IsGameMaster() && getLevel() < 30 && !IsQuestRewarded(26706))
+        if (getRace() == RACE_WORGEN && getClass() != CLASS_DEATH_KNIGHT && GetMapId() == 654 && !IsGameMaster() && GetLevel() < 30 && !IsQuestRewarded(26706))
             return false;
-        if (getRace() == RACE_PANDAREN_ALLIANCE && GetMapId() == 860 && !IsGameMaster() && getLevel() < 30 && !IsQuestRewarded(31450) && GetQuestStatus(31450) != QUEST_STATUS_COMPLETE)
+        if (getRace() == RACE_PANDAREN_ALLIANCE && GetMapId() == 860 && !IsGameMaster() && GetLevel() < 30 && !IsQuestRewarded(31450) && GetQuestStatus(31450) != QUEST_STATUS_COMPLETE)
             return false;
-        if (getRace() == RACE_PANDAREN_HORDE && GetMapId() == 860 && !IsGameMaster() && getLevel() < 30 && !IsQuestRewarded(31450) && GetQuestStatus(31450) != QUEST_STATUS_COMPLETE)
+        if (getRace() == RACE_PANDAREN_HORDE && GetMapId() == 860 && !IsGameMaster() && GetLevel() < 30 && !IsQuestRewarded(31450) && GetQuestStatus(31450) != QUEST_STATUS_COMPLETE)
             return false;
 
         // far teleport to another map
@@ -3390,7 +3390,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
     if (victim && victim->GetTypeId() == TYPEID_UNIT && !victim->ToCreature()->HasLootRecipient())
         return;
 
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
 
     sScriptMgr->OnGivePlayerXP(this, xp, victim);
 
@@ -3428,7 +3428,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
         if (level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
             GiveLevel(level + 1);
 
-        level = getLevel();
+        level = GetLevel();
         nextLvlXP = GetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP);
     }
 
@@ -3439,7 +3439,7 @@ void Player::GiveXP(uint32 xp, Unit* victim, float group_rate)
 // Current player experience not update (must be update by caller)
 void Player::GiveLevel(uint8 level)
 {
-    uint8 oldLevel = getLevel();
+    uint8 oldLevel = GetLevel();
     if (level == oldLevel)
         return;
 
@@ -3559,7 +3559,7 @@ void Player::GiveLevel(uint8 level)
         { 90, 31989 }, // The Peak of Serenity - Complete Your Training
     };
 
-    auto itr = monkQuestToLevel.find(getLevel());
+    auto itr = monkQuestToLevel.find(GetLevel());
     if (itr != monkQuestToLevel.end())
         if (getClass() == CLASS_MONK && GetQuestStatus(itr->second) == QUEST_STATUS_NONE)
             if (Quest const* quest = sObjectMgr->GetQuestTemplate(itr->second))
@@ -3581,7 +3581,7 @@ void Player::GiveLevel(uint8 level)
 
 void Player::InitTalentForLevel()
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     // talents base at level diff (talents = level - 9 but some can be used already)
     if (level < 15)
     {
@@ -3625,13 +3625,13 @@ void Player::InitStatsForLevel(bool reapplyMods)
         _RemoveAllStatBonuses();
 
     uint32 basehp = 0, basemana = 0;
-    sObjectMgr->GetPlayerClassLevelInfo(getClass(), getLevel(), basehp, basemana);
+    sObjectMgr->GetPlayerClassLevelInfo(getClass(), GetLevel(), basehp, basemana);
 
     PlayerLevelInfo info;
-    sObjectMgr->GetPlayerLevelInfo(getRace(), getClass(), getLevel(), &info);
+    sObjectMgr->GetPlayerLevelInfo(getRace(), getClass(), GetLevel(), &info);
 
     SetUInt32Value(PLAYER_FIELD_MAX_LEVEL, sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL));
-    SetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(getLevel()));
+    SetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP, sObjectMgr->GetXPForLevel(GetLevel()));
 
     // reset before any aura state sources (health set/aura apply)
     SetUInt32Value(UNIT_FIELD_AURA_STATE, 0);
@@ -5046,7 +5046,7 @@ TrainerSpellState Player::GetTrainerSpellState(TrainerSpell const* trainer_spell
         return TRAINER_SPELL_RED;
 
     // check level requirement
-    if (getLevel() < trainer_spell->reqLevel)
+    if (GetLevel() < trainer_spell->reqLevel)
         return TRAINER_SPELL_RED;
 
     for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
@@ -5654,15 +5654,15 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
     //Characters level 20 and up suffer from ten minutes of sickness.
     int32 startLevel = sWorld->getIntConfig(CONFIG_DEATH_SICKNESS_LEVEL);
 
-    if (int32(getLevel()) >= startLevel)
+    if (int32(GetLevel()) >= startLevel)
     {
         // set resurrection sickness
         CastSpell(this, 15007, true);
 
         // not full duration
-        if (int32(getLevel()) < startLevel+9)
+        if (int32(GetLevel()) < startLevel+9)
         {
-            int32 delta = (int32(getLevel()) - startLevel + 1)*MINUTE;
+            int32 delta = (int32(GetLevel()) - startLevel + 1)*MINUTE;
 
             if (Aura* aur = GetAura(15007, GetGUID()))
             {
@@ -6164,7 +6164,7 @@ void Player::LeaveLFGChannel()
 
 float Player::GetMeleeCritFromAgility()
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL)
@@ -6180,7 +6180,7 @@ float Player::GetMeleeCritFromAgility()
 
 float Player::GetSpellCritFromIntellect()
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL)
@@ -6196,7 +6196,7 @@ float Player::GetSpellCritFromIntellect()
 
 float Player::GetRatingMultiplier(CombatRating cr) const
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
 
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;
@@ -6237,7 +6237,7 @@ float Player::GetExpertiseDodgeOrParryReduction(WeaponAttackType attType) const
 
 float Player::OCTRegenMPPerSpirit()
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     uint32 pclass = getClass();
 
     if (level > GT_MAX_LEVEL)
@@ -6525,11 +6525,11 @@ bool Player::UpdateGatherSkill(uint32 skillId, uint32 skillValue, uint32 redLeve
             }
             if (GameObject const* gobject = lootObject->ToGameObject())
             {
-                uint32 gain = Trinity::XP::BaseGain(getLevel(), gobject->GetGOInfo()->chest.xpLevel, GetContentLevelsForMapAndZone(GetMapId(), GetZoneId()));
+                uint32 gain = Trinity::XP::BaseGain(GetLevel(), gobject->GetGOInfo()->chest.xpLevel, GetContentLevelsForMapAndZone(GetMapId(), GetZoneId()));
                 gain *= sWorld->getRate(RATE_XP_GATHER);
                 gain += GetXPRestBonus(gain);
 
-                int32 diff = gobject->GetGOInfo()->chest.xpLevel - getLevel();
+                int32 diff = gobject->GetGOInfo()->chest.xpLevel - GetLevel();
                 gain = diff > int32(sWorld->getIntConfig(CONFIG_XP_GATHER_LEVEL_DIFFERENCE)) ? 0 : gain;
                 GiveXP(gain, nullptr);
             }
@@ -7328,17 +7328,17 @@ void Player::CheckAreaExploreAndOutdoor()
 
         if (areaEntry->area_level > 0)
         {
-            if (getLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+            if (GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
             {
                 SendExplorationExperience(areaId, 0);
             }
             else
             {
-                int32 diff = int32(getLevel()) - areaEntry->area_level;
+                int32 diff = int32(GetLevel()) - areaEntry->area_level;
                 uint32 XP = 0;
                 if (diff < -5)
                 {
-                    XP = uint32(sObjectMgr->GetBaseXP(getLevel()+5)*sWorld->getRate(RATE_XP_EXPLORE, this));
+                    XP = uint32(sObjectMgr->GetBaseXP(GetLevel()+5)*sWorld->getRate(RATE_XP_EXPLORE, this));
                 }
                 else if (diff > 5)
                 {
@@ -7426,7 +7426,7 @@ float Player::CalculateReputationGain(ReputationSource source, uint32 creatureOr
             break;
     }
 
-    if (rate != 1.0f && creatureOrQuestLevel <= Trinity::XP::GetGrayLevel(getLevel()))
+    if (rate != 1.0f && creatureOrQuestLevel <= Trinity::XP::GetGrayLevel(GetLevel()))
         percent *= rate;
 
     if (percent <= 0.0f)
@@ -7491,7 +7491,7 @@ void Player::RewardReputation(Unit* victim, float rate)
 
     if (Rep->RepFaction1 && (!Rep->TeamDependent || team == ALLIANCE))
     {
-        float donerep1 = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->getLevel(), Rep->RepValue1, Rep->RepFaction1);
+        float donerep1 = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->GetLevel(), Rep->RepValue1, Rep->RepFaction1);
         donerep1 = donerep1 * rate;
 
         FactionEntry const* factionEntry1 = sFactionStore.LookupEntry(Rep->RepFaction1);
@@ -7502,7 +7502,7 @@ void Player::RewardReputation(Unit* victim, float rate)
 
     if (Rep->RepFaction2 && (!Rep->TeamDependent || team == HORDE))
     {
-        float donerep2 = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->getLevel(), Rep->RepValue2, Rep->RepFaction2);
+        float donerep2 = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->GetLevel(), Rep->RepValue2, Rep->RepFaction2);
         donerep2 = donerep2 * rate;
 
         FactionEntry const* factionEntry2 = sFactionStore.LookupEntry(Rep->RepFaction2);
@@ -7586,12 +7586,12 @@ void Player::RewardReputationOnChampioning(Unit* victim)
         return;
 
     int32 rep = target->isWorldBoss() || target->IsDungeonBoss() ? 300 : 15;
-    if (target->getLevel() <= Trinity::XP::GetGrayLevel(getLevel()))
+    if (target->GetLevel() <= Trinity::XP::GetGrayLevel(GetLevel()))
         rep /= 5;
 
     if (auto factionEntry = sFactionStore.LookupEntry(championingFaction))
     {
-        float donerep = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->getLevel(), rep, championingFaction);
+        float donerep = CalculateReputationGain(REPUTATION_SOURCE_KILL, victim->GetLevel(), rep, championingFaction);
         GetReputationMgr().ModifyReputation(factionEntry, donerep);
     }
 }
@@ -7670,9 +7670,9 @@ bool Player::RewardHonor(Unit* victim, uint32 groupsize, int32 honor, bool pvpto
             if (GetTeam() == plrVictim->GetTeam() && !sWorld->IsFFAPvPRealm() && !(GetMap()->IsBattleground() && sWorld->getBoolConfig(CONFIG_BATTLEGROUND_IGNORE_FACTION)))
                 return false;
 
-            uint8 k_level = getLevel();
+            uint8 k_level = GetLevel();
             uint8 k_grey = Trinity::XP::GetGrayLevel(k_level);
-            uint8 v_level = victim->getLevel();
+            uint8 v_level = victim->GetLevel();
 
             if (v_level <= k_grey)
                 return false;
@@ -8518,7 +8518,7 @@ void Player::UpdateZone(uint32 newZone, uint32 newArea)
     else
         questId = 33230;
 
-    if (questId && newZone == 5840 && getLevel() == 90 && GetQuestStatus(questId) == QUEST_STATUS_NONE)
+    if (questId && newZone == 5840 && GetLevel() == 90 && GetQuestStatus(questId) == QUEST_STATUS_NONE)
     {
         if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
         {
@@ -8818,7 +8818,7 @@ void Player::_ApplyItemBonuses(Item const* item, uint8 slot, bool apply, bool on
         return;
 
     // req. check at equip, but allow use for extended range if range limit max level, set proper level
-    uint32 ssd_level = getLevel();
+    uint32 ssd_level = GetLevel();
     if (ssd && ssd_level > ssd->MaxLevel)
         ssd_level = ssd->MaxLevel;
 
@@ -9074,7 +9074,7 @@ void Player::GetItemDamage(float& minDamage, float& maxDamage, Item const* item)
     {
         if (ScalingStatDistributionEntry const* ssd = sScalingStatDistributionStore.LookupEntry(proto->ScalingStatDistribution))
         {
-            uint32 ssdLevel = getLevel();
+            uint32 ssdLevel = GetLevel();
             if (ssdLevel > ssd->MaxLevel)
                 ssdLevel = ssd->MaxLevel;
 
@@ -9460,7 +9460,7 @@ void Player::CastItemCombatSpell(Unit* target, WeaponAttackType attType, uint32 
         if (!enchant)
             continue;
 
-        if (enchant->RequiredLevel && getLevel() < enchant->RequiredLevel)
+        if (enchant->RequiredLevel && GetLevel() < enchant->RequiredLevel)
             continue;
 
         if (enchant->RequiredSkill && GetSkillValue(enchant->RequiredSkill) < enchant->RequiredSkillValue)
@@ -9786,7 +9786,7 @@ void Player::RemovedInsignia(Player* looterPlr)
 
     // We store the level of our player in the gold field
     // We retrieve this information at Player::SendLoot()
-    bones->loot.gold = getLevel();
+    bones->loot.gold = GetLevel();
     bones->lootRecipient = looterPlr;
     looterPlr->SendLoot(bones->GetGUID(), LOOT_INSIGNIA);
 }
@@ -10162,8 +10162,8 @@ void Player::SendLoot(uint64 guid, LootType lootType, bool isAoE)
                     loot->FillLoot(creature, lootid, LootTemplates_Pickpocketing, this, true);
 
                 // Generate extra money for pick pocket loot
-                const uint32 a = urand(0, creature->getLevel()/2);
-                const uint32 b = urand(0, getLevel()/2);
+                const uint32 a = urand(0, creature->GetLevel()/2);
+                const uint32 b = urand(0, GetLevel()/2);
                 loot->gold = creature->GetEntry() == 56233 ? 0 : uint32(10 * (a + b) * sWorld->getRate(RATE_DROP_MONEY));  // hack, but I dont know how it must work (money should not drop for pockpocketing from spell?)
                 permission = OWNER_PERMISSION;
             }
@@ -12712,7 +12712,7 @@ InventoryResult Player::CanEquipItem(uint8 slot, uint16 &dest, Item* pItem, bool
 
             // ScalingStatDistributionEntry const* ssd = pProto->ScalingStatDistribution ? sScalingStatDistributionStore.LookupEntry(pProto->ScalingStatDistribution) : 0;
             // check allowed level (extend range to upper values if MaxLevel more or equal max player level, this let GM set high level with 1...max range items)
-            // if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < getLevel())
+            // if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < GetLevel())
             //     return EQUIP_ERR_NOT_EQUIPPABLE;
 
             uint8 eslot = FindEquipSlot(pProto, slot, swap);
@@ -13138,7 +13138,7 @@ InventoryResult Player::CanUseItem(ItemTemplate const* proto) const
         if (proto->RequiredSpell != 0 && !HasSpell(proto->RequiredSpell))
             return EQUIP_ERR_PROFICIENCY_NEEDED;
 
-        if (getLevel() < proto->RequiredLevel)
+        if (GetLevel() < proto->RequiredLevel)
             return EQUIP_ERR_CANT_EQUIP_LEVEL_I;
 
         // If World Event is not active, prevent using event dependant items
@@ -13198,7 +13198,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
     {
         if (_class == CLASS_WARRIOR || _class == CLASS_PALADIN || _class == CLASS_DEATH_KNIGHT)
         {
-            if (getLevel() < 50)
+            if (GetLevel() < 50)
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_MAIL)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -13208,7 +13208,7 @@ InventoryResult Player::CanRollForItemInLFG(ItemTemplate const* proto, WorldObje
         }
         else if (_class == CLASS_HUNTER || _class == CLASS_SHAMAN)
         {
-            if (getLevel() < 50)
+            if (GetLevel() < 50)
             {
                 if (proto->SubClass != ITEM_SUBCLASS_ARMOR_LEATHER)
                     return EQUIP_ERR_CLIENT_LOCKED_OUT;
@@ -15449,7 +15449,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
     if (!ignore_condition && pEnchant->EnchantmentCondition && !EnchantmentFitsRequirements(pEnchant->EnchantmentCondition, -1))
         return;
 
-    if (pEnchant->RequiredLevel > getLevel())
+    if (pEnchant->RequiredLevel > GetLevel())
         return;
 
     if (pEnchant->RequiredSkill > 0 && pEnchant->RequiredSkillValue > GetSkillValue(pEnchant->RequiredSkill))
@@ -15529,7 +15529,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                                 if (pEnchant->ScalingLevel && pEnchant->Amount[s])
                                 {
                                     if (AuraEffect* ench = GetAuraEffect(enchant_spell_id, EFFECT_0))
-                                        ench->ChangeAmount(CalcEnchantAmount(pEnchant, getLevel(), s));
+                                        ench->ChangeAmount(CalcEnchantAmount(pEnchant, GetLevel(), s));
                                 }
                                 else if (spellInfo->HasAttribute(SPELL_ATTR11_SCALING_FROM_ITEM))
                                 {
@@ -15544,7 +15544,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                     break;
                 case ITEM_ENCHANTMENT_TYPE_RESISTANCE:
                     if (pEnchant->ScalingLevel)
-                        enchant_amount = CalcEnchantAmount(pEnchant, getLevel(), s);
+                        enchant_amount = CalcEnchantAmount(pEnchant, GetLevel(), s);
                     if (!enchant_amount)
                     {
                         ItemRandomSuffixEntry const* item_rand = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
@@ -15566,7 +15566,7 @@ void Player::ApplyEnchantment(Item* item, EnchantmentSlot slot, bool apply, bool
                 case ITEM_ENCHANTMENT_TYPE_STAT:
                 {
                     if (pEnchant->ScalingLevel)
-                        enchant_amount = CalcEnchantAmount(pEnchant, getLevel(), s);
+                        enchant_amount = CalcEnchantAmount(pEnchant, GetLevel(), s);
                     if (!enchant_amount)
                     {
                         ItemRandomSuffixEntry const* item_rand_suffix = sItemRandomSuffixStore.LookupEntry(abs(item->GetItemRandomPropertyId()));
@@ -16027,7 +16027,7 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                         canTalk = false;
                     break;
                 case GOSSIP_OPTION_LEARNDUALSPEC:
-                    if (!(GetSpecsCount() == 1 && creature->isCanTrainingAndResetTalentsOf(this) && !(getLevel() < sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))))
+                    if (!(GetSpecsCount() == 1 && creature->isCanTrainingAndResetTalentsOf(this) && !(GetLevel() < sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))))
                         canTalk = false;
                     break;
                 case GOSSIP_OPTION_TAXIVENDOR:
@@ -16043,7 +16043,7 @@ void Player::PrepareGossipMenu(WorldObject* source, uint32 menuId /*= 0*/, bool 
                         canTalk = false;
                     break;
                 case GOSSIP_OPTION_PROVING_GROUNDS:
-                    if (!((creature->isCanTrainingAndResetTalentsOf(this) || creature->GetEntry() == 72536) && getLevel() == 90))
+                    if (!((creature->isCanTrainingAndResetTalentsOf(this) || creature->GetEntry() == 72536) && GetLevel() == 90))
                         canTalk = false;
                     break;
                 case GOSSIP_OPTION_QUESTGIVER:
@@ -16249,7 +16249,7 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
         case GOSSIP_OPTION_PROVING_GROUNDS:
         {
             PlayerTalkClass->SendCloseGossip();
-            if (GetGroup() || IsUsingLfg() || getLevel() < 90)
+            if (GetGroup() || IsUsingLfg() || GetLevel() < 90)
                 break;
 
             lfg::LfgDungeonSet scenario = { 658 };
@@ -16257,7 +16257,7 @@ void Player::OnGossipSelect(WorldObject* source, uint32 gossipListId, uint32 men
             break;
         }
         case GOSSIP_OPTION_LEARNDUALSPEC:
-            if (GetSpecsCount() == 1 && getLevel() >= sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))
+            if (GetSpecsCount() == 1 && GetLevel() >= sWorld->getIntConfig(CONFIG_MIN_DUALSPEC_LEVEL))
             {
                 // Cast spells that teach dual spec
                 // Both are also ImplicitTarget self and must be cast by player
@@ -16561,7 +16561,7 @@ bool Player::CanSeeStartQuest(Quest const* quest)
         SatisfyQuestPrevChain(quest, false) && SatisfyQuestDay(quest, false) && SatisfyQuestWeek(quest, false) &&
         SatisfyQuestMonth(quest, false) && SatisfyQuestSeasonal(quest, false))
     {
-        return getLevel() + sWorld->getIntConfig(CONFIG_QUEST_HIGH_LEVEL_HIDE_DIFF) >= quest->GetMinLevel();
+        return GetLevel() + sWorld->getIntConfig(CONFIG_QUEST_HIGH_LEVEL_HIDE_DIFF) >= quest->GetMinLevel();
     }
 
     return false;
@@ -17191,7 +17191,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     for (Unit::AuraEffectList::const_iterator i = ModXPPctAuras.begin(); i != ModXPPctAuras.end(); ++i)
         AddPct(XP, (*i)->GetAmount());
 
-    if (getLevel() < quest->GetQuestLevel() + 9) // I dunno how to detect a gray quest better...
+    if (GetLevel() < quest->GetQuestLevel() + 9) // I dunno how to detect a gray quest better...
     {
         if (Guild* guild = sGuildMgr->GetGuildById(GetGuildId()))
         {
@@ -17203,7 +17203,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     }
 
     int32 moneyRew = quest->GetRewardOrRequiredMoney();
-    if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+    if (GetLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
         GiveXP(XP, NULL);
     else
     {
@@ -17223,7 +17223,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
         UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_QUEST_REWARD, uint32(moneyRew));
 
     // honor reward
-    if (uint32 honor = quest->CalculateHonorGain(getLevel()))
+    if (uint32 honor = quest->CalculateHonorGain(GetLevel()))
         RewardHonor(NULL, 0, honor);
 
     // title reward
@@ -17383,7 +17383,7 @@ bool Player::SatisfyQuestSkill(Quest const* qInfo, bool msg) const
 
 bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg)
 {
-    if (getLevel() < qInfo->GetMinLevel())
+    if (GetLevel() < qInfo->GetMinLevel())
     {
         if (msg)
         {
@@ -17392,7 +17392,7 @@ bool Player::SatisfyQuestLevel(Quest const* qInfo, bool msg)
         }
         return false;
     }
-    else if (qInfo->GetMaxLevel() > 0 && getLevel() > qInfo->GetMaxLevel())
+    else if (qInfo->GetMaxLevel() > 0 && GetLevel() > qInfo->GetMaxLevel())
     {
         if (msg)
         {
@@ -18637,7 +18637,7 @@ void Player::SendQuestReward(Quest const* quest, uint32 XP)
     uint32 xp = 0;
     uint32 moneyReward = 0;
 
-    if (getLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+    if (GetLevel() < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
     {
         xp = XP;
         if (quest->GetRewardOrRequiredMoney() > 0)
@@ -21161,9 +21161,9 @@ bool Player::Satisfy(AccessRequirement const* ar, uint32 target_map, bool report
 
         if (!sWorld->getBoolConfig(CONFIG_INSTANCE_IGNORE_LEVEL))
         {
-            if (ar->levelMin && getLevel() < ar->levelMin)
+            if (ar->levelMin && GetLevel() < ar->levelMin)
                 LevelMin = ar->levelMin;
-            if (ar->levelMax && getLevel() > ar->levelMax)
+            if (ar->levelMax && GetLevel() > ar->levelMax)
                 LevelMax = ar->levelMax;
         }
 
@@ -21354,7 +21354,7 @@ void Player::SaveToDB(bool create /*=false*/)
         stmt->setUInt8(index++, getRace());
         stmt->setUInt8(index++, getClass());
         stmt->setUInt8(index++, getGender());
-        stmt->setUInt8(index++, getLevel());
+        stmt->setUInt8(index++, GetLevel());
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_XP));
         stmt->setUInt64(index++, GetMoney());
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_HAIR_COLOR_ID));
@@ -21468,7 +21468,7 @@ void Player::SaveToDB(bool create /*=false*/)
         stmt->setUInt8(index++, getRace());
         stmt->setUInt8(index++, getClass());
         stmt->setUInt8(index++, getGender());
-        stmt->setUInt8(index++, getLevel());
+        stmt->setUInt8(index++, GetLevel());
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_XP));
         stmt->setUInt64(index++, GetMoney());
         stmt->setUInt32(index++, GetUInt32Value(PLAYER_FIELD_HAIR_COLOR_ID));
@@ -22364,7 +22364,7 @@ void Player::_SaveSpells(SQLTransaction& trans)
 void Player::_SaveStats(SQLTransaction& trans)
 {
     // check if stat saving is enabled and if char level is high enough
-    if (!sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE) || getLevel() < sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE))
+    if (!sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE) || GetLevel() < sWorld->getIntConfig(CONFIG_MIN_LEVEL_STAT_SAVE))
         return;
 
     PreparedStatement* stmt = NULL;
@@ -23710,7 +23710,7 @@ uint32 Player::GetMaxArenaRating() const
 void Player::SetRestBonus(float rest_bonus_new)
 {
     // Prevent resting on max level
-    if (getLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
+    if (GetLevel() >= sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
         rest_bonus_new = 0;
 
     if (rest_bonus_new < 0)
@@ -25928,7 +25928,7 @@ void Player::LearnDefaultSkills()
     for (auto&& id : info->skills)
     {
         auto entry = sSkillRaceClassInfoStore.LookupEntry(id);
-        if (!entry || entry->ReqLevel > getLevel())
+        if (!entry || entry->ReqLevel > GetLevel())
             continue;
 
         if (HasSkill(entry->SkillId))
@@ -25957,7 +25957,7 @@ void Player::LearnDefaultSkill(SkillRaceClassInfoEntry const* entry)
             if (entry->Flags & 0x10)
                 skillValue = maxValue;
             else if (getClass() == CLASS_DEATH_KNIGHT)
-                skillValue = std::min(std::max<uint16>({ 1, uint16((getLevel() - 1) * 5) }), maxValue);
+                skillValue = std::min(std::max<uint16>({ 1, uint16((GetLevel() - 1) * 5) }), maxValue);
             else if (skillId == SKILL_FIST_WEAPONS)
                 skillValue = std::max<uint16>(1, GetSkillValue(SKILL_UNARMED));
 
@@ -25979,7 +25979,7 @@ void Player::LearnDefaultSkill(SkillRaceClassInfoEntry const* entry)
             if (entry->Flags & 0x10)
                 skillValue = maxValue;
             else if (getClass() == CLASS_DEATH_KNIGHT)
-                skillValue = std::min(std::max(uint16(1), uint16((getLevel() - 1) * 5)), maxValue);
+                skillValue = std::min(std::max(uint16(1), uint16((GetLevel() - 1) * 5)), maxValue);
 
             SetSkill(skillId, GetSkillStep(skillLine->id), skillValue, maxValue);
             break;
@@ -25995,7 +25995,7 @@ void Player::LearnSpecializationSpells()
     if (!spells)
         return;
 
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     for (auto&& spell : *spells)
     {
         SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(spell);
@@ -26122,7 +26122,7 @@ void Player::LearnSkillRewardedSpells(uint32 id, uint32 value)
         if (ability->classmask && !(ability->classmask & classMask))
             continue;
 
-        if (getLevel() < spell->SpellLevel)
+        if (GetLevel() < spell->SpellLevel)
             continue;
 
         // need unlearn spell
@@ -26549,7 +26549,7 @@ bool Player::GetBGAccessByLevel(BattlegroundTypeId bgTypeId) const
         return false;
 
     // limit check leel to dbc compatible level range
-    uint32 level = getLevel();
+    uint32 level = GetLevel();
     if (level > DEFAULT_MAX_LEVEL)
         level = DEFAULT_MAX_LEVEL;
 
@@ -26944,8 +26944,8 @@ uint32 Player::GetResurrectionSpellId()
 // Used in triggers for check "Only to targets that grant experience or honor" req
 bool Player::IsHonorOrXPTarget(Unit const* victim)
 {
-    uint8 v_level = victim->getLevel();
-    uint8 k_grey  = Trinity::XP::GetGrayLevel(getLevel());
+    uint8 v_level = victim->GetLevel();
+    uint8 k_grey  = Trinity::XP::GetGrayLevel(GetLevel());
 
     // Victim level less gray level
     if (v_level <= k_grey)
@@ -26964,7 +26964,7 @@ bool Player::IsHonorOrXPTarget(Unit const* victim)
 bool Player::GetsRecruitAFriendBonus(bool forXP)
 {
     bool recruitAFriend = false;
-    if (getLevel() <= sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL) || !forXP)
+    if (GetLevel() <= sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL) || !forXP)
     {
         if (Group* group = this->GetGroup())
         {
@@ -26980,12 +26980,12 @@ bool Player::GetsRecruitAFriendBonus(bool forXP)
                 if (forXP)
                 {
                     // level must be allowed to get RaF bonus
-                    if (player->getLevel() > sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL))
+                    if (player->GetLevel() > sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL))
                         continue;
 
                     // level difference must be small enough to get RaF bonus, UNLESS we are lower level
-                    if (player->getLevel() < getLevel())
-                        if (uint8(getLevel() - player->getLevel()) > sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL_DIFFERENCE))
+                    if (player->GetLevel() < GetLevel())
+                        if (uint8(GetLevel() - player->GetLevel()) > sWorld->getIntConfig(CONFIG_MAX_RECRUIT_A_FRIEND_BONUS_PLAYER_LEVEL_DIFFERENCE))
                             continue;
                 }
 
@@ -27673,7 +27673,7 @@ bool Player::CanCaptureTowerPoint()
 
 uint32 Player::GetBarberShopCost(uint8 newhairstyle, uint8 newhaircolor, uint8 newfacialhair, BarberShopStyleEntry const* newSkin)
 {
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
 
     if (level > GT_MAX_LEVEL)
         level = GT_MAX_LEVEL;                               // max level in this dbc
@@ -27717,7 +27717,7 @@ void Player::InitGlyphsForLevel()
         if (GlyphSlotEntry const* gs = sGlyphSlotStore.LookupEntry(glyphsOrder[i]))
             SetGlyphSlot(slot++, gs->Id);
 
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     uint32 slotMask = 0;
 
     if (level >= 25)
@@ -28161,7 +28161,7 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot, Object* src, AELootResult
 uint32 Player::CalculateTalentsPoints() const
 {
     // 1 talent point for every 15 levels
-    return uint32(floor(getLevel() / 15.f));
+    return uint32(floor(GetLevel() / 15.f));
 }
 
 bool Player::IsKnowHowFlyIn(uint32 mapid, uint32 zone) const
@@ -28312,7 +28312,7 @@ void Player::_LoadSkills(PreparedQueryResult result)
     // special settings
     if (getClass() == CLASS_DEATH_KNIGHT)
     {
-        uint8 base_level = std::min(getLevel(), uint8(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)));
+        uint8 base_level = std::min(GetLevel(), uint8(sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL)));
         if (base_level < 1)
             base_level = 1;
         uint16 base_skill = (base_level-1)*5;               // 270 at starting level 55
@@ -30138,7 +30138,7 @@ Pet* Player::SummonPet(uint32 entry, float x, float y, float z, float ang, uint3
     pet->SetPowerType(POWER_MANA);
     pet->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, 0);
     pet->SetUInt32Value(UNIT_FIELD_ANIM_TIER, 0);
-    pet->InitStatsForLevel(getLevel());
+    pet->InitStatsForLevel(GetLevel());
 
     SetMinion(pet, true);
 
@@ -30868,7 +30868,7 @@ bool Player::IsResearchDigsiteAvailable(ResearchDigsiteInfo const* digsiteInfo)
     if (GetSkillValue(SKILL_ARCHAEOLOGY) < digsiteInfo->requiredSkillValue)
         return false;
 
-    if (getLevel() < digsiteInfo->requiredLevel)
+    if (GetLevel() < digsiteInfo->requiredLevel)
         return false;
 
     return true;
@@ -31451,7 +31451,7 @@ bool Player::IsItemFitToSpecialization(ItemTemplate const* proto) const
     if ((proto->AllowableClass & getClassMask()) == 0 || (proto->AllowableRace & getRaceMask()) == 0)
         return false;
 
-    if (proto->Class == ITEM_CLASS_ARMOR && proto->InventoryType >= INVTYPE_HEAD && proto->InventoryType <= INVTYPE_HANDS && getLevel() >= 40)
+    if (proto->Class == ITEM_CLASS_ARMOR && proto->InventoryType >= INVTYPE_HEAD && proto->InventoryType <= INVTYPE_HANDS && GetLevel() >= 40)
     {
         switch (getClass())
         {
@@ -31493,7 +31493,7 @@ bool Player::IsItemFitToSpecialization(ItemTemplate const* proto) const
     if (!spec)
         spec = GetTalentSpecialization();
 
-    return sObjectMgr->GetItemSpecInfo(proto->ItemId, getLevel())->HasSpecializationId(spec);
+    return sObjectMgr->GetItemSpecInfo(proto->ItemId, GetLevel())->HasSpecializationId(spec);
 }
 
 void Player::SendDeclineGuildInvitation(std::string declinerName, bool autoDecline /*= false*/)
@@ -31982,7 +31982,7 @@ void Player::ChangeClass(uint32 oldClass, uint32 newClass)
         }
     }
 
-    uint8 level = getLevel();
+    uint8 level = GetLevel();
     uint32 faction = getRaceMask() & RACEMASK_ALLIANCE ? RECLASS_ALLIANCE : RECLASS_HORDE;
     uint32 guid = GetGUIDLow();
     // find riding, it will be unlearn if old class is DK or paly
@@ -32069,7 +32069,7 @@ void Player::ChangeClass(uint32 oldClass, uint32 newClass)
             continue;
 
         const SpellInfo* spellInfo = sSpellMgr->GetSpellInfo(spell);
-        if (!spellInfo || spellInfo->SpellLevel > getLevel())
+        if (!spellInfo || spellInfo->SpellLevel > GetLevel())
             continue;
 
         bool check = true;

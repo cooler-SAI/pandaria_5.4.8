@@ -668,7 +668,7 @@ namespace LuaUnit
 
     int GetLevel(lua_State* L, Unit* unit)
     {
-        sEluna->Push(L, unit->getLevel());
+        sEluna->Push(L, unit->GetLevel());
         return 1;
     }
 
@@ -1648,7 +1648,7 @@ namespace LuaUnit
         if (!summon)
             return 0;
         if (summon->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
-            ((Guardian*)summon)->InitStatsForLevel(unit->getLevel());
+            ((Guardian*)summon)->InitStatsForLevel(unit->GetLevel());
         if (properties && properties->Category == SUMMON_CATEGORY_ALLY)
             summon->setFaction(unit->getFaction());
         if (summon->GetEntry() == 27893)

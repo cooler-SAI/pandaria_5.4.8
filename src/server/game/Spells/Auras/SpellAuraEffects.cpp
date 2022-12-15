@@ -786,7 +786,7 @@ float AuraEffect::CalculateAmount(Unit* caster, bool recalculate)
             if (caster)
             {
                 // if Level <= 70 resist = player level
-                int32 resist = caster->getLevel();
+                int32 resist = caster->GetLevel();
 
                 if (resist > 70 && resist < 81)
                     resist += (resist - 70) * 5;

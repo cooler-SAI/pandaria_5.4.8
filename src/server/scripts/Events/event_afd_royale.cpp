@@ -751,7 +751,7 @@ class Game
                                 ItemQualityColors[proto->Quality],
                                 count > 1 ? Format("%u x ", count).c_str() : "",
                                 icon,
-                                proto->ItemId, 0, 0, 0, 0, 0, 0, 0, uint32(player->getLevel()),
+                                proto->ItemId, 0, 0, 0, 0, 0, 0, 0, uint32(player->GetLevel()),
                                 name.c_str()).c_str(), player, true);
                         }
 

@@ -592,7 +592,7 @@ bool Vehicle::AddPassenger(Unit* unit, int8 seatId)
     {
         // Instant Statue Pedestal
         case 40246:
-            unit->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+            unit->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
             break;
     }
 

@@ -449,7 +449,7 @@ void BattlegroundAV::AddPlayer(Player* player)
 
     PlayerScores[player->GetGUID()] = sc;
     if (m_maxLevel == 0)
-        m_maxLevel=(player->getLevel()%10 == 0)? player->getLevel() : (player->getLevel()-(player->getLevel()%10))+10; /// @todo just look at the code \^_^/ --but queue-info should provide this information..
+        m_maxLevel=(player->GetLevel()%10 == 0)? player->GetLevel() : (player->GetLevel()-(player->GetLevel()%10))+10; /// @todo just look at the code \^_^/ --but queue-info should provide this information..
 
     if (GetStatus() == STATUS_IN_PROGRESS)
         player->StartCriteria(CRITERIA_START_TYPE_EVENT, EVENT_START_BATTLE_AV, (TimeValue::Now() - m_doorOpeningTime).ToMilliseconds());

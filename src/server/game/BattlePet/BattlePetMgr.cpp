@@ -305,7 +305,7 @@ void BattlePetMgr::ResummonLastBattlePet()
     if (!battlePet)
     {
 
-        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: %u",
+        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: " UI64FMTD "",
             m_owner->GetName().c_str(), m_owner->GetGUIDLow(), battlePetId);
         return;
     }
