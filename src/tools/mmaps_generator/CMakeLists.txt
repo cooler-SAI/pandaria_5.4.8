@@ -11,39 +11,40 @@
 
 file(GLOB_RECURSE mmap_gen_sources *.cpp *.h)
 
-set(mmap_gen_Includes
-  ${CMAKE_BINARY_DIR}
-  ${ACE_INCLUDE_DIR}
-  ${CMAKE_SOURCE_DIR}/dep/zlib
-  ${CMAKE_SOURCE_DIR}/dep/bzip2
-  ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
-  ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
-  ${CMAKE_SOURCE_DIR}/src/server/shared
-  ${CMAKE_SOURCE_DIR}/src/server/game/Conditions
-  ${CMAKE_SOURCE_DIR}/src/server/collision
-  ${CMAKE_SOURCE_DIR}/src/server/collision/Management
-  ${CMAKE_SOURCE_DIR}/src/server/collision/Maps
-  ${CMAKE_SOURCE_DIR}/src/server/collision/Models
+include_directories(
+  PUBLIC
+    ${CMAKE_BINARY_DIR}
+  PRIVATE  
+    ${ACE_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/dep/zlib
+    ${CMAKE_SOURCE_DIR}/dep/bzip2
+    ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
+    ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
+    ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
+    ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
+    ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
+    ${CMAKE_SOURCE_DIR}/src/server/shared
+    ${CMAKE_SOURCE_DIR}/src/server/game/Conditions
+    ${CMAKE_SOURCE_DIR}/src/server/collision
+    ${CMAKE_SOURCE_DIR}/src/server/collision/Management
+    ${CMAKE_SOURCE_DIR}/src/server/collision/Maps
+    ${CMAKE_SOURCE_DIR}/src/server/collision/Models
 )
-
-include_directories(${mmap_gen_Includes})
 
 add_executable(mmaps_generator ${mmap_gen_sources})
 
 target_link_libraries(mmaps_generator
-  shared
-  collision
-  g3dlib
-  Recast
-  Detour
-  ${ACE_LIBRARY}
-  ${BZIP2_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  ${Boost_LIBRARIES}
-  Threads::Threads
+  PRIVATE
+    shared
+    collision
+    g3dlib
+    Recast
+    Detour
+    ${ACE_LIBRARY}
+    ${BZIP2_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    ${Boost_LIBRARIES}
+    Threads::Threads
 )
 
 if( UNIX )
