@@ -294,7 +294,6 @@ if (ELUNA)
 
   add_library(game STATIC
     ${game_STAT_SRCS}
-    ${game_STAT_PCH_SRC}
     ${lua_STAT_SRCS}
     ${LuaEngine_STAT_SRCS}
   )
@@ -307,7 +306,6 @@ if (ELUNA)
 else()
   add_library(game STATIC
     ${game_STAT_SRCS}
-    ${game_STAT_PCH_SRC}
   )
 endif()
 

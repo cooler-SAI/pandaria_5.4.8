@@ -84,7 +84,6 @@ endif()
 
 add_library(collision STATIC
   ${collision_STAT_SRCS}
-  ${collision_STAT_PCH_SRC}
 )
 
 target_link_libraries(collision
