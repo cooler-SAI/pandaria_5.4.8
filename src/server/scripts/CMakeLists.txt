@@ -79,7 +79,9 @@ message(STATUS "SCRIPT PREPARATION COMPLETE")
 message("")
 
 include_directories(
+  PUBLIC
     ${CMAKE_BINARY_DIR}
+  PRIVATE    
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
     ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
@@ -192,7 +194,12 @@ include_directories(
     ${MYSQL_INCLUDE_DIR}
     ${OPENSSL_INCLUDE_DIR}
 )
-
+if (Boost_FOUND)
+  include_directories(
+    PRIVATE 
+      ${Boost_INCLUDE_DIRS}
+  )
+endif()
 if( USE_SCRIPTPCH AND MSVC )
   set(scripts_STAT_SRCS
     ${scripts_STAT_SRCS}
