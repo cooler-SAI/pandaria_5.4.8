@@ -25,15 +25,14 @@
 #include "Common.h"
 #include "SharedDefines.h"
 #include "AddonMgr.h"
-#include "DatabaseEnv.h"
 #include "World.h"
 #include "WorldPacket.h"
 #include "Cryptography/BigNumber.h"
 #include "Opcodes.h"
 #include "AccountMgr.h"
 #include "Object.h"
-#include "TaskMgr.h"
 
+class BigNumber;
 class AccountAchievementMgr;
 
 class PetBattle;
