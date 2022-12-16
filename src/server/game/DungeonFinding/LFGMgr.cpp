@@ -43,6 +43,7 @@
 #include "GridNotifiersImpl.h"
 #include "WorldPacket.h"
 #include "BattlegroundMgr.h"
+#include "Field.h"
 #include <numeric>
 
 template <typename... Args>

@@ -20,7 +20,6 @@
 
 #include <ace/Singleton.h>
 #include "DBCStructure.h"
-#include "Field.h"
 #include "LFG.h"
 #include "LFGQueue.h"
 #include "LFGGroupData.h"

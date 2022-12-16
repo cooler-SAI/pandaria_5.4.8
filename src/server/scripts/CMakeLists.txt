@@ -196,7 +196,7 @@ include_directories(
 )
 if (Boost_FOUND)
   include_directories(
-    PRIVATE 
+    PUBLIC 
       ${Boost_INCLUDE_DIRS}
   )
 endif()

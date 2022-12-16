@@ -19,6 +19,7 @@
 #define TrinityCore_Optional_h__
 
 //#include <boost/optional.hpp>
+#include <optional>
 
 //! Optional helper class to wrap optional values within.
 template <class T>

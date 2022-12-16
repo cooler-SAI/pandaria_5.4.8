@@ -79,7 +79,7 @@ jobs:
         cd $GITHUB_WORKSPACE
         
         mkdir -p build && cd build
-        cmake .. -DTOOLS=ON -A x64
+        cmake .. -DTOOLS=ON -DELUNA=0 -A x64
         cmake --build . --config RelWithDebInfo --parallel 4
       #git bash shell
       shell: bash
