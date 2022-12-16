@@ -81,7 +81,7 @@ class world_map_gilneas: public WorldMapScript
                             }
                         }
 
-                        _events.Repeat(60000ms, 120000ms);
+                        _events.RepeatEvent(randtime(1min, 120s));
                         break;
                     }
                     default:
