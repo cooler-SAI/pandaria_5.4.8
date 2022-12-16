@@ -158,6 +158,13 @@ include_directories(
     ${OPENSSL_INCLUDE_DIR}
 )
 
+if (Boost_FOUND)
+  include_directories(
+    PRIVATE
+      ${Boost_INCLUDE_DIRS}
+  )
+endif()
+
 add_executable(worldserver
   ${worldserver_SRCS}
 )

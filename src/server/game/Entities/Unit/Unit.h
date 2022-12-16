@@ -909,18 +909,9 @@ public:
         m_absorbedSplit = amount;
     }
 
-    Unit* GetAttacker() const
-    {
-        return m_attacker;
-    }
-    Unit* GetVictim() const
-    {
-        return m_victim;
-    }
-    SpellInfo const* GetSpellInfo() const
-    {
-        return m_spellInfo;
-    }
+    Unit* GetAttacker() const { return m_attacker; }
+    Unit* GetVictim() const { return m_victim; }
+    SpellInfo const* GetSpellInfo() const { return m_spellInfo; }
     SpellSchoolMask GetSchoolMask() const
     {
         return m_schoolMask;
