@@ -188,15 +188,13 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/game/Warden/Modules
     ${CMAKE_SOURCE_DIR}/src/server/game/Weather
     ${CMAKE_SOURCE_DIR}/src/server/game/World
-    ${CMAKE_CURRENT_SOURCE_DIR}/SharedPtrs
     ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
 )
 if (Boost_FOUND)
   include_directories(
-    PRIVATE 
+    PUBLIC 
       ${Boost_INCLUDE_DIRS}
   )
 endif()

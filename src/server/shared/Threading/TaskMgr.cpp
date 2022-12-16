@@ -17,8 +17,47 @@
 
 #include "TaskMgr.h"
 #include "Task.h"
+#include <boost/asio.hpp>
+#include <boost/thread.hpp>
+#include "Optional.h"
 
-ThreadPool TaskMgr::_pool{ 1 };
+class ThreadPool
+{
+    typedef std::unique_ptr<boost::asio::io_service::work> worker;
+    typedef boost::asio::io_service service;
+    typedef boost::thread_group pool;
+public:
+    ThreadPool(size_t threads)
+        : _worker(new worker::element_type{ _service })
+    {
+        while (threads--)
+        {
+            auto worker = boost::bind(&service::run, &(this->_service));
+            _pool.add_thread(new boost::thread(worker));
+        }
+    }
+
+    void Stop()
+    {
+        _worker.reset();
+        _pool.join_all();
+        _service.stop();
+    }
+
+    template<class F>
+    void Enqueue(F f)
+    {
+        _service.post(f);
+    }
+
+private:
+    service _service;
+    worker  _worker;
+    pool    _pool;
+};
+
+//ThreadPool TaskMgr::_pool{ 1 };
+std::unique_ptr<ThreadPool> TaskMgr::_pool(new ThreadPool{1});
 
 // Yes, this must be here.
 TaskMgr::~TaskMgr()
@@ -71,4 +110,14 @@ void Schedulable::NewAction(TaskBase* task)
     }
 
     _tokens.push_back(std::move(tok));
+}
+
+void TaskMgr::Async(std::function<void()> func)
+{
+    _pool->Enqueue(func);
+}
+
+void TaskMgr::Stop()
+{
+    _pool->Stop();
 }

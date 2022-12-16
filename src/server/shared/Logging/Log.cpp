@@ -457,3 +457,34 @@ void Log::LoadFromConfig()
     ReadAppendersFromConfig();
     ReadLoggersFromConfig();
 }
+
+Logger const* Log::GetLoggerByType(std::string const& type) const
+{
+    LoggerMap::const_iterator it = loggers.find(type);
+    if (it != loggers.end())
+        return &(it->second);
+
+    if (type == LOGGER_ROOT)
+        return NULL;
+
+    std::string parentLogger = LOGGER_ROOT;
+    size_t found = type.find_last_of(".");
+    if (found != std::string::npos)
+        parentLogger = type.substr(0,found);
+
+    return GetLoggerByType(parentLogger);
+}
+
+bool Log::ShouldLog(std::string const& type, LogLevel level) const
+{
+    // TODO: Use cache to store "Type.sub1.sub2": "Type" equivalence, should
+    // Speed up in cases where requesting "Type.sub1.sub2" but only configured
+    // Logger "Type"
+
+    Logger const* logger = GetLoggerByType(type);
+    if (!logger)
+        return false;
+
+    LogLevel logLevel = logger->getLogLevel();
+    return logLevel != LOG_LEVEL_DISABLED && logLevel <= level;
+}
