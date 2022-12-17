@@ -59,7 +59,6 @@ include(CheckPlatform)
 set(OPENSSL_EXPECTED_VERSION 1.0.0)
 set(ACE_EXPECTED_VERSION 5.8.3)
 
-#find_package(PCHSupport) Remove old PCH macro
 find_package(ACE REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(Threads REQUIRED)
@@ -67,6 +66,10 @@ find_package(Threads REQUIRED)
 if( NOT USE_MYSQL_SOURCES )
   find_package(MySQL REQUIRED)
 endif()
+
+#Debug compile time
+set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CMAKE_COMMAND} -E time")
+set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK "${CMAKE_COMMAND} -E time")
 
 if( UNIX )
   find_package(Readline)

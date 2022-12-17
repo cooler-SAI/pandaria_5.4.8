@@ -17,18 +17,14 @@ jobs:
       run: |
         mkdir bin
         cd bin
-        cmake ../ -DTOOLS=1 -DELUNA=0 ..
+        cmake ../ -DTOOLS=1 -DELUNA=0 -DCMAKE_INSTALL_PREFIX=check_install
         cd ..
     - name: Build
       run: |
         cd bin
         make -j 4 -k && make install
-    - name: Unit tests
-      run: |
-        cd bin
-        make test
-    - name: Check executables
-      run: |
-        cd bin/check_install/bin
-        ./authserver --version
-        ./worldserver --version
+    #- name: Check executables
+    #  run: |
+    #    cd bin/check_install/bin
+    #    ./authserver --version
+    #    ./worldserver --version
