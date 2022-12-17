@@ -5277,7 +5277,7 @@ void ObjectMgr::LoadInstanceEncounters()
                 CreatureTemplate const* creatureInfo = GetCreatureTemplate(creditEntry);
                 if (!creatureInfo)
                 {
-                    TC_LOG_ERROR("sql.sql", "Table `instance_encounters` has an invalid creature (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName);
+                    TC_LOG_ERROR("sql.sql", "Table `instance_encounters` has an invalid creature (entry %u) linked to the encounter %u (%s), skipped!", creditEntry, entry, dungeonEncounter->encounterName.m_impl);
                     continue;
                 }
                 const_cast<CreatureTemplate*>(creatureInfo)->flags_extra |= CREATURE_FLAG_EXTRA_DUNGEON_BOSS;
@@ -10779,7 +10779,7 @@ void ObjectMgr::LoadBrokenQuests()
 
         if (quest->IsDailyOrWeekly() || quest->IsDFQuest() || quest->IsRaidQuest(Difficulty(REGULAR_DIFFICULTY)))
         {
-            TC_LOG_ERROR("sql.sql", "ObjectMgr::LoadBrokenQuests trying to load unwished quest, skipped", entry);
+            TC_LOG_ERROR("sql.sql", "ObjectMgr::LoadBrokenQuests trying to load unwished quest %u, skipped", entry);
             continue;
         }
 

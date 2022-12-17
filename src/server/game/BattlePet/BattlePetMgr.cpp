@@ -316,7 +316,7 @@ void BattlePetMgr::ResummonLastBattlePet()
     TempSummon* summon = GetCurrentSummon();
     if (!summon)
     {
-        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: %u, spell: %u",
+        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: " UI64FMTD ", spell: %u",
             m_owner->GetName().c_str(), m_owner->GetGUIDLow(), battlePetId, spell);
     }
 
