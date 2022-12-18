@@ -202,9 +202,9 @@ class CreatureAI : public UnitAI
 
         /// == Waypoints system =============================
 
-        virtual void WaypointStarted(uint32 /*nodeId*/, uint32 /*pathId*/) { }
-        virtual void WaypointReached(uint32 /*nodeId*/, uint32 /*pathId*/) { }
-        virtual void WaypointPathEnded(uint32 /*nodeId*/, uint32 /*pathId*/) { }
+        // virtual void WaypointStarted(uint32 /*nodeId*/, uint32 /*pathId*/) { }
+        // virtual void WaypointReached(uint32 /*nodeId*/, uint32 /*pathId*/) { }
+        // virtual void WaypointPathEnded(uint32 /*nodeId*/, uint32 /*pathId*/) { }
 
         /// == Fields =======================================
 
