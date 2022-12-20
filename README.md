@@ -4,6 +4,7 @@
 Discord link: https://discord.gg/byBCHbwJEg
 
 Geodata: https://mega.nz/file/EAZUmZiD#PxdHN7jcEKCA8qaIBTIWLWLGZcT5PdsKfIgkygTZgTs
+Geodata (RU dbc): https://mega.nz/file/EAZUmZiD#PxdHN7jcEKCA8qaIBTIWLWLGZcT5PdsKfIgkygTZgTs
 
 ## Requirements
 + Platform: Linux, Windows or Mac
