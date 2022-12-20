@@ -12,7 +12,7 @@ Geodata: https://mega.nz/file/EAZUmZiD#PxdHN7jcEKCA8qaIBTIWLWLGZcT5PdsKfIgkygTZg
 + ACE = 7.0.0 (included for Windows) 
 + MySQL = 5.7, 8.0
 + CMake ≥ 3.16 (latest stable recommended) 
-+ OpenSSL = 1.1.x
++ OpenSSL = 1.1.x, 3.0
 + Boost ≥ 1.70 (latest stable recommended)
 + Windows SDK version 10
 + MS Visual Studio (Community) ≥ 16.4 (2019) (Desktop) (Not previews) 
