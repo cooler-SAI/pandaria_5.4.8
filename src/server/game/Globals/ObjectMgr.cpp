@@ -1120,7 +1120,7 @@ void ObjectMgr::LoadCreatureAddons()
     {
         Field* fields = result->Fetch();
 
-        uint32 guid = fields[0].GetUInt32();
+        uint64 guid = fields[0].GetUInt64();
 
         CreatureData const* creData = GetCreatureData(guid);
         if (!creData)

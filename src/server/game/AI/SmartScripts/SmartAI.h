@@ -136,16 +136,16 @@ class SmartAI : public CreatureAI
         void UpdateAIWhileCharmed(const uint32 diff);
 
         // Called when a Player/Creature enters the creature (vehicle)
-        void PassengerBoarded(Unit* who, int8 seatId, bool apply);
+        void PassengerBoarded(Unit* who, int8 seatId, bool apply) override;
 
         // Called when gets initialized, when creature is added to world
         void InitializeAI() override;
 
         // Called when creature gets charmed by another unit
-        void OnCharmed(bool apply);
+        void OnCharmed(bool apply) override;
 
         // Called when victim is in line of sight
-        bool CanAIAttack(const Unit* who) const;
+        bool CanAIAttack(const Unit* who) const override;
 
         // Used in scripts to share variables
         void DoAction(int32 param = 0) override;
@@ -185,9 +185,9 @@ class SmartAI : public CreatureAI
         void OnQuestAccept(Player* player, Quest const* quest) override;     
         //void sQuestSelect(Player* player, Quest const* quest);
         //void sQuestComplete(Player* player, Quest const* quest);
-        void sQuestReward(Player* player, Quest const* quest, uint32 opt);
-        bool sOnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex);
-        void sOnGameEvent(bool start, uint16 eventId);
+        void sQuestReward(Player* player, Quest const* quest, uint32 opt) override;
+        bool sOnDummyEffect(Unit* caster, uint32 spellId, SpellEffIndex effIndex) override;
+        void sOnGameEvent(bool start, uint16 eventId) override;
 
         uint32 mEscortQuestID;
 
@@ -200,7 +200,7 @@ class SmartAI : public CreatureAI
 
         void RemoveAuras();
 
-        void OnSpellClick(Unit* clicker, bool& result);
+        void OnSpellClick(Unit* clicker, bool& result) override;
 
         uint32 GetPhase() { return GetScript()->GetPhase(); }
 
@@ -272,9 +272,9 @@ class SmartGameObjectAI : public GameObjectAI
         SmartGameObjectAI(GameObject* g) : GameObjectAI(g), go(g) { }
         ~SmartGameObjectAI() { }
 
-        void UpdateAI(uint32 diff);
-        void InitializeAI();
-        void Reset();
+        void UpdateAI(uint32 diff) override;
+        void InitializeAI() override;
+        void Reset() override;
         SmartScript* GetScript() { return &mScript; }
         static int Permissible(const GameObject* g);
 
