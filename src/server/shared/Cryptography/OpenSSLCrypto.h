@@ -15,8 +15,8 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef OPENSSL_CRYPTO_H
-#define OPENSSL_CRYPTO_H
+#ifndef LEGION_OF_AZEROTH_PANDARIA_OPENSSL_CRYPTO_H
+#define LEGION_OF_AZEROTH_PANDARIA_OPENSSL_CRYPTO_H
 
 /**
 * A group of functions which setup openssl crypto module to work properly in multithreaded enviroment
