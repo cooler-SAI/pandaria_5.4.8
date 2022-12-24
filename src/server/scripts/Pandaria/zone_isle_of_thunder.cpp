@@ -3889,7 +3889,7 @@ class spell_reverberating_smash : public SpellScript
     }
 };
 
-class ReverberatingSmashRangePredicate
+class ReverberatingSmashRangePredicate : public std::binary_function<uint32, WorldLocation const*, bool>
 {
     public:
         ReverberatingSmashRangePredicate(uint32 const& spell_id, WorldLocation const* m_pos) : _spell_id(spell_id), _pos(m_pos) { }
@@ -4319,7 +4319,8 @@ class spell_nalak_throw_spear : public SpellScript
             if (Creature* nalak = caster->FindNearestCreature(BOSS_NALAK, 50.0f, true))
                 if (nalak->IsAlive())
                     return SPELL_CAST_OK;
-        return SPELL_FAILED_UNKNOWN;
+
+        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
     }
 
     void Register() override
