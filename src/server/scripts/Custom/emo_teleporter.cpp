@@ -337,7 +337,7 @@ void Custom_GetMenu (Player* pPlayer, Creature* pCreature, uint32 Key)
 	{
 		if (ENDMENU && pandariq[i].menu_id != Key)
 			break;
-		if (pandariq[i].menu_id == Key && pPlayer->getLevel() >= pandariq[i].level && Custom_FactCheck(pPlayer->GetTeam(), i))
+		if (pandariq[i].menu_id == Key && pPlayer->GetLevel() >= pandariq[i].level && Custom_FactCheck(pPlayer->GetTeam(), i))
 		{
 			if (pandariq[i].next_menu_id != 0)
 				pPlayer->ADD_GOSSIP_ITEM_EXTENDED(pandariq[i].icon, pandariq[i].name, GOSSIP_SENDER_MAIN, i, "", pandariq[i].cost, false);

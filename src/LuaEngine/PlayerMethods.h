@@ -1279,7 +1279,7 @@ namespace LuaPlayer
         if (victim && victim->GetTypeId() == TYPEID_UNIT && !victim->ToCreature()->HasLootRecipient())
             return 0;
 
-        uint8 level = player->getLevel();
+        uint8 level = player->GetLevel();
 
         if (triggerHook)
             sScriptMgr->OnGivePlayerXP(player, xp, victim);
@@ -1323,7 +1323,7 @@ namespace LuaPlayer
             if (level < sWorld->getIntConfig(CONFIG_MAX_PLAYER_LEVEL))
                 player->GiveLevel(level + 1);
 
-            level = player->getLevel();
+            level = player->GetLevel();
             nextLvlXP = player->GetUInt32Value(PLAYER_FIELD_NEXT_LEVEL_XP);
         }
 

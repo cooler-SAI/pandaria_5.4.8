@@ -1541,7 +1541,7 @@ class npc_corruptor_tentacle : public CreatureScript
             {
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }
@@ -1615,7 +1615,7 @@ class npc_constrictor_tentacle : public CreatureScript
                     passenger->RemoveAurasDueToSpell(Is25ManRaid() ? SPELL_SQUEEZE_25 : SPELL_SQUEEZE);
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }
@@ -1677,7 +1677,7 @@ class npc_crusher_tentacle : public CreatureScript
             {
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }

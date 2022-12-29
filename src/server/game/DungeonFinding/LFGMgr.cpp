@@ -43,6 +43,7 @@
 #include "GridNotifiersImpl.h"
 #include "WorldPacket.h"
 #include "BattlegroundMgr.h"
+#include "Field.h"
 #include <numeric>
 
 template <typename... Args>
@@ -115,7 +116,7 @@ void QueueAnnounceContextLFG::Announce() const
             continue;
 
         // Don't show to players in the wrong level range
-        if (dungeon && (player->getLevel() < dungeon->minlevel || player->getLevel() > dungeon->maxlevel))
+        if (dungeon && (player->GetLevel() < dungeon->minlevel || player->GetLevel() > dungeon->maxlevel))
             continue;
 
         Show setting = info->GetSetting(projectMemberInfo::Setting::QueueAnnounceRaidFinder).As<Show>();
@@ -547,7 +548,7 @@ void LFGMgr::InitializeLockedDungeons(Player* player, uint8 level /* = 0 */)
 {
     uint64 guid = player->GetGUID();
     if (!level)
-        level = player->getLevel();
+        level = player->GetLevel();
     uint8 expansion = player->GetSession()->Expansion();
     LfgDungeonSet const& dungeons = GetDungeonsByRandom(0);
     LfgLockMap lock;
@@ -2013,7 +2014,7 @@ void LFGMgr::UpdateBoot(uint64 guid, bool accept)
     uint64 gguid = GetGroup(guid, queueId);
     if (!gguid)
     {
-        TC_LOG_ERROR("lfg", "LFGMgr::UpdateBoot Group not found [" UI64FMTD "], queue id: %", GetGuidForLog(guid), queueId);
+        TC_LOG_ERROR("lfg", "LFGMgr::UpdateBoot Group not found [" UI64FMTD "], queue id: %u", GetGuidForLog(guid), queueId);
         return;
     }
 
@@ -2230,7 +2231,7 @@ void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
 
         if (queueData.State == LFG_STATE_FINISHED_DUNGEON)
         {
-            TC_LOG_DEBUG("lfg", "LFGMgr::FinishDungeon: [%u] Already rewarded player. Ignoring", guid);
+            TC_LOG_DEBUG("lfg", "LFGMgr::FinishDungeon: [" UI64FMTD "] Already rewarded player. Ignoring", guid);
             continue;
         }
 
@@ -2251,7 +2252,7 @@ void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
         Player* player = ObjectAccessor::FindPlayer(guid);
         if (!player || !player->IsInWorld())
         {
-            TC_LOG_DEBUG("lfg", "LFGMgr::FinishDungeon: [%] not found in world", GUID_LOPART(guid));
+            TC_LOG_DEBUG("lfg", "LFGMgr::FinishDungeon: [%u] not found in world", GUID_LOPART(guid));
             continue;
         }
 
@@ -2283,7 +2284,7 @@ void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
         if (dungeon->difficulty == DUNGEON_DIFFICULTY_HEROIC)
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_USE_LFD_TO_GROUP_WITH_PLAYERS, 1);
 
-        LfgReward const* reward = GetRandomDungeonReward(rDungeonId, player->getLevel());
+        LfgReward const* reward = GetRandomDungeonReward(rDungeonId, player->GetLevel());
         if (!reward)
             continue;
 
@@ -2554,7 +2555,7 @@ LfgState LFGMgr::GetOldState(uint64 guid, uint32 queueId)
     else
         state = PlayersStore[guid].GetOldState(queueId);
 
-    TC_LOG_TRACE("lfg", "LFGMgr::GetOldState: [" UI64FMTD "] = %u, queueId: ", GetGuidForLog(guid), state, queueId);
+    TC_LOG_TRACE("lfg", "LFGMgr::GetOldState: [" UI64FMTD "] = %u, queueId: %u", GetGuidForLog(guid), state, queueId);
     return state;
 }
 

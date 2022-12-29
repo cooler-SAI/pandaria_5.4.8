@@ -65,7 +65,7 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-#include <signal.h>
+//#include <signal.h>
 #include <assert.h>
 #include <cmath>
 #include <ctgmath>

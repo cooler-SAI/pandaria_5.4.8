@@ -265,7 +265,7 @@ void TempSummon::InitStats(uint32 duration)
     if (owner && IsTrigger() && m_spells[0])
     {
         setFaction(owner->getFaction());
-        SetLevel(owner->getLevel());
+        SetLevel(owner->GetLevel());
         if (owner->GetTypeId() == TYPEID_PLAYER)
             m_ControlledByPlayer = true;
     }
@@ -465,7 +465,7 @@ void Guardian::InitStats(uint32 duration)
 {
     Minion::InitStats(duration);
 
-    InitStatsForLevel(GetOwner()->getLevel());
+    InitStatsForLevel(GetOwner()->GetLevel());
 
     if (GetOwner()->GetTypeId() == TYPEID_PLAYER && HasUnitTypeMask(UNIT_MASK_CONTROLABLE_GUARDIAN))
     {
@@ -501,7 +501,7 @@ Puppet::Puppet(SummonPropertiesEntry const* properties, Unit* owner)
 void Puppet::InitStats(uint32 duration)
 {
     Minion::InitStats(duration);
-    SetLevel(GetOwner()->getLevel());
+    SetLevel(GetOwner()->GetLevel());
     SetReactState(REACT_PASSIVE);
 }
 

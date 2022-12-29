@@ -778,7 +778,7 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
 
             if (e.action.animKit.type > 3)
             {
-                TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry " SI64FMTD " SourceType %u Event %u Action %u uses invalid AnimKit type %u, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), e.action.animKit.type);
+                TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u uses invalid AnimKit type %u, skipped.", e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType(), e.action.animKit.type);
                 return false;
             }
             break;
@@ -819,7 +819,7 @@ bool SmartAIMgr::IsEventValid(SmartScriptHolder& e)
         {
             if (std::all_of(e.action.randomSound.sounds.begin(), e.action.randomSound.sounds.end(), [](uint32 sound) { return sound == 0; }))
             {
-                TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry " SI64FMTD " SourceType %u Event %u Action %u does not have any non-zero sound",
+                TC_LOG_ERROR("sql.sql", "SmartAIMgr: Entry %d SourceType %u Event %u Action %u does not have any non-zero sound",
                     e.entryOrGuid, e.GetScriptType(), e.event_id, e.GetActionType());
                 return false;
             }

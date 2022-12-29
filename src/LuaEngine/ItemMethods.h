@@ -69,7 +69,7 @@ namespace LuaItem
             item->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3) << ":" <<
             item->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT) << ":" <<
             item->GetItemRandomPropertyId() << ":" << item->GetItemSuffixFactor() << ":" <<
-            (uint32)item->GetOwner()->getLevel() << "|h[" << name << "]|h|r";
+            (uint32)item->GetOwner()->GetLevel() << "|h[" << name << "]|h|r";
 
         sEluna->Push(L, oss.str());
         return 1;

@@ -24,3 +24,7 @@
 #include "Errors.h"
 #include "TypeList.h"
 #include "TaskScheduler.h"
+#include "AuthCrypt.h"
+#include <memory>
+#include <string>
+#include <vector>

@@ -252,7 +252,7 @@ void QueueAnnounceContext::Announce() const
             continue;
 
         // Don't show to players in the wrong level range
-        if (bracket && (player->getLevel() < bracket->minLevel || player->getLevel() > bracket->maxLevel))
+        if (bracket && (player->GetLevel() < bracket->minLevel || player->GetLevel() > bracket->maxLevel))
             continue;
 
         Show setting = info->GetSetting(isArena ? projectMemberInfo::Setting::QueueAnnounceArenaHorizon : projectMemberInfo::Setting::QueueAnnounceBattlegroundHorizon).As<Show>();

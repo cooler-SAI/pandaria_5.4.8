@@ -454,7 +454,7 @@ float Player::GetHealthBonusFromStamina()
 {
     // Taken from PaperDollFrame.lua - 4.3.4.15595
     float ratio = 10.0f;
-    if (gtOCTHpPerStaminaEntry const* hpBase = sGtOCTHpPerStaminaStore.LookupEntry(getLevel()))
+    if (gtOCTHpPerStaminaEntry const* hpBase = sGtOCTHpPerStaminaStore.LookupEntry(GetLevel()))
         ratio = hpBase->ratio;
 
     float stamina = GetStat(STAT_STAMINA);
@@ -498,7 +498,7 @@ void Player::UpdateMaxPower(Powers power)
 void Player::UpdateAttackPowerAndDamage(bool ranged)
 {
     float val2 = 0.0f;
-    float level = float(getLevel());
+    float level = float(GetLevel());
 
     ChrClassesEntry const* entry = sChrClassesStore.LookupEntry(getClass());
     UnitMods unitMod = ranged ? UNIT_MOD_ATTACK_POWER_RANGED : UNIT_MOD_ATTACK_POWER;
@@ -526,7 +526,7 @@ void Player::UpdateAttackPowerAndDamage(bool ranged)
             apPerLevel = 3;
         }
 
-        val2 = strengthValue + agilityValue + getLevel() * apPerLevel;
+        val2 = strengthValue + agilityValue + GetLevel() * apPerLevel;
     }
 
     SetModifierValue(unitMod, BASE_VALUE, val2);
@@ -904,7 +904,7 @@ void Player::UpdateParryPercentage()
     if (CanParry() && parryCap[pclass] > 0.0f)
     {
         float b = GetCreateStat(STAT_STRENGTH);
-        float q = DodgeOrParryPerStat[getLevel() - 1];
+        float q = DodgeOrParryPerStat[GetLevel() - 1];
         float c = parryCap[getClass() - 1];
         float k = DodgeOrParryScalingFactor[getClass() - 1];
         float t = GetStat(STAT_STRENGTH);
@@ -939,7 +939,7 @@ void Player::UpdateDodgePercentage()
     };
 
     float b = GetCreateStat(STAT_AGILITY);
-    float q = DodgeOrParryPerStat[getLevel() - 1];
+    float q = DodgeOrParryPerStat[GetLevel() - 1];
     float c = dodgeCap[getClass() - 1];
     float k = DodgeOrParryScalingFactor[getClass() - 1];
     float t = GetStat(STAT_AGILITY);

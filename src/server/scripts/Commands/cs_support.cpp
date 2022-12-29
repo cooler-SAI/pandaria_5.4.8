@@ -887,7 +887,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT guid, sum(count) FROM item_instance WHERE itemEntry = %u AND owner_guid = %u", item->ItemId, GUID_LOPART(guid)))
                     {
                         CharacterDatabase.PExecute("DELETE FROM item_instance WHERE guid = %u", (*result)[0].GetUInt32());
-                        handler->PSendSysMessage("Item %s (%u, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
+                        handler->PSendSysMessage("Item %d (%u, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't item %s (%u).", name.c_str(), GUID_LOPART(guid), item->Name1.c_str(), item->ItemId);
@@ -1857,7 +1857,7 @@ public:
                     {
                         CharacterDatabase.PExecute("DELETE FROM character_aura WHERE spell = %u AND guid = %u", spell->Id, GUID_LOPART(guid));
                         CharacterDatabase.PExecute("DELETE FROM character_aura_effect WHERE slot = %u AND guid = %u", (*result)[0].GetUInt32(), GUID_LOPART(guid));
-                        handler->PSendSysMessage("Aura %u removed from player %s (guid: %u).", name.c_str(), GUID_LOPART(guid), spell->Id);
+                        handler->PSendSysMessage("Aura %s removed from player %s (guid: %u).", name.c_str(), GUID_LOPART(guid), spell->Id);
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't aura %u.", name.c_str(), GUID_LOPART(guid), spell->Id);
@@ -3345,7 +3345,7 @@ public:
 
         uint32 slot = atoi(tok[1]);
         if (slot >= PVP_SLOT_MAX)
-            handler->PSendSysMessage("Incorrect slot %u, max %s.", slot, PVP_SLOT_MAX);
+            handler->PSendSysMessage("Incorrect slot %u, max %d.", slot, PVP_SLOT_MAX);
 
         if (auto info = RatedPvpMgr::Instance()->GetInfo(RatedPvpSlot(slot), guid))
         {
@@ -3379,7 +3379,7 @@ public:
 
         uint32 slot = atoi(tok[1]);
         if (slot >= PVP_SLOT_MAX)
-            handler->PSendSysMessage("Incorrect slot %u, max %s.", slot, PVP_SLOT_MAX);
+            handler->PSendSysMessage("Incorrect slot %u, max %d.", slot, PVP_SLOT_MAX);
 
         if (auto info = RatedPvpMgr::Instance()->GetInfo(RatedPvpSlot(slot), guid))
         {
@@ -3535,7 +3535,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT currency FROM character_currency WHERE guid = %u AND currency = %u", GUID_LOPART(guid), cur->ID))
                     {
                         uint64 currencyAmount = (*result)[0].GetUInt32();
-                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %u.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
+                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %lu.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
                     }
                     else
                         handler->PSendSysMessage("Player %s (%u) hasn't currency %s (%u).", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID);

@@ -4069,7 +4069,7 @@ class spell_gen_ancient_knowledge : public AuraScript
     void CalculateAmount(AuraEffect const* /*aurEff*/, float& amount, bool& /*canBeRecalculated*/)
     {
         if (Player* player = GetAura()->GetOwner()->ToPlayer())
-            if (player->getLevel() > 84)
+            if (player->GetLevel() > 84)
                 amount = 0;
     }
 
@@ -4092,7 +4092,7 @@ class spell_gen_heirloom_experience_bonus : public AuraScript
                 if (Item* item = player->GetItemByGuid(aura->GetCastItemGUID()))
                     if (ItemTemplate const* itemTemp = item->GetTemplate())
                         if (ScalingStatDistributionEntry const* ssd = sScalingStatDistributionStore.LookupEntry(itemTemp->ScalingStatDistribution))
-                            if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < player->getLevel())
+                            if (ssd && ssd->MaxLevel < DEFAULT_MAX_LEVEL && ssd->MaxLevel < player->GetLevel())
                                 amount = 0;
     }
 
@@ -4133,11 +4133,11 @@ class spell_gen_free_action_potion : public SpellScript
 
         if (Player* player = GetCaster()->ToPlayer())
         {
-            if (player->getLevel() >= 77)
+            if (player->GetLevel() >= 77)
             {
                 if (Aura* aura = player->GetAura(6615, player->GetGUID()))
                 {
-                    int32 duration = (30 - ((player->getLevel() - 77) * 3)) * IN_MILLISECONDS;
+                    int32 duration = (30 - ((player->GetLevel() - 77) * 3)) * IN_MILLISECONDS;
                     if (duration < 0)
                         duration = 5000;
 
@@ -4716,6 +4716,28 @@ class spell_gen_deserter : public SpellScript
     }
 };
 
+// 69041 - Rocket Barrage (Goblin Racial)
+class spell_gen_rocket_barrage : public SpellScript
+{
+    PrepareSpellScript(spell_gen_rocket_barrage);
+
+    void HandleDamage(SpellEffIndex /*effIndex*/)
+    {
+        if (Player* caster = GetCaster()->ToPlayer())
+        {
+            // Get highest attack power
+            uint32 ap = std::max(caster->GetTotalAttackPowerValue(BASE_ATTACK), caster->GetTotalAttackPowerValue(RANGED_ATTACK));
+
+            SetHitDamage(1 + (0.25f * ap) + (0.429f * caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) + (caster->getLevel() * 2));
+        }
+    }
+
+    void Register()
+    {
+        OnEffectHitTarget += SpellEffectFn(spell_gen_rocket_barrage::HandleDamage, EFFECT_0, SPELL_EFFECT_SCHOOL_DAMAGE);
+    }
+};
+
 void AddSC_generic_spell_scripts()
 {
     new aura_script<spell_gen_absorb0_hitlimit1>("spell_gen_absorb0_hitlimit1");
@@ -4835,4 +4857,5 @@ void AddSC_generic_spell_scripts()
     new aura_script<spell_carrying_seaforium>("spell_carrying_seaforium");
     new aura_script<spell_gen_surgical_alterations>("spell_gen_surgical_alterations");
     new spell_script<spell_gen_deserter>("spell_gen_deserter");
+	new spell_script<spell_gen_rocket_barrage>("spell_gen_rocket_barrage");
 }

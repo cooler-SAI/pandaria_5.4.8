@@ -17,6 +17,7 @@
 
 #include <OpenSSLCrypto.h>
 #include <openssl/crypto.h>
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x1010000fL
 #include <ace/Thread_Mutex.h>
 #include <vector>
 #include <ace/Thread.h>
@@ -35,9 +36,15 @@ static void threadIdCallback(CRYPTO_THREADID * id)
 {
     CRYPTO_THREADID_set_numeric(id, ACE_Thread::self());
 }
+#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
+#include <openssl/provider.h>
+OSSL_PROVIDER* LegacyProvider;
+OSSL_PROVIDER* DefaultProvider;
+#endif
 
 void OpenSSLCrypto::threadsSetup()
 {
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x1010000fL 
     cryptoLocks.resize(CRYPTO_num_locks());
     for(int i = 0 ; i < CRYPTO_num_locks(); ++i)
     {
@@ -45,10 +52,18 @@ void OpenSSLCrypto::threadsSetup()
     }
     CRYPTO_THREADID_set_callback(threadIdCallback);
     CRYPTO_set_locking_callback(lockingCallback);
+#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
+#ifdef WIN32
+    OSSL_PROVIDER_set_default_search_path(nullptr, std::filesystem::current_path().string().c_str());
+#endif
+    LegacyProvider = OSSL_PROVIDER_load(nullptr, "legacy");
+    DefaultProvider = OSSL_PROVIDER_load(nullptr, "default");
+#endif    
 }
 
 void OpenSSLCrypto::threadsCleanup()
 {
+#if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x1010000fL
     CRYPTO_set_locking_callback(NULL);
     CRYPTO_THREADID_set_callback(NULL);
     for(int i = 0 ; i < CRYPTO_num_locks(); ++i)
@@ -56,4 +71,9 @@ void OpenSSLCrypto::threadsCleanup()
         delete cryptoLocks[i];
     }
     cryptoLocks.resize(0);
+#elif OPENSSL_VERSION_NUMBER >= 0x30000000L
+    OSSL_PROVIDER_unload(LegacyProvider);
+    OSSL_PROVIDER_unload(DefaultProvider);
+    OSSL_PROVIDER_set_default_search_path(nullptr, nullptr);
+#endif    
 }

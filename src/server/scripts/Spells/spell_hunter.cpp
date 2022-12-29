@@ -1033,7 +1033,7 @@ class spell_hun_tame_beast : public SpellScriptLoader
                     return SPELL_FAILED_DONT_REPORT;
                 }
 
-                if (target->getLevel() > caster->getLevel())
+                if (target->GetLevel() > caster->GetLevel())
                 {
                     SendPetTameError(caster, PET_TAME_ERROR_TOO_HIGH_LEVEL);
                     return SPELL_FAILED_DONT_REPORT;

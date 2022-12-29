@@ -664,7 +664,7 @@ void WorldSession::SendPetList(uint64 guid, uint8 first, uint8 last)
             modelId = cInfo->Modelid1 ? cInfo->Modelid1 : cInfo->Modelid2;
 
         buff << uint32(petData.Entry);
-        buff << uint32(_player->getLevel());    // All pets have equal level
+        buff << uint32(_player->GetLevel());    // All pets have equal level
         buff << uint8(petStableState);
         buff << uint32(modelId);
         buff.WriteString(petData.Name);

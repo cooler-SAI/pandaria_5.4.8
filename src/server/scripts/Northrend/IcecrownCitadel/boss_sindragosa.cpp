@@ -1514,13 +1514,13 @@ class spell_sindragosa_ice_tomb_unattackable : public SpellScriptLoader
             void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* target = GetTarget())
-                    target->AddUnitState(UNIT_STATE_ON_VEHICLE); // To prevent healing
+                    target->AddUnitState(UNIT_STATE_FOLLOW_FORMATION); // To prevent healing
             }
 
             void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
             {
                 if (Unit* target = GetTarget())
-                    target->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    target->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
             }
 
             void Register() override

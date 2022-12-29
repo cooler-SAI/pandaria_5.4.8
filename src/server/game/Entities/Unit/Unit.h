@@ -461,6 +461,22 @@ enum UnitMods
     UNIT_MOD_POWER_END = UNIT_MOD_ALTERNATIVE + 1
 };
 
+enum BaseModGroup
+{
+    CRIT_PERCENTAGE,
+    RANGED_CRIT_PERCENTAGE,
+    OFFHAND_CRIT_PERCENTAGE,
+    SHIELD_BLOCK_VALUE,
+    BASEMOD_END
+};
+
+enum BaseModType
+{
+    FLAT_MOD,
+    PCT_MOD,
+    MOD_END
+};
+
 enum DeathState
 {
     ALIVE = 0,
@@ -470,48 +486,57 @@ enum DeathState
     JUST_RESPAWNED = 4
 };
 
-enum UnitState
+enum UnitState : uint32
 {
-    UNIT_STATE_DIED = 0x00000001,                     // player has fake death aura
-    UNIT_STATE_MELEE_ATTACKING = 0x00000002,                     // player is melee attacking someone
-    //UNIT_STATE_MELEE_ATTACK_BY = 0x00000004,                     // player is melee attack by someone
-    UNIT_STATE_STUNNED = 0x00000008,
-    UNIT_STATE_ROAMING = 0x00000010,
-    UNIT_STATE_CHASE = 0x00000020,
-    //UNIT_STATE_SEARCHING       = 0x00000040,
-    UNIT_STATE_FLEEING = 0x00000080,
-    UNIT_STATE_IN_FLIGHT = 0x00000100,                     // player is in flight mode
-    UNIT_STATE_FOLLOW = 0x00000200,
-    UNIT_STATE_ROOT = 0x00000400,
-    UNIT_STATE_CONFUSED = 0x00000800,
-    UNIT_STATE_DISTRACTED = 0x00001000,
-    UNIT_STATE_ISOLATED = 0x00002000,                     // area auras do not affect other players
-    UNIT_STATE_ATTACK_PLAYER = 0x00004000,
-    UNIT_STATE_CASTING = 0x00008000,
-    UNIT_STATE_POSSESSED = 0x00010000,
-    UNIT_STATE_CHARGING = 0x00020000,
-    UNIT_STATE_JUMPING = 0x00040000,
-    UNIT_STATE_ON_VEHICLE = 0x00080000,
-    UNIT_STATE_MOVE = 0x00100000,
-    UNIT_STATE_ROTATING = 0x00200000,
-    UNIT_STATE_EVADE = 0x00400000,
-    UNIT_STATE_ROAMING_MOVE = 0x00800000,
-    UNIT_STATE_CONFUSED_MOVE = 0x01000000,
-    UNIT_STATE_FLEEING_MOVE = 0x02000000,
-    UNIT_STATE_CHASE_MOVE = 0x04000000,
-    UNIT_STATE_FOLLOW_MOVE = 0x08000000,
-    UNIT_STATE_IGNORE_PATHFINDING = 0x10000000,                 // do not use pathfinding in any MovementGenerator
-    UNIT_STATE_UNATTACKABLE = UNIT_STATE_IN_FLIGHT,
-    // for real move using movegen check and stop (except unstoppable flight)
-    UNIT_STATE_MOVING = UNIT_STATE_ROAMING_MOVE | UNIT_STATE_CONFUSED_MOVE | UNIT_STATE_FLEEING_MOVE | UNIT_STATE_CHASE_MOVE | UNIT_STATE_FOLLOW_MOVE,
-    UNIT_STATE_CONTROLLED = (UNIT_STATE_CONFUSED | UNIT_STATE_STUNNED | UNIT_STATE_FLEEING),
-    UNIT_STATE_LOST_CONTROL = (UNIT_STATE_CONTROLLED | UNIT_STATE_JUMPING | UNIT_STATE_CHARGING),
-    UNIT_STATE_SIGHTLESS = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_EVADE),
-    UNIT_STATE_CANNOT_AUTOATTACK = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_CASTING),
-    UNIT_STATE_CANNOT_TURN = (UNIT_STATE_LOST_CONTROL | UNIT_STATE_ROTATING),
-    // stay by different reasons
-    UNIT_STATE_NOT_MOVE = UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DIED | UNIT_STATE_DISTRACTED,
-    UNIT_STATE_ALL_STATE = 0xffffffff                      //(UNIT_STATE_STOPPED | UNIT_STATE_MOVING | UNIT_STATE_IN_COMBAT | UNIT_STATE_IN_FLIGHT)
+    UNIT_STATE_DIED                  = 0x00000001, // player has fake death aura
+    UNIT_STATE_MELEE_ATTACKING       = 0x00000002, // player is melee attacking someone
+    UNIT_STATE_CHARMED               = 0x00000004, // having any kind of charm aura on self
+    UNIT_STATE_STUNNED               = 0x00000008,
+    UNIT_STATE_ROAMING               = 0x00000010,
+    UNIT_STATE_CHASE                 = 0x00000020,
+    UNIT_STATE_FOCUSING              = 0x00000040,
+    UNIT_STATE_FLEEING               = 0x00000080,
+    UNIT_STATE_IN_FLIGHT             = 0x00000100, // player is in flight mode
+    UNIT_STATE_FOLLOW                = 0x00000200,
+    UNIT_STATE_ROOT                  = 0x00000400,
+    UNIT_STATE_CONFUSED              = 0x00000800,
+    UNIT_STATE_DISTRACTED            = 0x00001000,
+    UNIT_STATE_ISOLATED              = 0x00002000, // area auras do not affect other players
+    UNIT_STATE_ATTACK_PLAYER         = 0x00004000,
+    UNIT_STATE_CASTING               = 0x00008000,
+    UNIT_STATE_POSSESSED             = 0x00010000, // being possessed by another unit
+    UNIT_STATE_CHARGING              = 0x00020000,
+    UNIT_STATE_JUMPING               = 0x00040000,
+    UNIT_STATE_FOLLOW_FORMATION      = 0x00080000,
+    UNIT_STATE_MOVE                  = 0x00100000,
+    UNIT_STATE_ROTATING              = 0x00200000,
+    UNIT_STATE_EVADE                 = 0x00400000,
+    UNIT_STATE_ROAMING_MOVE          = 0x00800000,
+    UNIT_STATE_CONFUSED_MOVE         = 0x01000000,
+    UNIT_STATE_FLEEING_MOVE          = 0x02000000,
+    UNIT_STATE_CHASE_MOVE            = 0x04000000,
+    UNIT_STATE_FOLLOW_MOVE           = 0x08000000,
+    UNIT_STATE_IGNORE_PATHFINDING    = 0x10000000, // do not use pathfinding in any MovementGenerator
+    UNIT_STATE_FOLLOW_FORMATION_MOVE = 0x20000000,
+
+    UNIT_STATE_ALL_STATE_SUPPORTED = UNIT_STATE_DIED | UNIT_STATE_MELEE_ATTACKING | UNIT_STATE_CHARMED | UNIT_STATE_STUNNED | UNIT_STATE_ROAMING | UNIT_STATE_CHASE
+                                   | UNIT_STATE_FOCUSING | UNIT_STATE_FLEEING | UNIT_STATE_IN_FLIGHT | UNIT_STATE_FOLLOW | UNIT_STATE_ROOT | UNIT_STATE_CONFUSED
+                                   | UNIT_STATE_DISTRACTED | UNIT_STATE_ISOLATED | UNIT_STATE_ATTACK_PLAYER | UNIT_STATE_CASTING
+                                   | UNIT_STATE_POSSESSED | UNIT_STATE_CHARGING | UNIT_STATE_JUMPING | UNIT_STATE_MOVE | UNIT_STATE_ROTATING
+                                   | UNIT_STATE_EVADE | UNIT_STATE_ROAMING_MOVE | UNIT_STATE_CONFUSED_MOVE | UNIT_STATE_FLEEING_MOVE
+                                   | UNIT_STATE_CHASE_MOVE | UNIT_STATE_FOLLOW_MOVE | UNIT_STATE_IGNORE_PATHFINDING | UNIT_STATE_FOLLOW_FORMATION_MOVE,
+
+    UNIT_STATE_UNATTACKABLE        = UNIT_STATE_IN_FLIGHT,
+    UNIT_STATE_MOVING              = UNIT_STATE_ROAMING_MOVE | UNIT_STATE_CONFUSED_MOVE | UNIT_STATE_FLEEING_MOVE | UNIT_STATE_CHASE_MOVE | UNIT_STATE_FOLLOW_MOVE | UNIT_STATE_FOLLOW_FORMATION_MOVE,
+    UNIT_STATE_CONTROLLED          = UNIT_STATE_CONFUSED | UNIT_STATE_STUNNED | UNIT_STATE_FLEEING,
+    UNIT_STATE_LOST_CONTROL        = UNIT_STATE_CONTROLLED | UNIT_STATE_POSSESSED | UNIT_STATE_JUMPING | UNIT_STATE_CHARGING,
+    UNIT_STATE_CANNOT_AUTOATTACK   = UNIT_STATE_CONTROLLED | UNIT_STATE_CHARGING | UNIT_STATE_CASTING,
+    UNIT_STATE_SIGHTLESS           = UNIT_STATE_LOST_CONTROL | UNIT_STATE_EVADE,
+    UNIT_STATE_CANNOT_TURN         = UNIT_STATE_LOST_CONTROL | UNIT_STATE_ROTATING | UNIT_STATE_FOCUSING,
+    UNIT_STATE_NOT_MOVE            = UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DIED | UNIT_STATE_DISTRACTED,
+
+    UNIT_STATE_ALL_ERASABLE        = UNIT_STATE_ALL_STATE_SUPPORTED & ~(UNIT_STATE_IGNORE_PATHFINDING),
+    UNIT_STATE_ALL_STATE           = 0xffffffff
 };
 
 enum UnitMoveType
@@ -884,18 +909,9 @@ public:
         m_absorbedSplit = amount;
     }
 
-    Unit* GetAttacker() const
-    {
-        return m_attacker;
-    }
-    Unit* GetVictim() const
-    {
-        return m_victim;
-    }
-    SpellInfo const* GetSpellInfo() const
-    {
-        return m_spellInfo;
-    }
+    Unit* GetAttacker() const { return m_attacker; }
+    Unit* GetVictim() const { return m_victim; }
+    SpellInfo const* GetSpellInfo() const { return m_spellInfo; }
     SpellSchoolMask GetSchoolMask() const
     {
         return m_schoolMask;
@@ -1399,19 +1415,10 @@ struct ProcTriggerContext
 class Unit : public WorldObject
 {
 public:
-    class RemainingPeriodicAmount final
-    {
-    public:
-        RemainingPeriodicAmount(int32 total, int32 ticks) : _total(total), _ticks(ticks) { }
-        int32 Total() const { return _total; }
-        int32 PerTick() const { return _total ? _total / _ticks : 0; }
-    private:
-        int32 _total;
-        int32 _ticks;
-    };
 
     typedef std::set<Unit*> AttackerSet;
     typedef std::set<Unit*> ControlList;
+    typedef std::vector<Unit*> UnitVector;
 
     typedef std::multimap<uint32, Aura*> AuraMap;
     typedef std::pair<AuraMap::const_iterator, AuraMap::const_iterator> AuraMapBounds;
@@ -1428,9 +1435,29 @@ public:
     typedef std::list<Aura*> AuraList;
     typedef std::list<AuraApplication *> AuraApplicationList;
     typedef std::list<DiminishingReturn> Diminishing;
-    typedef std::set<uint32> ComboPointHolderSet;
+
+    // typedef std::vector<std::pair<uint8 /*procEffectMask*/, AuraApplication*>> AuraApplicationProcContainer; // TC
 
     typedef std::map<uint8, AuraApplication*> VisibleAuraMap;
+
+    class RemainingPeriodicAmount final
+    {
+    public:
+
+        RemainingPeriodicAmount(int32 total, int32 ticks) : _total(total), _ticks(ticks) { }
+        int32 Total() const { return _total; }
+        int32 PerTick() const { return _total ? _total / _ticks : 0; }
+    private:
+        int32 _total;
+        int32 _ticks;
+    };
+
+
+
+
+    typedef std::set<uint32> ComboPointHolderSet;
+
+
 
     virtual ~Unit();
 
@@ -1447,7 +1474,7 @@ public:
     void RemoveFromWorld() override;
 
     void CleanupBeforeRemoveFromMap(bool finalCleanup);
-    void CleanupsBeforeDelete(bool finalCleanup = true);                        // used in ~Creature/~Player (or before mass creature delete to remove cross-references to already deleted units)
+    void CleanupsBeforeDelete(bool finalCleanup = true) override;                        // used in ~Creature/~Player (or before mass creature delete to remove cross-references to already deleted units)
 
     DiminishingLevels GetDiminishing(DiminishingGroup  group);
     void IncrDiminishing(DiminishingGroup group);
@@ -1531,64 +1558,24 @@ public:
     void SendMeleeAttackStop(Unit* victim = NULL);
     void SendMeleeAttackStart(Unit* victim);
 
-    void AddUnitState(uint32 f)
-    {
-        m_state |= f;
-    }
-    bool HasUnitState(const uint32 f) const
-    {
-        return (m_state & f);
-    }
-    void ClearUnitState(uint32 f)
-    {
-        m_state &= ~f;
-    }
+    void AddUnitState(uint32 f) { m_state |= f; }
+    bool HasUnitState(const uint32 f) const { return (m_state & f) != 0; }
+    void ClearUnitState(uint32 f) { m_state &= ~f; }
     bool CanFreeMove() const;
 
-    uint32 HasUnitTypeMask(uint32 mask) const
-    {
-        return mask & m_unitTypeMask;
-    }
-    void AddUnitTypeMask(uint32 mask)
-    {
-        m_unitTypeMask |= mask;
-    }
-    bool IsSummon() const
-    {
-        return m_unitTypeMask & UNIT_MASK_SUMMON;
-    }
-    bool IsGuardian() const
-    {
-        return m_unitTypeMask & UNIT_MASK_GUARDIAN;
-    }
-    bool IsPet() const
-    {
-        return m_unitTypeMask & UNIT_MASK_PET;
-    }
-    bool IsHunterPet() const
-    {
-        return m_unitTypeMask & UNIT_MASK_HUNTER_PET;
-    }
-    bool IsTotem() const
-    {
-        return m_unitTypeMask & UNIT_MASK_TOTEM;
-    }
-    bool IsVehicle() const
-    {
-        return m_unitTypeMask & UNIT_MASK_VEHICLE;
-    }
-
+    uint32 HasUnitTypeMask(uint32 mask) const { return mask & m_unitTypeMask; }
+    void AddUnitTypeMask(uint32 mask) { m_unitTypeMask |= mask; }
+    bool IsSummon() const   { return (m_unitTypeMask & UNIT_MASK_SUMMON) != 0; }
+    bool IsGuardian() const { return (m_unitTypeMask & UNIT_MASK_GUARDIAN) != 0; }  
+    bool IsPet() const      { return (m_unitTypeMask & UNIT_MASK_PET) != 0; }
+    bool IsHunterPet() const{ return (m_unitTypeMask & UNIT_MASK_HUNTER_PET) != 0; }
+    bool IsTotem() const    { return (m_unitTypeMask & UNIT_MASK_TOTEM) != 0; }
+    bool IsVehicle() const  { return (m_unitTypeMask & UNIT_MASK_VEHICLE) != 0; }
     bool IsPetGuardianStuff() const { return m_unitTypeMask & (UNIT_MASK_SUMMON | UNIT_MASK_GUARDIAN | UNIT_MASK_PET | UNIT_MASK_HUNTER_PET | UNIT_MASK_TOTEM); }
 
-    uint8 getLevel() const
-    {
-        return uint8(GetUInt32Value(UNIT_FIELD_LEVEL));
-    }
-    uint8 getLevelForTarget(WorldObject const* /*target*/) const
-    {
-        return getLevel();
-    }
-    void SetLevel(uint8 lvl);
+    uint8 GetLevel() const { return uint8(GetUInt32Value(UNIT_FIELD_LEVEL)); }
+    uint8 GetLevelForTarget(WorldObject const* /*target*/) const override { return GetLevel(); }
+    void SetLevel(uint8 lvl, bool sendUpdate = true);
 
     uint8 getRace() const
     {
@@ -1654,10 +1641,8 @@ public:
         SetStatInt32Value(UNIT_FIELD_RESISTANCES + school, val);
     }
 
-    uint32 GetHealth() const
-    {
-        return GetUInt32Value(UNIT_FIELD_HEALTH);
-    }
+
+    uint32 GetHealth()    const { return GetUInt32Value(UNIT_FIELD_HEALTH); }
     uint32 GetMaxHealth() const
     {
         return GetUInt32Value(UNIT_FIELD_MAX_HEALTH);
@@ -1823,7 +1808,7 @@ public:
 
     uint16 GetMaxSkillValueForLevel(Unit const* target = NULL) const
     {
-        return (target ? getLevelForTarget(target) : getLevel()) * 5;
+        return (target ? GetLevelForTarget(target) : GetLevel()) * 5;
     }
     void DealDamageMods(Unit* victim, uint32 &damage, uint32* absorb);
     uint32 DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDamage = NULL, DamageEffectType damagetype = DIRECT_DAMAGE, SpellSchoolMask damageSchoolMask = SPELL_SCHOOL_MASK_NORMAL, SpellInfo const* spellProto = NULL, bool durabilityLoss = true);

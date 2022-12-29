@@ -11,6 +11,9 @@
 
 # Set build-directive (used in core to tell which buildtype we used)
 add_definitions(-D_BUILD_DIRECTIVE='"${CMAKE_BUILD_TYPE}"')
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -s -w" CACHE INTERNAL "EXE_LINKER_FLAGS" FORCE)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections" CACHE INTERNAL "C_FLAGS" FORCE)
+
 
 if(PLATFORM EQUAL 32)
   # Required on 32-bit systems to enable SSE2 (standard on x64)

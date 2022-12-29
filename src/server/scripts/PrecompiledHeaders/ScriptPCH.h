@@ -29,3 +29,4 @@
 #include "SpellInfo.h"
 #include "SpellScript.h"
 #include "TemporarySummon.h"
+#include "Chat.h"

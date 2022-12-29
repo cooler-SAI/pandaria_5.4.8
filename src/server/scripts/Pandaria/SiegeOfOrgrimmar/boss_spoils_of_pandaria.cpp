@@ -2545,7 +2545,9 @@ class go_spoils_secured_stockpile_of_spoils : public GameObjectScript
 
                 // Mix this
                 std::vector<uint32> mixedVoiceChoise(leadersVoiceChoise.begin(), leadersVoiceChoise.end());
-                std::random_shuffle(mixedVoiceChoise.begin(), mixedVoiceChoise.end());
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(mixedVoiceChoise.begin(), mixedVoiceChoise.end(), g);                
 
                 // save this value for check
                 if (Creature* spoils = ObjectAccessor::GetCreature(*go, go->GetInstanceScript() ? go->GetInstanceScript()->GetData64(DATA_SPOILS_OF_PANDARIA) : 0))

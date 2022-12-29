@@ -561,7 +561,7 @@ class boss_kiljaeden : public CreatureScript
                     //summon->SetVisible(false);  //with this we cant see the armageddon visuals
                 }
                 else
-                    summon->SetLevel(me->getLevel());
+                    summon->SetLevel(me->GetLevel());
 
                 summon->setFaction(me->getFaction());
                 summons.Summon(summon);
@@ -911,7 +911,7 @@ class npc_hand_of_the_deceiver : public CreatureScript
             void JustSummoned(Creature* summon) override
             {
                 summon->setFaction(me->getFaction());
-                summon->SetLevel(me->getLevel());
+                summon->SetLevel(me->GetLevel());
             }
 
             void EnterCombat(Unit* /*who*/) override
@@ -1026,7 +1026,7 @@ class npc_felfire_portal : public CreatureScript
             void JustSummoned(Creature* summon) override
             {
                 summon->setFaction(me->getFaction());
-                summon->SetLevel(me->getLevel());
+                summon->SetLevel(me->GetLevel());
             }
 
             void UpdateAI(uint32 diff) override

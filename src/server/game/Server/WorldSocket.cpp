@@ -808,7 +808,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 ACE_GUARD_RETURN(LockType, Guard, m_SessionLock, -1);
                 if (!m_Session)
                 {
-                    TC_LOG_ERROR("network.opcode", "ProcessIncoming: Client not authed opcode = %u", GetRemoteAddress().c_str(),uint32(opcode));
+                    TC_LOG_ERROR("network.opcode", "ProcessIncoming: Client %s not authed opcode = %u", GetRemoteAddress().c_str(),uint32(opcode));
                     return -1;
                     CloseSocket();
                 }
@@ -820,7 +820,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 OpcodeHandler const* handler = clientOpcodeTable[opcode];
                 if (!handler || handler->Status == STATUS_UNHANDLED)
                 {
-                    TC_LOG_ERROR("network.opcode", "No defined handler for opcode %s sent by %u", GetRemoteAddress().c_str() ,GetOpcodeNameForLogging(new_pct->GetOpcode(), false, new_pct->GetReceivedOpcode()).c_str(), m_Session->GetAccountId());
+                    TC_LOG_ERROR("network.opcode", "No defined handler for opcode %s sent by %s %u", GetRemoteAddress().c_str() ,GetOpcodeNameForLogging(new_pct->GetOpcode(), false, new_pct->GetReceivedOpcode()).c_str(), m_Session->GetAccountId());
                     if (m_Session->GetPlayer() && !handler && sWorld->getBoolConfig(CONFIG_DEBUG_OPCODES))
                         ChatHandler(m_Session->GetPlayer()).PSendSysMessage("Ваш клиент отправил некий пакет %s. Если вы случайно обнаружили гарантированный способ повторения данной ошибки, сообщите об этом администрации сервера.", GetOpcodeNameForLogging(new_pct->GetOpcode(), false, new_pct->GetReceivedOpcode()).c_str());
                     return 0;

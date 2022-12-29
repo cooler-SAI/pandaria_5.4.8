@@ -101,7 +101,7 @@ void WorldSession::HandleBlackMarketBidOnItem(WorldPacket& recvData)
 
     if (auction->GetCurrentBid() > bidAmount && bidAmount != auction->GetTemplate()->MinBid)
     {
-        TC_LOG_DEBUG("blackMarket", "HandleBlackMarketBid - Player (GUID: %u) could not bid. The current bid (%u) is higher than the given amount (" UI64FMTD ").", GetPlayer()->GetGUIDLow(), auction->GetCurrentBid(), bidAmount);
+        TC_LOG_DEBUG("blackMarket", "HandleBlackMarketBid - Player (GUID: %u) could not bid. The current bid (" UI64FMTD ") is higher than the given amount (" UI64FMTD ").", GetPlayer()->GetGUIDLow(), auction->GetCurrentBid(), bidAmount);
         SendBlackMarketBidOnItemResult(auctionId, itemId, ERR_BMAH_HIGHER_BID);
         return;
     }

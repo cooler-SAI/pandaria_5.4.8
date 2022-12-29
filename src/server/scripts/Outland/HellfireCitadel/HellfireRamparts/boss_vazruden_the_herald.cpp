@@ -97,7 +97,7 @@ class boss_nazan : public CreatureScript
             {
                 if (summoned && summoned->GetEntry() == NPC_LIQUID_FIRE)
                 {
-                    summoned->SetLevel(me->getLevel());
+                    summoned->SetLevel(me->GetLevel());
                     summoned->setFaction(me->getFaction());
                     summoned->CastSpell(summoned, DUNGEON_MODE(SPELL_SUMMON_LIQUID_FIRE, SPELL_SUMMON_LIQUID_FIRE_H), true);
                     summoned->CastSpell(summoned, SPELL_FIRE_NOVA_VISUAL, true);

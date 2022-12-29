@@ -2044,7 +2044,7 @@ class npc_valkyr_shadowguard : public CreatureScript
 
                                 triggers.sort(Trinity::ObjectDistanceOrderPred(me));
                                 DoCast(target, SPELL_VALKYR_CARRY);
-                                target->ClearUnitState(UNIT_STATE_ON_VEHICLE); // HACK: Target needs to be healable
+                                target->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION); // HACK: Target needs to be healable
                                 _dropPoint.Relocate(triggers.front());
                                 _events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 1500);
                             }
@@ -2169,7 +2169,7 @@ class npc_strangulate_vehicle : public CreatureScript
             {
                 me->SetFacingToObject(summoner);
                 DoCast(summoner, SPELL_HARVEST_SOUL_VEHICLE);
-                summoner->ClearUnitState(UNIT_STATE_ON_VEHICLE); // HACK: Target needs to be healable
+                summoner->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION); // HACK: Target needs to be healable
                 _events.Reset();
                 _events.ScheduleEvent(EVENT_MOVE_TO_LICH_KING, 2000);
                 _events.ScheduleEvent(EVENT_TELEPORT, 6000);

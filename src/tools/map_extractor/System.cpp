@@ -38,6 +38,7 @@
 #include "adt.h"
 #include "wdt.h"
 #include <fcntl.h>
+#include <filesystem>
 
 #if defined( __GNUC__ )
     #define _open   open
@@ -135,30 +136,14 @@ TCHAR const* LocalesT[] =
 
 #define LOCALES_COUNT 15
 
-void CreateDir(std::string const& path)
+void CreateDir(std::filesystem::path const& path)
 {
-    if (chdir(path.c_str()) == 0)
-    {
-        chdir("../");
+    namespace fs = std::filesystem;
+    if (fs::exists(path))
         return;
-    }
-#ifdef _WIN32
-    _mkdir(path.c_str());
-#else
-    mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO); // 0777
-#endif
-}
 
-bool FileExists(TCHAR const* fileName)
-{
-    int fp = _open(fileName, OPEN_FLAGS);
-    if(fp != -1)
-    {
-        _close(fp);
-        return true;
-    }
-
-    return false;
+    if (!fs::create_directory(path))
+        throw std::runtime_error("Unable to create directory" + path.string());
 }
 
 void Usage(char const* prg)

@@ -2350,7 +2350,7 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
             if (m_auraScaleMask && ihit->effectMask == m_auraScaleMask && m_caster != target)
             {
                 SpellInfo const* auraSpell = m_spellInfo->GetFirstRankSpell();
-                if (uint32(target->getLevel() + 10) >= auraSpell->SpellLevel)
+                if (uint32(target->GetLevel() + 10) >= auraSpell->SpellLevel)
                     ihit->scaleAura = true;
             }
             return;
@@ -2373,7 +2373,7 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
     if (m_auraScaleMask && targetInfo.effectMask == m_auraScaleMask && m_caster != target)
     {
         SpellInfo const* auraSpell = m_spellInfo->GetFirstRankSpell();
-        if (uint32(target->getLevel() + 10) >= auraSpell->SpellLevel)
+        if (uint32(target->GetLevel() + 10) >= auraSpell->SpellLevel)
             targetInfo.scaleAura = true;
     }
 
@@ -3031,7 +3031,7 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
 
         if (scaleAura)
         {
-            aurSpellInfo = m_spellInfo->GetAuraRankForLevel(unitTarget->getLevel());
+            aurSpellInfo = m_spellInfo->GetAuraRankForLevel(unitTarget->GetLevel());
             ASSERT(aurSpellInfo);
             for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
@@ -3462,14 +3462,14 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
         {
             player->SetSpellModTakingSpell(this, true);
             // calculate cast time (calculated after first CheckCast check to prevent charge counting for first CheckCast fail)
-            m_casttime = m_spellInfo->CalcCastTime(player->getLevel(), this);
+            m_casttime = m_spellInfo->CalcCastTime(player->GetLevel(), this);
             player->SetSpellModTakingSpell(this, false);
         }
         else
             m_casttime = 0; // Set cast time to 0 if .cheat casttime is enabled.
     }
     else
-        m_casttime = m_spellInfo->CalcCastTime(m_caster->getLevel(), this);
+        m_casttime = m_spellInfo->CalcCastTime(m_caster->GetLevel(), this);
 
     if (_triggeredCastFlags & TRIGGERED_CAST_DIRECTLY)
         m_casttime = 0;
@@ -6450,7 +6450,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (!learn_spellproto)
                     return SPELL_FAILED_NOT_KNOWN;
 
-                if (m_spellInfo->SpellLevel > pet->getLevel())
+                if (m_spellInfo->SpellLevel > pet->GetLevel())
                     return SPELL_FAILED_LOWLEVEL;
 
                 break;
@@ -6481,7 +6481,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (!learn_spellproto)
                         return SPELL_FAILED_NOT_KNOWN;
 
-                    if (m_spellInfo->SpellLevel > pet->getLevel())
+                    if (m_spellInfo->SpellLevel > pet->GetLevel())
                         return SPELL_FAILED_LOWLEVEL;
                 }
                 break;
@@ -6584,7 +6584,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 uint32 skill = creature->GetCreatureTemplate()->GetRequiredLootSkill();
 
                 int32 skillValue = m_caster->ToPlayer()->GetSkillValue(skill);
-                int32 TargetLevel = m_targets.GetUnitTarget()->getLevel();
+                int32 TargetLevel = m_targets.GetUnitTarget()->GetLevel();
                 int32 ReqValue = TargetLevel < 10 ? 0 :
                                  TargetLevel < 20 ? (TargetLevel - 10) * 10 :
                                  TargetLevel < 74 ? TargetLevel * 5 :
@@ -6861,7 +6861,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_TARGET_IS_PLAYER_CONTROLLED;
 
                     int32 damage = CalculateDamage(i, target);
-                    if (damage && int32(target->getLevel()) > damage)
+                    if (damage && int32(target->GetLevel()) > damage)
                         return SPELL_FAILED_HIGHLEVEL;
                 }
 
@@ -8034,7 +8034,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
             if (target->GetCharmerGUID())
                 return false;
             if (int32 damage = CalculateDamage(eff, target))
-                if ((int32)target->getLevel() > damage)
+                if ((int32)target->GetLevel() > damage)
                     return false;
             break;
         default:
@@ -8538,7 +8538,7 @@ SpellCastResult Spell::CanOpenLock(uint32 effIndex, uint32 lockId, SkillType& sk
                     if (m_spellInfo->Effects[effIndex].TargetA.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET || m_spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET)
                     {
                         if (GetSpellInfo()->SpellFamilyName == SPELLFAMILY_ROGUE)
-                            skillValue += GetCaster()->getLevel() * 5;
+                            skillValue += GetCaster()->GetLevel() * 5;
                         else
                             skillValue += m_spellInfo->Effects[effIndex].CalcValue();
                     }

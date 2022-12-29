@@ -1809,7 +1809,7 @@ public:
             accId             = target->GetSession()->GetAccountId();
             money             = target->GetMoney();
             totalPlayerTime   = target->GetTotalPlayedTime();
-            level             = target->getLevel();
+            level             = target->GetLevel();
             latency           = target->GetSession()->GetLatency();
             raceid            = target->getRace();
             classid           = target->getClass();
@@ -4216,7 +4216,7 @@ public:
                 ObjectMgr::GetLocaleString(locale->Name, handler->GetSession()->GetSessionDbLocaleIndex(), name);
 
             std::stringstream ss;
-            ss << "|c" << std::hex << ItemQualityColors[proto->Quality] << std::dec << "|Hitem:" << proto->ItemId << ":0:0:0:0:0:" << info.randomPropertyId << ":0:" << uint32(handler->GetSession()->GetPlayer()->getLevel()) << "|h[" << name << "]|h|r";
+            ss << "|c" << std::hex << ItemQualityColors[proto->Quality] << std::dec << "|Hitem:" << proto->ItemId << ":0:0:0:0:0:" << info.randomPropertyId << ":0:" << uint32(handler->GetSession()->GetPlayer()->GetLevel()) << "|h[" << name << "]|h|r";
             name = ss.str();
         }
         if (revert)
