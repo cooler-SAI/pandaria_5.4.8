@@ -4728,7 +4728,7 @@ class spell_gen_rocket_barrage : public SpellScript
             // Get highest attack power
             uint32 ap = std::max(caster->GetTotalAttackPowerValue(BASE_ATTACK), caster->GetTotalAttackPowerValue(RANGED_ATTACK));
 
-            SetHitDamage(1 + (0.25f * ap) + (0.429f * caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) + (caster->getLevel() * 2));
+            SetHitDamage(1 + (0.25f * ap) + (0.429f * caster->SpellBaseDamageBonusDone(SPELL_SCHOOL_MASK_FIRE)) + (caster->GetLevel() * 2));
         }
     }
 
