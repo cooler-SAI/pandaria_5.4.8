@@ -46,7 +46,7 @@ enum GOSSIPS
     GOSSIP_ITEM_BEGIN_HORDE_OID    = 0,
     GOSSIP_ITEM_AZGALOR_MID        = 7581,  // We have nothing to fear.
     GOSSIP_ITEM_AZGALOR_OID        = 1,
-    GOSSIP_ITEM_HORDE_RETREAT_MID  = 7581,  //Until we meet again, Thrall.
+    GOSSIP_ITEM_HORDE_RETREAT_MID  = 7581,  // Until we meet again, Thrall.
     GOSSIP_ITEM_HORDE_RETREAT_OID  = 2,
     GOSSIP_ITEM_TYRANDE_MID        = 7706,  // I would be grateful for any aid you can provide, Priestess.
     GOSSIP_ITEM_TYRANDE_OID        = 0
@@ -57,12 +57,7 @@ enum NPCTEXTS
     JAINA_RETREAT_ALLIANCE_BASE    = 5
 };
 
-#define GOSSIP_ITEM_BEGIN_HORDE     "I am with you, Thrall."
-#define GOSSIP_ITEM_AZGALOR         "We have nothing to fear."
 
-#define GOSSIP_ITEM_RETREAT         "We can't keep this up. Let's retreat!"
-
-#define GOSSIP_ITEM_TYRANDE         "Aid us in defending Nordrassil"
 #define ITEM_TEAR_OF_GODDESS        24494
 
 #define GOSSIP_ITEM_GM1             "[GM] Toggle Debug Timers"
@@ -199,11 +194,23 @@ public:
             uint32 KazrogalEvent = ai->GetInstanceData(DATA_KAZROGALEVENT);
             uint32 AzgalorEvent  = ai->GetInstanceData(DATA_AZGALOREVENT);
             if (KazrogalEvent == NOT_STARTED)
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_BEGIN_HORDE, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+            {
+                InitGossipMenuFor(player, GOSSIP_ITEM_BEGIN_HORDE_MID);
+                AddGossipItemFor(player, GOSSIP_ITEM_BEGIN_HORDE_MID, GOSSIP_ITEM_BEGIN_HORDE_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+                SendGossipMenuFor(player, 9225, creature->GetGUID());
+            }
             else if (KazrogalEvent == DONE && AzgalorEvent == NOT_STARTED)
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_AZGALOR, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+            {
+                InitGossipMenuFor(player, GOSSIP_ITEM_AZGALOR_MID);
+                AddGossipItemFor(player, GOSSIP_ITEM_AZGALOR_MID, GOSSIP_ITEM_AZGALOR_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+                SendGossipMenuFor(player, 9396, creature->GetGUID());
+            }
             else if (AzgalorEvent == DONE)
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_RETREAT, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+            {
+                InitGossipMenuFor(player, GOSSIP_ITEM_HORDE_RETREAT_MID);
+                AddGossipItemFor(player, GOSSIP_ITEM_HORDE_RETREAT_MID, GOSSIP_ITEM_HORDE_RETREAT_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                SendGossipMenuFor(player, 9398, creature->GetGUID());
+            }
         }
 
         if (player->IsGameMaster())
@@ -257,7 +264,7 @@ public:
                      if (Item* item = player->StoreNewItem(dest, ITEM_TEAR_OF_GODDESS, true))
                          player->SendNewItem(item, 1, true, false, true);
 
-                player->SEND_GOSSIP_MENU(907, creature->GetGUID());
+                SendGossipMenuFor(player, 907, creature->GetGUID());
         }
         return true;
     }
@@ -269,8 +276,8 @@ public:
 
         // Only let them get item if Azgalor is dead.
         if (AzgalorEvent == DONE && !player->HasItemCount(ITEM_TEAR_OF_GODDESS))
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_ITEM_TYRANDE, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
-        player->SEND_GOSSIP_MENU(907, creature->GetGUID());
+            AddGossipItemFor(player, GOSSIP_ITEM_TYRANDE_MID, GOSSIP_ITEM_TYRANDE_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF);
+        SendGossipMenuFor(player, 9410, creature->GetGUID());
         return true;
     }
 
