@@ -1125,7 +1125,7 @@ void ObjectMgr::LoadCreatureAddons()
         CreatureData const* creData = GetCreatureData(guid);
         if (!creData)
         {
-            TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) does not exist but has a record in `creature_addon`", guid);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) does not exist but has a record in `creature_addon`", guid);
             continue;
         }
 
@@ -1135,7 +1135,7 @@ void ObjectMgr::LoadCreatureAddons()
         if (creData->movementType == WAYPOINT_MOTION_TYPE && !creatureAddon.path_id)
         {
             const_cast<CreatureData*>(creData)->movementType = IDLE_MOTION_TYPE;
-            TC_LOG_ERROR("sql.sql", "Creature (GUID %u) has movement type set to WAYPOINT_MOTION_TYPE but no path assigned", guid);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID %lu) has movement type set to WAYPOINT_MOTION_TYPE but no path assigned", guid);
         }
 
         creatureAddon.mount             = fields[2].GetUInt32();
@@ -1154,16 +1154,16 @@ void ObjectMgr::LoadCreatureAddons()
             SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(uint32(atol(*itr)));
             if (!spellInfo)
             {
-                TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) has wrong spell %u defined in `auras` field in `creature_addon`.", guid, uint32(atol(*itr)));
+                TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has wrong spell %u defined in `auras` field in `creature_addon`.", guid, uint32(atol(*itr)));
                 continue;
             }
 
             if (spellInfo->HasAura(SPELL_AURA_CONTROL_VEHICLE))
-                TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) has SPELL_AURA_CONTROL_VEHICLE aura %u defined in `auras` field in `creature_addon`.", guid, uint32(atol(*itr)));
+                TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has SPELL_AURA_CONTROL_VEHICLE aura %u defined in `auras` field in `creature_addon`.", guid, uint32(atol(*itr)));
 
             if (!CheckCreatureAddonSpell(creData->id, spellInfo))
             {
-                TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) has spell %u defined in `auras` field in `creature_addon`  which summon this creature", guid, spellInfo->Id);
+                TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has spell %u defined in `auras` field in `creature_addon`  which summon this creature", guid, spellInfo->Id);
                 continue;
             }
 
@@ -1174,7 +1174,7 @@ void ObjectMgr::LoadCreatureAddons()
         {
             if (!sCreatureDisplayInfoStore.LookupEntry(creatureAddon.mount))
             {
-                TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) has invalid displayInfoId (%u) for mount defined in `creature_addon`", guid, creatureAddon.mount);
+                TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has invalid displayInfoId (%u) for mount defined in `creature_addon`", guid, creatureAddon.mount);
                 creatureAddon.mount = 0;
             }
         }
@@ -1183,31 +1183,31 @@ void ObjectMgr::LoadCreatureAddons()
         {
             if (emote->Id != 0 && emote->EmoteType == 0)
             {
-                TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) cant`t has oneshot emote %d in `creature_addon` field, you should use scripts, skipped.", guid, creatureAddon.emote);
+                TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) cant`t has oneshot emote %d in `creature_addon` field, you should use scripts, skipped.", guid, creatureAddon.emote);
                 creatureAddon.emote = 0;
             }
         }
         else
         {
-            TC_LOG_ERROR("sql.sql", "Creature (GUID: %u) has invalid emote (%u) defined in `creature_addon`.", guid, creatureAddon.emote);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has invalid emote (%u) defined in `creature_addon`.", guid, creatureAddon.emote);
             creatureAddon.emote = 0;
         }
 
         if (creatureAddon.ai_anim_kit && !sAnimKitStore.LookupEntry(creatureAddon.ai_anim_kit))
         {
-            TC_LOG_ERROR("sql.sql", "Creature (GUID: " UI64FMTD ") has invalid ai_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.ai_anim_kit);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has invalid ai_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.ai_anim_kit);
             creatureAddon.ai_anim_kit = 0;
         }
 
         if (creatureAddon.movement_anim_kit && !sAnimKitStore.LookupEntry(creatureAddon.movement_anim_kit))
         {
-            TC_LOG_ERROR("sql.sql", "Creature (GUID: " UI64FMTD ") has invalid movement_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.movement_anim_kit);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has invalid movement_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.movement_anim_kit);
             creatureAddon.movement_anim_kit = 0;
         }
 
         if (creatureAddon.melee_anim_kit && !sAnimKitStore.LookupEntry(creatureAddon.melee_anim_kit))
         {
-            TC_LOG_ERROR("sql.sql", "Creature (GUID: " UI64FMTD ") has invalid melee_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.melee_anim_kit);
+            TC_LOG_ERROR("sql.sql", "Creature (GUID: %lu) has invalid melee_anim_kit (%u) defined in `creature_addon`.", guid, creatureAddon.melee_anim_kit);
             creatureAddon.melee_anim_kit = 0;
         }
 
@@ -1236,12 +1236,12 @@ void ObjectMgr::LoadGameObjectAddons()
     {
         Field* fields = result->Fetch();
 
-        uint32 guid = fields[0].GetUInt64();
+        uint64 guid = fields[0].GetUInt64();
 
         const GameObjectData* goData = GetGOData(guid);
         if (!goData)
         {
-            TC_LOG_ERROR("sql.sql", "GameObject (GUID: " UI64FMTD ") does not exist but has a record in `gameobject_addon`", guid);
+            TC_LOG_ERROR("sql.sql", "GameObject (GUID: %lu) does not exist but has a record in `gameobject_addon`", guid);
             continue;
         }
 
@@ -1251,14 +1251,14 @@ void ObjectMgr::LoadGameObjectAddons()
 
         if (gameObjectAddon.InvisibilityType >= TOTAL_INVISIBILITY_TYPES)
         {
-            TC_LOG_ERROR("sql.sql", "GameObject (GUID: " UI64FMTD ") has invalid InvisibilityType in `gameobject_addon`", guid);
+            TC_LOG_ERROR("sql.sql", "GameObject (GUID: %lu) has invalid InvisibilityType in `gameobject_addon`", guid);
             gameObjectAddon.InvisibilityType = INVISIBILITY_GENERAL;
             gameObjectAddon.InvisibilityValue = 0;
         }
 
         if (gameObjectAddon.InvisibilityType && !gameObjectAddon.InvisibilityValue)
         {
-            TC_LOG_ERROR("sql.sql", "GameObject (GUID: " UI64FMTD ") has InvisibilityType set but has no InvisibilityValue in `gameobject_addon`, set to 1", guid);
+            TC_LOG_ERROR("sql.sql", "GameObject (GUID: %lu) has InvisibilityType set but has no InvisibilityValue in `gameobject_addon`, set to 1", guid);
             gameObjectAddon.InvisibilityValue = 1;
         }
 

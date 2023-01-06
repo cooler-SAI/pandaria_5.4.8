@@ -239,7 +239,7 @@ void BattlePayMgr::LoadGroupsFromDb()
 
         if (HasGroupName(name))
         {
-            TC_LOG_ERROR("sql.sql", "Group name %s defined in `battle_pay_group` is invalid because a group of the same name already exists, skipped!", name.c_str(), id);
+            TC_LOG_ERROR("sql.sql", "Group name %s defined in `battle_pay_group` is invalid because a group of the same name already exists, skipped!", name.c_str());
             continue;
         }
 
