@@ -296,10 +296,10 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
 
     if (creatureInfo)
     {
-        std::string Name, FemaleName, SubName;
+        std::string Name, FemaleName, Title;
         Name = creatureInfo->Name;
         FemaleName = creatureInfo->FemaleName;
-        SubName = creatureInfo->SubName;
+        Title = creatureInfo->SubName;
 
         uint8 qItemsSize = 0;
 
@@ -315,13 +315,13 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
             {
                 ObjectMgr::GetLocaleString(creatureLocale->Name, locale, Name);
                 ObjectMgr::GetLocaleString(creatureLocale->FemaleName, locale, FemaleName);
-                ObjectMgr::GetLocaleString(creatureLocale->SubName, locale, SubName);
+                ObjectMgr::GetLocaleString(creatureLocale->Title, locale, Title);
             }
         }
 
         TC_LOG_DEBUG("network", "WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", creatureInfo->Name.c_str(), entry);
 
-        data.WriteBits(SubName.length() ? SubName.length() + 1 : 0, 11);
+        data.WriteBits(Title.length() ? Title.length() + 1 : 0, 11);
         data.WriteBits(qItemsSize, 22);                       // Quest items
         data.WriteBits(0, 11);
 
@@ -347,8 +347,8 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         data << uint32(creatureInfo->movementId);                     // CreatureMovementInfo.dbc
         data << Name;
 
-        if (SubName != "")
-            data << SubName;                                          // Subname
+        if (Title != "")
+            data << Title;                                            // Subname
 
         data << uint32(creatureInfo->Modelid1);                       // Modelid1
         data << uint32(creatureInfo->Modelid3);                       // Modelid3

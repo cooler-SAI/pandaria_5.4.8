@@ -314,11 +314,10 @@ void ObjectMgr::LoadCreatureLocales()
 {
     uint32 oldMSTime = getMSTime();
 
-    _creatureLocaleStore.clear();                              // need for reload case
+    _creatureLocaleStore.clear(); // need for reload case
 
-    //                                                  0      1      2       3          4
-    QueryResult result = WorldDatabase.Query("SELECT entry, locale, Name, FemaleName, SubName FROM locales_creature");
-
+    //                                               0      1       2     3           4
+    QueryResult result = WorldDatabase.Query("SELECT entry, locale, Name, FemaleName, Title FROM creature_template_locale");
     if (!result)
         return;
 
@@ -331,21 +330,20 @@ void ObjectMgr::LoadCreatureLocales()
 
         std::string name        = fields[2].GetString();
         std::string femaleName  = fields[3].GetString();
-        std::string subname     = fields[4].GetString();
+        std::string title       = fields[4].GetString();
 
         CreatureLocale& data = _creatureLocaleStore[id];
         LocaleConstant locale = GetLocaleByName(localeName);
-
         if (locale == LOCALE_enUS)
             continue;
 
-        AddLocaleString(name, locale, data.Name);
+        AddLocaleString(name,       locale, data.Name);
         AddLocaleString(femaleName, locale, data.FemaleName);
-        AddLocaleString(subname, locale, data.SubName);
-        
+        AddLocaleString(title,      locale, data.Title);
+
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %lu creature locale strings in %u ms", (unsigned long)_creatureLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u creature locale strings in %u ms", uint32(_creatureLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadGossipMenuItemsLocales()
@@ -386,7 +384,8 @@ void ObjectMgr::LoadPointOfInterestLocales()
 
     _pointOfInterestLocaleStore.clear();                              // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, icon_name_loc1, icon_name_loc2, icon_name_loc3, icon_name_loc4, icon_name_loc5, icon_name_loc6, icon_name_loc7, icon_name_loc8, icon_name_loc9, icon_name_loc10, icon_name_loc11 FROM locales_points_of_interest");
+    //                                               0   1       2
+    QueryResult result = WorldDatabase.Query("SELECT ID, locale, Name FROM points_of_interest_locale");
 
     if (!result)
         return;
@@ -395,15 +394,17 @@ void ObjectMgr::LoadPointOfInterestLocales()
     {
         Field* fields = result->Fetch();
 
-        uint32 entry = fields[0].GetUInt32();
+        uint32 id               = fields[0].GetUInt32();
+        std::string localeName  = fields[1].GetString();
+        std::string name        = fields[2].GetString();
 
-        PointOfInterestLocale& data = _pointOfInterestLocaleStore[entry];
+        PointOfInterestLocale& data = _pointOfInterestLocaleStore[id];
+        LocaleConstant locale = GetLocaleByName(localeName);
 
-        for (uint8 i = 1; i < TOTAL_LOCALES; ++i)
-            AddLocaleString(fields[i].GetString(), LocaleConstant(i), data.IconName);
+        AddLocaleString(name, locale, data.IconName); // shoud be data.Name here
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %lu points_of_interest locale strings in %u ms", (unsigned long)_pointOfInterestLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u points_of_interest locale strings in %u ms", uint32(_pointOfInterestLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadCreatureTemplates()
@@ -2492,8 +2493,7 @@ void ObjectMgr::LoadItemLocales()
     _itemLocaleStore.clear();                                 // need for reload case
 
     //                                               0   1       2     3
-    QueryResult result = WorldDatabase.Query("SELECT ID, locale, Name, Description FROM locales_item");
-
+    QueryResult result = WorldDatabase.Query("SELECT ID, locale, Name, Description FROM item_template_locale");
     if (!result)
         return;
 
@@ -2503,17 +2503,17 @@ void ObjectMgr::LoadItemLocales()
 
         uint32 id               = fields[0].GetUInt32();
         std::string localeName  = fields[1].GetString();
-        std::string Name        = fields[2].GetString();
-        std::string Description = fields[3].GetString();
 
-        ItemLocale& data        = _itemLocaleStore[id];
-        LocaleConstant locale   = GetLocaleByName(localeName);
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (locale == LOCALE_enUS)
+            continue;
 
-        AddLocaleString(Name, locale, data.Name);
-        AddLocaleString(Description, locale, data.Description);
+        ItemLocale& data = _itemLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.Name);
+        AddLocaleString(fields[3].GetString(), locale, data.Description);
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %lu Item locale strings in %u ms", (unsigned long)_itemLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Item locale strings in %u ms", uint32(_itemLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void FillItemDamageFields(float* minDamage, float* maxDamage, float* dps, uint32 itemLevel, uint32 itemClass, uint32 itemSubClass, uint32 quality, uint32 delay, float statScalingFactor, uint32 inventoryType, uint32 flags2)
@@ -5153,7 +5153,8 @@ void ObjectMgr::LoadPageTextLocales()
 
     _pageTextLocaleStore.clear();                             // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, text_loc1, text_loc2, text_loc3, text_loc4, text_loc5, text_loc6, text_loc7, text_loc8, text_loc9, text_loc10, text_loc11 FROM locales_page_text");
+    //                                               0   1        2
+    QueryResult result = WorldDatabase.Query("SELECT ID, locale, `Text` FROM page_text_locale");
 
     if (!result)
         return;
@@ -5162,15 +5163,18 @@ void ObjectMgr::LoadPageTextLocales()
     {
         Field* fields = result->Fetch();
 
-        uint32 entry = fields[0].GetUInt32();
+        uint32 id                   = fields[0].GetUInt32();
+        std::string localeName      = fields[1].GetString();
 
-        PageTextLocale& data = _pageTextLocaleStore[entry];
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (locale == LOCALE_enUS)
+            continue;
 
-        for (uint8 i = 1; i < TOTAL_LOCALES; ++i)
-            AddLocaleString(fields[i].GetString(), LocaleConstant(i), data.Text);
+        PageTextLocale& data = _pageTextLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.Text);
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %lu PageText locale strings in %u ms", (unsigned long)_pageTextLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u PageText locale strings in %u ms", uint32(_pageTextLocaleStore.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadInstanceTemplate()
