@@ -2,8 +2,7 @@
 SQLyog Ultimate v11.11 (64 bit)
 MySQL - 5.6.26-log : Database - auth
 *********************************************************************
-*/
-
+*/
 
 /*!40101 SET NAMES utf8 */;
 
@@ -24,8 +23,6 @@ DROP TABLE IF EXISTS `account`;
 CREATE TABLE `account` (
   `id` int(10) unsigned NOT NULL AUTO_INCREMENT COMMENT 'Identifier',
   `username` varchar(32) NOT NULL DEFAULT '',
-  `salt` binary(32) NOT NULL,
-  `verifier` binary(32) NOT NULL,
   `battlenet_account` varchar(32) NOT NULL DEFAULT '',
   `sha_pass_hash` varchar(40) NOT NULL DEFAULT '',
   `sessionkey` varchar(80) NOT NULL DEFAULT '',
