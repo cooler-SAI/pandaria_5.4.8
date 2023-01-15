@@ -174,6 +174,7 @@ enum LocaleConstant
     LOCALE_ptPT = 11,
     TOTAL_LOCALES = 12,
     DEFAULT_LOCALE = LOCALE_enUS,
+    LOCALE_none = 99, // hack
 };
 
 #define MAX_LOCALES 11
@@ -202,6 +203,11 @@ struct DbcStr
 
     char const* m_impl[TOTAL_LOCALES];
 };
+
+constexpr inline bool IsValidLocale(LocaleConstant locale)
+{
+    return locale < TOTAL_LOCALES && locale != LOCALE_none;
+}
 
 #if defined(__GNUC__)
 #pragma pack()
