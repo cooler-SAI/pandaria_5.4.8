@@ -232,7 +232,7 @@ struct CreatureLocale
 {
     StringVector Name;
     StringVector FemaleName;
-    StringVector SubName;
+    StringVector Title;
 };
 
 struct PointOfInterestLocale
