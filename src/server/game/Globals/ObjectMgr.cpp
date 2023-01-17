@@ -10478,52 +10478,89 @@ void ObjectMgr::LoadQuestObjectiveVisualEffects()
     TC_LOG_INFO("server.loading", ">> Loaded %u Quest Objective visual effects in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
-void ObjectMgr::LoadQuestObjectiveLocales()
+void ObjectMgr::LoadQuestObjectivesLocale()
 {
     uint32 oldMSTime = getMSTime();
 
-    QueryResult result = WorldDatabase.Query("SELECT `id`, `locale`, `description` FROM `locales_quest_objective` ORDER BY `id` ASC");
+    _questObjectivesLocaleStore.clear(); // need for reload case
+    //                                               0     1          2
+    QueryResult result = WorldDatabase.Query("SELECT Id, locale, Description FROM quest_objectives_locale");
     if (!result)
-    {
-        TC_LOG_ERROR("server.loading", ">> Loaded 0 Quest Objective locale descriptions. DB table `locales_quest_objective` is empty.");
         return;
-    }
 
-    uint32 count = 0;
     do
     {
         Field* fields = result->Fetch();
 
-        uint32 objectiveId      = fields[0].GetUInt32();
-        uint8 locale            = fields[1].GetUInt8();
-        std::string description = fields[2].GetString();
+        uint32 id                           = fields[0].GetUInt32();
+        std::string localeName              = fields[1].GetString();
 
-        if (!QuestObjectiveExists(objectiveId))
-        {
-            TC_LOG_ERROR("sql.sql", "Quest Objective locale %u has invalid Quest Objective %u! Skipping.", locale, objectiveId);
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (!IsValidLocale(locale) || locale == LOCALE_enUS)
             continue;
-        }
 
-        if (locale >= TOTAL_LOCALES)
-        {
-            TC_LOG_ERROR("sql.sql", "Locale Id %u for Quest Objective %u is invalid! Skipping.", locale, objectiveId);
-            continue;
-        }
-
-        AddLocaleString(description, (LocaleConstant)locale, m_questObjectiveLocaleStore[objectiveId].Description);
+        QuestObjectivesLocale& data = _questObjectivesLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.Description);
     }
     while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded %u Quest Objective visual effects in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Objectives locale strings in {} ms", _questObjectivesLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
-QuestObjectiveLocale const* ObjectMgr::GetQuestObjectiveLocale(uint32 objectiveId) const
+void ObjectMgr::LoadQuestOfferRewardLocale()
 {
-    QuestObjectiveLocaleContainer::const_iterator citr = m_questObjectiveLocaleStore.find(objectiveId);
-    if (citr == m_questObjectiveLocaleStore.end())
-        return NULL;
+    uint32 oldMSTime = getMSTime();
 
-    return &citr->second;
+    _questOfferRewardLocaleStore.clear(); // need for reload case
+    //                                               0     1          2
+    QueryResult result = WorldDatabase.Query("SELECT Id, locale, RewardText FROM quest_offer_reward_locale");
+    if (!result)
+        return;
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 id = fields[0].GetUInt32();
+        std::string localeName = fields[1].GetString();
+
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (!IsValidLocale(locale) || locale == LOCALE_enUS)
+            continue;
+
+        QuestOfferRewardLocale& data = _questOfferRewardLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.RewardText);
+    } while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Offer Reward locale strings in {} ms", _questOfferRewardLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadQuestRequestItemsLocale()
+{
+    uint32 oldMSTime = getMSTime();
+
+    _questRequestItemsLocaleStore.clear(); // need for reload case
+    //                                               0     1          2
+    QueryResult result = WorldDatabase.Query("SELECT Id, locale, CompletionText FROM quest_request_items_locale");
+    if (!result)
+        return;
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 id = fields[0].GetUInt32();
+        std::string localeName = fields[1].GetString();
+
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (!IsValidLocale(locale) || locale == LOCALE_enUS)
+            continue;
+
+        QuestRequestItemsLocale& data = _questRequestItemsLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.CompletionText);
+    } while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Request Items locale strings in {} ms", _questRequestItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 bool ObjectMgr::QuestObjectiveExists(uint32 objectiveId) const

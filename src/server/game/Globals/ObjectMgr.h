@@ -495,6 +495,9 @@ typedef std::unordered_map<uint32, CreatureLocale> CreatureLocaleContainer;
 typedef std::unordered_map<uint32, GameObjectLocale> GameObjectLocaleContainer;
 typedef std::unordered_map<uint32, ItemLocale> ItemLocaleContainer;
 typedef std::unordered_map<uint32, QuestLocale> QuestLocaleContainer;
+typedef std::unordered_map<uint32, QuestObjectivesLocale> QuestObjectivesLocaleContainer;
+typedef std::unordered_map<uint32, QuestOfferRewardLocale> QuestOfferRewardLocaleContainer;
+typedef std::unordered_map<uint32, QuestRequestItemsLocale> QuestRequestItemsLocaleContainer;
 typedef std::unordered_map<uint32, NpcTextLocale> NpcTextLocaleContainer;
 typedef std::unordered_map<uint32, PageTextLocale> PageTextLocaleContainer;
 typedef std::unordered_map<int32, TrinityStringLocale> TrinityStringLocaleContainer;
@@ -1089,7 +1092,6 @@ class ObjectMgr
         void LoadQuests();
         void LoadQuestObjectives();
         void LoadQuestObjectiveVisualEffects();
-        void LoadQuestObjectiveLocales();
         void LoadQuestStartersAndEnders()
         {
             TC_LOG_INFO("server.loading", "Loading GO Start Quest Data...");
@@ -1181,6 +1183,10 @@ class ObjectMgr
         void LoadItemScriptNames();
         void LoadItemLocales();
         void LoadQuestLocales();
+        void LoadQuestObjectivesLocale();
+        void LoadQuestGreetingLocales();
+        void LoadQuestOfferRewardLocale();
+        void LoadQuestRequestItemsLocale();         
         void LoadNpcTextLocales();
         void LoadPageTextLocales();
         void LoadGossipMenuItemsLocales();
@@ -1409,6 +1415,24 @@ class ObjectMgr
             if (itr == _questLocaleStore.end()) return NULL;
             return &itr->second;
         }
+        QuestOfferRewardLocale const* GetQuestOfferRewardLocale(uint32 entry) const
+        {
+            auto itr = _questOfferRewardLocaleStore.find(entry);
+            if (itr == _questOfferRewardLocaleStore.end()) return nullptr;
+            return &itr->second;
+        }
+        QuestRequestItemsLocale const* GetQuestRequestItemsLocale(uint32 entry) const
+        {
+            auto itr = _questRequestItemsLocaleStore.find(entry);
+            if (itr == _questRequestItemsLocaleStore.end()) return nullptr;
+            return &itr->second;
+        }
+        QuestObjectivesLocale const* GetQuestObjectivesLocale(uint32 entry) const
+        {
+            QuestObjectivesLocaleContainer::const_iterator itr = _questObjectivesLocaleStore.find(entry);
+            if (itr == _questObjectivesLocaleStore.end()) return nullptr;
+            return &itr->second;
+        }        
         NpcTextLocale const* GetNpcTextLocale(uint32 entry) const
         {
             NpcTextLocaleContainer::const_iterator itr = _npcTextLocaleStore.find(entry);
@@ -1433,7 +1457,6 @@ class ObjectMgr
             if (itr == _pointOfInterestLocaleStore.end()) return NULL;
             return &itr->second;
         }
-        QuestObjectiveLocale const* GetQuestObjectiveLocale(uint32 objectiveId) const;
 
         GameObjectData const* GetGOData(uint32 guid) const
         {
@@ -1887,12 +1910,14 @@ class ObjectMgr
         ItemTemplateContainer _itemTemplateStore;
         ItemLocaleContainer _itemLocaleStore;
         QuestLocaleContainer _questLocaleStore;
+        QuestObjectivesLocaleContainer _questObjectivesLocaleStore;
+        QuestOfferRewardLocaleContainer _questOfferRewardLocaleStore;
+        QuestRequestItemsLocaleContainer _questRequestItemsLocaleStore;        
         NpcTextLocaleContainer _npcTextLocaleStore;
         PageTextLocaleContainer _pageTextLocaleStore;
         TrinityStringLocaleContainer _trinityStringLocaleStore;
         GossipMenuItemsLocaleContainer _gossipMenuItemsLocaleStore;
         PointOfInterestLocaleContainer _pointOfInterestLocaleStore;
-        QuestObjectiveLocaleContainer m_questObjectiveLocaleStore;
         AreaTriggerTemplateContainer _areaTriggerTemplateStore;
 
         CacheVendorItemContainer _cacheVendorItemStore;

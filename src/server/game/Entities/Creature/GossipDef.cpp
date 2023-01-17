@@ -739,7 +739,8 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
 
         std::string descriptionText = questObjective->Description;
         if (localeConstant != LOCALE_enUS)
-            if (QuestObjectiveLocale const* questObjectiveLocale = sObjectMgr->GetQuestObjectiveLocale(questObjective->Id))
+            if (QuestObjectivesLocale const* questObjectiveLocale = sObjectMgr->GetQuestObjectivesLocale(questObjective->Id))
+            //if (QuestObjectiveLocale const* questObjectiveLocale = sObjectMgr->GetQuestObjectiveLocale(questObjective->Id))
                 ObjectMgr::GetLocaleString(questObjectiveLocale->Description, localeConstant, descriptionText);
 
         data.WriteBits(descriptionText.size(), 8);

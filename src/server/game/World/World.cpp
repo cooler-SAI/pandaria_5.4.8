@@ -1928,7 +1928,8 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadQuestObjectives();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Locales...");
-    sObjectMgr->LoadQuestObjectiveLocales();
+    //sObjectMgr->LoadQuestObjectiveLocales();
+    sObjectMgr->LoadQuestObjectivesLocale();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Visual Effects...");
     sObjectMgr->LoadQuestObjectiveVisualEffects();
