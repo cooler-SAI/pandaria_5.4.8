@@ -556,7 +556,7 @@ private:
         {
 
             std::ostringstream msg_ru, msg_en;
-            std::ostringstream msg_en, msg_fr;
+            std::ostringstream msg_fr;
 
 
             int SpellPowerBonus = 0;
@@ -783,7 +783,7 @@ private:
             msg_en << "|cffFF0000[SoloCraft]|r |cffFF8000" << player->GetName() << " exited to %s - Reverting Difficulty Offset: %0.2f. Spellpower Bonus Removed: %i";
             ChatHandler(player->GetSession()).PSendSysMessage(GetText(player, msg_ru.str().c_str(), msg_en.str().c_str()), map->GetMapName(), difficulty, SpellPowerBonus);
 
-            std::ostringstream msg_en, msg_fr;
+            std::ostringstream msg_fr;
             msg_en << "|cffFF0000[SoloCraft]|r |cffFF8000" << player->GetName() << " exited to %s - Reverting Difficulty Offset: %0.2f. Spellpower Bonus Removed: %i";
             msg_fr << "|cffFF0000[SoloCraft]|r |cffFF8000" << player->GetName() << " sorti pour %s - Rétablissement de la compensation de la difficulté: %0.2f. Suppression du bonus de puissance des sorts: %i";
             ChatHandler(player->GetSession()).PSendSysMessage(GetText(player, msg_en.str().c_str(), msg_fr.str().c_str()), map->GetMapName(), difficulty, SpellPowerBonus);
