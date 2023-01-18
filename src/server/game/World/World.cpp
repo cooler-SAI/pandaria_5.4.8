@@ -5062,7 +5062,7 @@ void BonusRatesEntry::Update(time_t const& now, tm const& lt)
             return;
         }
 
-        if (shouldBeActive = schedule.Satisfies(lt))
+        if (shouldBeActive == schedule.Satisfies(lt))
             break;
     }
 
