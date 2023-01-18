@@ -286,7 +286,7 @@ bool Field::IsNumeric() const
 }
 
 #ifdef TRINITY_DEBUG
-char const* Field::FieldTypeToString(enum_field_types type) const
+char const* Field::FieldTypeToString(enum_field_types type) 
 {
     switch (type)
     {
