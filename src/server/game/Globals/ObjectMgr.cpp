@@ -4501,58 +4501,6 @@ void ObjectMgr::LoadQuests()
     TC_LOG_INFO("server.loading", ">> Loaded %lu quests definitions in %u ms", (unsigned long)_questTemplates.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
-void ObjectMgr::LoadQuestLocales()
-{
-    uint32 oldMSTime = getMSTime();
-
-    _questLocaleStore.clear();                                // need for reload case
-
-    QueryResult result = WorldDatabase.Query("SELECT Id, "
-        "Title_loc1, Details_loc1, Objectives_loc1, OfferRewardText_loc1, RequestItemsText_loc1, EndText_loc1, CompletedText_loc1, QuestGiverTextWindow_loc1, QuestGiverTargetName_loc1, QuestTurnTextWindow_loc1, QuestTurnTargetName_loc1,"
-        "Title_loc2, Details_loc2, Objectives_loc2, OfferRewardText_loc2, RequestItemsText_loc2, EndText_loc2, CompletedText_loc2, QuestGiverTextWindow_loc2, QuestGiverTargetName_loc2, QuestTurnTextWindow_loc2, QuestTurnTargetName_loc2,"
-        "Title_loc3, Details_loc3, Objectives_loc3, OfferRewardText_loc3, RequestItemsText_loc3, EndText_loc3, CompletedText_loc3, QuestGiverTextWindow_loc3, QuestGiverTargetName_loc3, QuestTurnTextWindow_loc3, QuestTurnTargetName_loc3,"
-        "Title_loc4, Details_loc4, Objectives_loc4, OfferRewardText_loc4, RequestItemsText_loc4, EndText_loc4, CompletedText_loc4, QuestGiverTextWindow_loc4, QuestGiverTargetName_loc4, QuestTurnTextWindow_loc4, QuestTurnTargetName_loc4,"
-        "Title_loc5, Details_loc5, Objectives_loc5, OfferRewardText_loc5, RequestItemsText_loc5, EndText_loc5, CompletedText_loc5, QuestGiverTextWindow_loc5, QuestGiverTargetName_loc5, QuestTurnTextWindow_loc5, QuestTurnTargetName_loc5,"
-        "Title_loc6, Details_loc6, Objectives_loc6, OfferRewardText_loc6, RequestItemsText_loc6, EndText_loc6, CompletedText_loc6, QuestGiverTextWindow_loc6, QuestGiverTargetName_loc6, QuestTurnTextWindow_loc6, QuestTurnTargetName_loc6,"
-        "Title_loc7, Details_loc7, Objectives_loc7, OfferRewardText_loc7, RequestItemsText_loc7, EndText_loc7, CompletedText_loc7, QuestGiverTextWindow_loc7, QuestGiverTargetName_loc7, QuestTurnTextWindow_loc7, QuestTurnTargetName_loc7,"
-        "Title_loc8, Details_loc8, Objectives_loc8, OfferRewardText_loc8, RequestItemsText_loc8, EndText_loc8, CompletedText_loc8, QuestGiverTextWindow_loc8, QuestGiverTargetName_loc8, QuestTurnTextWindow_loc8, QuestTurnTargetName_loc8,"
-        "Title_loc9, Details_loc9, Objectives_loc9, OfferRewardText_loc9, RequestItemsText_loc9, EndText_loc9, CompletedText_loc9, QuestGiverTextWindow_loc9, QuestGiverTargetName_loc9, QuestTurnTextWindow_loc9, QuestTurnTargetName_loc9,"
-        "Title_loc10, Details_loc10, Objectives_loc10, OfferRewardText_loc10, RequestItemsText_loc10, EndText_loc10, CompletedText_loc10, QuestGiverTextWindow_loc10, QuestGiverTargetName_loc10, QuestTurnTextWindow_loc10, QuestTurnTargetName_loc10,"
-        "Title_loc11, Details_loc11, Objectives_loc11, OfferRewardText_loc11, RequestItemsText_loc11, EndText_loc11, CompletedText_loc11, QuestGiverTextWindow_loc11, QuestGiverTargetName_loc11, QuestTurnTextWindow_loc11, QuestTurnTargetName_loc11"
-        " FROM locales_quest");
-
-    if (!result)
-        return;
-
-    do
-    {
-        Field* fields = result->Fetch();
-
-        uint32 entry = fields[0].GetUInt32();
-
-        QuestLocale& data = _questLocaleStore[entry];
-
-        for (uint8 i = 1; i < TOTAL_LOCALES; ++i)
-        {
-            LocaleConstant locale = (LocaleConstant) i;
-
-            AddLocaleString(fields[1 + 11 * (i - 1)].GetString(), locale, data.Title);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 1].GetString(), locale, data.Details);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 2].GetString(), locale, data.Objectives);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 3].GetString(), locale, data.OfferRewardText);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 4].GetString(), locale, data.RequestItemsText);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 5].GetString(), locale, data.EndText);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 6].GetString(), locale, data.CompletedText);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 7].GetString(), locale, data.QuestGiverTextWindow);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 8].GetString(), locale, data.QuestGiverTargetName);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 9].GetString(), locale, data.QuestTurnTextWindow);
-            AddLocaleString(fields[1 + 11 * (i - 1) + 10].GetString(), locale, data.QuestTurnTargetName);
-        }
-    } while (result->NextRow());
-
-    TC_LOG_INFO("server.loading", ">> Loaded %lu Quest locale strings in %u ms", (unsigned long)_questLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
-}
-
 void ObjectMgr::LoadScripts(ScriptsType type)
 {
     uint32 oldMSTime = getMSTime();
@@ -10478,6 +10426,45 @@ void ObjectMgr::LoadQuestObjectiveVisualEffects()
     TC_LOG_INFO("server.loading", ">> Loaded %u Quest Objective visual effects in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+void ObjectMgr::LoadQuestTemplateLocale()
+{
+    uint32 oldMSTime = getMSTime();
+
+    _questTemplateLocaleStore.clear(); // need for reload case
+    //                                               0     1
+    QueryResult result = WorldDatabase.Query("SELECT Id, locale, "
+    //      2           3                 4                5                 6                  7                   8                   9                  10
+        "LogTitle, LogDescription, QuestDescription, AreaDescription, PortraitGiverText, PortraitGiverName, PortraitTurnInText, PortraitTurnInName, QuestCompletionLog"
+        " FROM quest_template_locale");
+    if (!result)
+        return;
+
+    do
+    {
+        Field* fields = result->Fetch();
+
+        uint32 id                       = fields[0].GetUInt32();
+        std::string localeName          = fields[1].GetString();
+
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (!IsValidLocale(locale) || locale == LOCALE_enUS)
+            continue;
+
+        QuestTemplateLocale& data = _questTemplateLocaleStore[id];
+        AddLocaleString(fields[2].GetString(), locale, data.LogTitle);
+        AddLocaleString(fields[3].GetString(), locale, data.LogDescription);
+        AddLocaleString(fields[4].GetString(), locale, data.QuestDescription);
+        AddLocaleString(fields[5].GetString(), locale, data.AreaDescription);
+        AddLocaleString(fields[6].GetString(), locale, data.PortraitGiverText);
+        AddLocaleString(fields[7].GetString(), locale, data.PortraitGiverName);
+        AddLocaleString(fields[8].GetString(), locale, data.PortraitTurnInText);
+        AddLocaleString(fields[9].GetString(), locale, data.PortraitTurnInName);
+        AddLocaleString(fields[10].GetString(), locale, data.QuestCompletionLog);
+    } while (result->NextRow());
+
+    TC_LOG_INFO("server.loading", ">> Loaded %u Quest Template locale strings in %u ms", _questTemplateLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+}
+
 void ObjectMgr::LoadQuestObjectivesLocale()
 {
     uint32 oldMSTime = getMSTime();
@@ -10504,7 +10491,7 @@ void ObjectMgr::LoadQuestObjectivesLocale()
     }
     while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Objectives locale strings in {} ms", _questObjectivesLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Quest Objectives locale strings in %u ms", _questObjectivesLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadQuestOfferRewardLocale()
@@ -10532,7 +10519,7 @@ void ObjectMgr::LoadQuestOfferRewardLocale()
         AddLocaleString(fields[2].GetString(), locale, data.RewardText);
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Offer Reward locale strings in {} ms", _questOfferRewardLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Quest Offer Reward locale strings in %u ms", _questOfferRewardLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 void ObjectMgr::LoadQuestRequestItemsLocale()
@@ -10560,7 +10547,7 @@ void ObjectMgr::LoadQuestRequestItemsLocale()
         AddLocaleString(fields[2].GetString(), locale, data.CompletionText);
     } while (result->NextRow());
 
-    TC_LOG_INFO("server.loading", ">> Loaded {} Quest Request Items locale strings in {} ms", _questRequestItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u Quest Request Items locale strings in %u ms", _questRequestItemsLocaleStore.size(), GetMSTimeDiffToNow(oldMSTime));
 }
 
 bool ObjectMgr::QuestObjectiveExists(uint32 objectiveId) const

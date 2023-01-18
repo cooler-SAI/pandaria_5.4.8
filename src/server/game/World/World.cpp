@@ -1771,7 +1771,10 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadCreatureLocales();
     sObjectMgr->LoadGameObjectLocales();
     sObjectMgr->LoadItemLocales();
-    sObjectMgr->LoadQuestLocales();
+    sObjectMgr->LoadQuestTemplateLocale();
+    sObjectMgr->LoadQuestObjectivesLocale();
+    sObjectMgr->LoadQuestOfferRewardLocale();
+    sObjectMgr->LoadQuestRequestItemsLocale();
     sObjectMgr->LoadNpcTextLocales();
     sObjectMgr->LoadPageTextLocales();
     sObjectMgr->LoadGossipMenuItemsLocales();
@@ -1928,7 +1931,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadQuestObjectives();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Locales...");
-    //sObjectMgr->LoadQuestObjectiveLocales();
     sObjectMgr->LoadQuestObjectivesLocale();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Visual Effects...");

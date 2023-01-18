@@ -647,11 +647,11 @@ public:
             if (localeIndex >= 0)
             {
                 uint8 ulocaleIndex = uint8(localeIndex);
-                if (QuestLocale const* questLocale = sObjectMgr->GetQuestLocale(qInfo->GetQuestId()))
+                if (QuestTemplateLocale const* questLocale = sObjectMgr->GetQuestLocale(qInfo->GetQuestId()))
                 {
-                    if (questLocale->Title.size() > ulocaleIndex && !questLocale->Title[ulocaleIndex].empty())
+                    if (questLocale->LogTitle.size() > ulocaleIndex && !questLocale->LogTitle[ulocaleIndex].empty())
                     {
-                        std::string title = questLocale->Title[ulocaleIndex];
+                        std::string title = questLocale->LogTitle[ulocaleIndex];
 
                         if (Utf8FitTo(title, wNamePart))
                         {

@@ -18707,8 +18707,8 @@ void Player::SendQuestConfirmAccept(const Quest* quest, Player* pReceiver)
 
         LocaleConstant localeConstant = pReceiver->GetSession()->GetSessionDbLocaleIndex();
         if (localeConstant != LOCALE_enUS)
-            if (const QuestLocale* pLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
-                ObjectMgr::GetLocaleString(pLocale->Title, localeConstant, strTitle);
+            if (const QuestTemplateLocale* pLocale = sObjectMgr->GetQuestLocale(quest->GetQuestId()))
+                ObjectMgr::GetLocaleString(pLocale->LogTitle, localeConstant, strTitle);
 
         ObjectGuid guid = GetGUID();
 
