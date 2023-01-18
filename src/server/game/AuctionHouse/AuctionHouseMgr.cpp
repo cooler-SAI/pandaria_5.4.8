@@ -32,6 +32,7 @@
 #include "Config.h"
 #include <vector>
 #include "CustomLogs.h"
+#include "DatabaseEnv.h"
 
 enum eAuctionHouse
 {

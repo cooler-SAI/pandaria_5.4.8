@@ -23,7 +23,6 @@
 #include <ace/Thread_Mutex.h>
 #include <list>
 #include <map>
-#include "DatabaseEnv.h"
 #include "DBCEnums.h"
 #include "ObjectDefines.h"
 

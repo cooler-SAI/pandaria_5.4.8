@@ -24,6 +24,8 @@
 #include "Item.h"
 #include "ItemPrototype.h"
 
+class Field;
+
 class Bag : public Item
 {
     public:

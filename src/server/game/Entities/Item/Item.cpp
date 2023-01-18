@@ -29,6 +29,7 @@
 #include "Opcodes.h"
 #include "WorldSession.h"
 #include <ace/Stack_Trace.h>
+#include "DatabaseEnv.h"
 
 void AddItemsSetItem(Player* player, Item* item)
 {

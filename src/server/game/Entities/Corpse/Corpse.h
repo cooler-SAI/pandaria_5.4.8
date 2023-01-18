@@ -19,9 +19,9 @@
 #define TRINITYCORE_CORPSE_H
 
 #include "Object.h"
-#include "DatabaseEnv.h"
 #include "GridDefines.h"
 #include "LootMgr.h"
+#include "DatabaseEnv.h"
 
 enum CorpseType
 {
