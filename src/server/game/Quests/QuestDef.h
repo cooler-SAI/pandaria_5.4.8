@@ -19,7 +19,6 @@
 #define TRINITYCORE_QUEST_H
 
 #include "Define.h"
-#include "DatabaseEnv.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "DBCEnums.h"

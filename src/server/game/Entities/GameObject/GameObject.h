@@ -23,7 +23,6 @@
 #include "Unit.h"
 #include "Object.h"
 #include "LootMgr.h"
-#include "DatabaseEnv.h"
 #include "DBCStores.h"
 
 class GameObjectAI;

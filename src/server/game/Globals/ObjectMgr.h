@@ -29,7 +29,6 @@
 #include "QuestDef.h"
 #include "ItemPrototype.h"
 #include "NPCHandler.h"
-#include "DatabaseEnv.h"
 #include "Mail.h"
 #include "Map.h"
 #include "ObjectAccessor.h"
@@ -494,7 +493,7 @@ typedef std::map<TempSummonGroupKey, std::vector<TempSummonData> > TempSummonDat
 typedef std::unordered_map<uint32, CreatureLocale> CreatureLocaleContainer;
 typedef std::unordered_map<uint32, GameObjectLocale> GameObjectLocaleContainer;
 typedef std::unordered_map<uint32, ItemLocale> ItemLocaleContainer;
-typedef std::unordered_map<uint32, QuestLocale> QuestLocaleContainer;
+typedef std::unordered_map<uint32, QuestTemplateLocale> QuestTemplateLocaleContainer;
 typedef std::unordered_map<uint32, QuestObjectivesLocale> QuestObjectivesLocaleContainer;
 typedef std::unordered_map<uint32, QuestOfferRewardLocale> QuestOfferRewardLocaleContainer;
 typedef std::unordered_map<uint32, QuestRequestItemsLocale> QuestRequestItemsLocaleContainer;
@@ -1182,7 +1181,7 @@ class ObjectMgr
         void LoadItemTemplateAddon();
         void LoadItemScriptNames();
         void LoadItemLocales();
-        void LoadQuestLocales();
+        void LoadQuestTemplateLocale();
         void LoadQuestObjectivesLocale();
         void LoadQuestGreetingLocales();
         void LoadQuestOfferRewardLocale();
@@ -1409,12 +1408,12 @@ class ObjectMgr
             if (itr == _itemLocaleStore.end()) return NULL;
             return &itr->second;
         }
-        QuestLocale const* GetQuestLocale(uint32 entry) const
+        QuestTemplateLocale const* GetQuestLocale(uint32 entry) const
         {
-            QuestLocaleContainer::const_iterator itr = _questLocaleStore.find(entry);
-            if (itr == _questLocaleStore.end()) return NULL;
+            QuestTemplateLocaleContainer::const_iterator itr = _questTemplateLocaleStore.find(entry);
+            if (itr == _questTemplateLocaleStore.end()) return nullptr;
             return &itr->second;
-        }
+        }        
         QuestOfferRewardLocale const* GetQuestOfferRewardLocale(uint32 entry) const
         {
             auto itr = _questOfferRewardLocaleStore.find(entry);
@@ -1909,7 +1908,7 @@ class ObjectMgr
         BroadcastTextContainer _broadcastTextStore;
         ItemTemplateContainer _itemTemplateStore;
         ItemLocaleContainer _itemLocaleStore;
-        QuestLocaleContainer _questLocaleStore;
+        QuestTemplateLocaleContainer _questTemplateLocaleStore;
         QuestObjectivesLocaleContainer _questObjectivesLocaleStore;
         QuestOfferRewardLocaleContainer _questOfferRewardLocaleStore;
         QuestRequestItemsLocaleContainer _questRequestItemsLocaleStore;        
