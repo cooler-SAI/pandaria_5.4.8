@@ -199,6 +199,8 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
             unit->AI()->sGossipSelectCode(_player, menuId, gossipListId, code.c_str());
             if (!sScriptMgr->OnGossipSelectCode(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId), code.c_str()))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
+            if (!unit->AI()->OnGossipSelectCode(_player, menuId, gossipListId, code.c_str())) // hack, add to support ScriptAI
+                _player->OnGossipSelect(unit, gossipListId, menuId);    
         }
         else if (go)
         {
@@ -221,6 +223,8 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
             unit->AI()->sGossipSelect(_player, menuId, gossipListId);
             if (!sScriptMgr->OnGossipSelect(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)))
                 _player->OnGossipSelect(unit, gossipListId, menuId);
+            if (!unit->AI()->OnGossipSelect(_player, menuId, gossipListId)) // hack, add to support ScriptAI
+                _player->OnGossipSelect(unit, gossipListId, menuId);            
         }
         else if (go)
         {
@@ -2321,8 +2325,8 @@ void WorldSession::SendBroadcastTextDb2Reply(uint32 entry, ByteBuffer& buffer)
     {
         if (NpcTextLocale const* localeData = sObjectMgr->GetNpcTextLocale(entry))
         {
-            ObjectMgr::GetLocaleStringOld(localeData->Text_0[0], locale, Text_0);
-            ObjectMgr::GetLocaleStringOld(localeData->Text_1[0], locale, Text_1);
+            ObjectMgr::GetLocaleString(localeData->Text_0[0], locale, Text_0);
+            ObjectMgr::GetLocaleString(localeData->Text_1[0], locale, Text_1);
         }
     }
     buffer << uint32(entry);

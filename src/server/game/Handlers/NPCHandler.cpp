@@ -448,6 +448,12 @@ void WorldSession::HandleGossipHelloOpcode(WorldPacket& recvData)
         _player->PrepareGossipMenu(unit, unit->GetGossipMenuId(), true);
         _player->SendPreparedGossip(unit);
     }
+    if (!unit->AI()->OnGossipHello(_player)) // hack, add to support ScriptAI
+    {
+//        _player->TalkedToCreature(unit->GetEntry(), unit->GetGUID());
+        _player->PrepareGossipMenu(unit, unit->GetCreatureTemplate()->GossipMenuId, true);
+        _player->SendPreparedGossip(unit);
+    }    
     unit->AI()->sGossipHello(_player);
 }
 

@@ -51,49 +51,50 @@ enum Erozion
 ## npc_erozion
 ######*/
 
-class npc_erozion : public CreatureScript
+struct npc_erozion : public ScriptedAI
 {
-public:
-    npc_erozion() : CreatureScript("npc_erozion") { }
+    npc_erozion(Creature* creature) : ScriptedAI(creature), instance(creature->GetInstanceScript()) { }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+    InstanceScript* instance;
+
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->PlayerTalkClass->ClearMenus();
-        if (action == GOSSIP_ACTION_INFO_DEF+1)
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
+        if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
             ItemPosCountVec dest;
             uint8 msg = player->CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, ITEM_ENTRY_BOMBS, 1);
             if (msg == EQUIP_ERR_OK)
             {
-                 player->StoreNewItem(dest, ITEM_ENTRY_BOMBS, true);
+                player->StoreNewItem(dest, ITEM_ENTRY_BOMBS, true);
             }
-            player->SEND_GOSSIP_MENU(9515, creature->GetGUID());
+            SendGossipMenuFor(player, 9515, me->GetGUID());
         }
-        if (action == GOSSIP_ACTION_INFO_DEF+2)
-        {
-            player->CLOSE_GOSSIP_MENU();
-        }
+        if (action == GOSSIP_ACTION_INFO_DEF + 2)
+            CloseGossipMenuFor(player);
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) override
+    bool OnGossipHello(Player* player) override
     {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
+        InitGossipMenuFor(player, GOSSIP_MENU_EROZION);
+        if (me->IsQuestGiver())
+            player->PrepareQuestMenu(me->GetGUID());
 
-        InstanceScript* instance = creature->GetInstanceScript();
-        if (instance && instance->GetData(TYPE_BARREL_DIVERSION) != DONE && !player->HasItemCount(ITEM_ENTRY_BOMBS))
+        if (instance->GetData(TYPE_BARREL_DIVERSION) != DONE && !player->HasItemCount(ITEM_ENTRY_BOMBS))
             AddGossipItemFor(player, GOSSIP_MENU_EROZION, GOSSIP_OPTION_BOMB, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
 
         if (player->GetQuestStatus(QUEST_ENTRY_RETURN) == QUEST_STATUS_COMPLETE)
             AddGossipItemFor(player, GOSSIP_ICON_CHAT, GOSSIP_HELLO_EROZION2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
 
-        player->SEND_GOSSIP_MENU(9778, creature->GetGUID());
+        SendGossipMenuFor(player, 9778, me->GetGUID());
 
         return true;
     }
-
 };
+
+
 
 /*######
 ## npc_thrall_old_hillsbrad
@@ -657,7 +658,8 @@ public:
 
 void AddSC_old_hillsbrad()
 {
-    new npc_erozion();
+    //new npc_erozion();
+    RegisterOldHillsbradCreatureAI(npc_erozion);
     new npc_thrall_old_hillsbrad();
     new npc_taretha();
 }
