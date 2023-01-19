@@ -291,27 +291,48 @@ if (Boost_FOUND)
 endif()
 
 if (ELUNA)
+  file(GLOB_RECURSE sources_LuaEngine LuaEngine/*.cpp LuaEngine/*.h)
+  source_group(LuaEngine FILES ${sources_LuaEngine})
+  set(game_STAT_SRCS
+    ${game_STAT_SRCS}
+    ${sources_LuaEngine}
+    #${lua_STAT_SRCS}
+  )
   include_directories(
-    ${CMAKE_SOURCE_DIR}/dep/lualib
-    ${CMAKE_SOURCE_DIR}/src/LuaEngine 
-  )
-
-  add_library(game STATIC
-    ${game_STAT_SRCS}
-    ${lua_STAT_SRCS}
-    ${LuaEngine_STAT_SRCS}
-  )
-
-  add_dependencies(game lua)
-  target_link_libraries(game
-   lua
-   LuaEngine
-  )
-else()
-  add_library(game STATIC
-    ${game_STAT_SRCS}
+    PRIVATE
+      ${CMAKE_SOURCE_DIR}/dep/lualib
+      ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine
   )
 endif()
+
+add_library(game STATIC
+  ${game_STAT_SRCS}
+)
+
+if (ELUNA)
+  add_dependencies(game lua)
+  target_link_libraries(game
+    PRIVATE
+      lua
+  )
+  if( WIN32 )
+    if ( MSVC )
+      add_custom_command(TARGET LuaEngine
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/extensions" "${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/lua_scripts/extensions/"
+      )
+    elseif ( MINGW )
+      add_custom_command(TARGET LuaEngine
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${CMAKE_BINARY_DIR}/bin/lua_scripts/extensions/"
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/extensions" "${CMAKE_BINARY_DIR}/bin/lua_scripts/extensions/"
+      )
+    endif()
+  endif()      
+endif()
+
+
 
 add_dependencies(game revision.h)
 

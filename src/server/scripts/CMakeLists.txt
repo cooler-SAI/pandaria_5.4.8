@@ -56,11 +56,12 @@ include(Spells/CMakeLists.txt)
 include(Commands/CMakeLists.txt)
 include(Battlegrounds/CMakeLists.txt)
 
-include(Examples/CMakeLists.txt)
+#include(Examples/CMakeLists.txt)
 set(scripts_STAT_SRCS
   ${scripts_STAT_SRCS}
   ${sources_ScriptLoader}
 )
+
 if(SCRIPTS)
   include(Custom/CMakeLists.txt)
   include(World/CMakeLists.txt)
@@ -85,10 +86,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
     ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
-    ${CMAKE_SOURCE_DIR}/dep/SFMT
-    ${CMAKE_SOURCE_DIR}/dep/zlib
-    ${CMAKE_SOURCE_DIR}/dep/lualib
-    ${CMAKE_SOURCE_DIR}/src/LuaEngine 
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/server/shared/Cryptography
@@ -101,11 +98,10 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Database    
     ${CMAKE_SOURCE_DIR}/src/server/collision
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management
     ${CMAKE_SOURCE_DIR}/src/server/collision/Models
-    ${CMAKE_SOURCE_DIR}/src/server/shared
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Database
     ${CMAKE_SOURCE_DIR}/src/server/game/Accounts
     ${CMAKE_SOURCE_DIR}/src/server/game/Achievements
     ${CMAKE_SOURCE_DIR}/src/server/game/Addons
@@ -129,7 +125,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/game/Conditions
     ${CMAKE_SOURCE_DIR}/src/server/game/CustomLogs
     ${CMAKE_SOURCE_DIR}/src/server/game/CustomTransmogrification
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/server/game/Combat
     ${CMAKE_SOURCE_DIR}/src/server/game/DataStores
     ${CMAKE_SOURCE_DIR}/src/server/game/DungeonFinding
@@ -191,8 +186,19 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/PrecompiledHeaders
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
 )
+
+if (ELUNA)
+  set(scripts_STAT_SRCS
+    ${scripts_STAT_SRCS}
+  )
+  include_directories(
+    PRIVATE
+      ${CMAKE_SOURCE_DIR}/dep/lualib
+      ${CMAKE_SOURCE_DIR}/src/server/game/LuaEngine 
+  )  
+endif()
+
 if (Boost_FOUND)
   include_directories(
     PUBLIC 
@@ -205,21 +211,16 @@ if( USE_SCRIPTPCH AND MSVC )
   )
 endif()
 
+add_library(scripts STATIC 
+  ${scripts_STAT_SRCS} 
+)
+
 if (ELUNA)
-add_library(scripts STATIC 
-${scripts_STAT_SRCS} 
-  ${lua_STAT_SRCS}
-  ${LuaEngine_STAT_SRCS}
-)
-add_dependencies(scripts lua)
-target_link_libraries(scripts
- lua
- LuaEngine
-)
-else()
-add_library(scripts STATIC 
-${scripts_STAT_SRCS} 
-)
+  add_dependencies(scripts lua)
+  target_link_libraries(scripts
+    PRIVATE
+      lua
+  )
 endif()
 
 add_dependencies(scripts revision.h)
