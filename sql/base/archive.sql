@@ -2,7 +2,8 @@
 SQLyog Ultimate v11.11 (64 bit)
 MySQL - 5.6.26-log : Database - archive
 *********************************************************************
-*/
+*/
+
 
 /*!40101 SET NAMES utf8 */;
 
@@ -20,22 +21,22 @@ USE `archive`;
 
 DROP TABLE IF EXISTS `currency_transactions`;
 
-CREATE TABLE `currency_transactions` (
-  `realmid` tinyint(3) unsigned NOT NULL DEFAULT '1',
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `guid` int(10) unsigned NOT NULL,
-  `unix_time` int(10) unsigned NOT NULL,
-  `operation` enum('LOOT_MOB','LOOT_ITEM','MAIL','QUEST_REWARD','TRADE','SELL_ITEM','GUILD_BANK','AUCTION','TRANSMOGRIFICATION') NOT NULL,
-  `param` int(10) unsigned DEFAULT NULL,
-  `attachments` text NOT NULL,
-  `amount_before` int(10) unsigned DEFAULT NULL,
-  `amount_after` int(10) unsigned DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `idx_guid` (`guid`),
-  KEY `idx_operation` (`operation`),
-  KEY `idx_unix_time` (`unix_time`),
-  KEY `idx_param` (`param`)
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8;
+CREATE TABLE `currency_transactions`  (
+  `realmid` tinyint UNSIGNED NOT NULL DEFAULT 1,
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `guid` int UNSIGNED NOT NULL,
+  `unix_time` int UNSIGNED NOT NULL,
+  `operation` enum('LOOT_MOB','LOOT_ITEM','MAIL','QUEST_REWARD','TRADE','SELL_ITEM','GUILD_BANK','AUCTION','TRANSMOGRIFICATION') CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `param` int UNSIGNED NULL DEFAULT NULL,
+  `attachments` text CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL,
+  `amount_before` bigint UNSIGNED NULL DEFAULT NULL,
+  `amount_after` bigint UNSIGNED NULL DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE,
+  INDEX `idx_guid`(`guid`) USING BTREE,
+  INDEX `idx_operation`(`operation`) USING BTREE,
+  INDEX `idx_unix_time`(`unix_time`) USING BTREE,
+  INDEX `idx_param`(`param`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 2361 CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci ROW_FORMAT = Dynamic;
 
 /*Data for the table `currency_transactions` */
 
