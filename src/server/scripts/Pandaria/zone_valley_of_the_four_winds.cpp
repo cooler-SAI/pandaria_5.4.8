@@ -968,7 +968,7 @@ struct npc_liang_thunderfoot : public ScriptedAI
 {
     npc_liang_thunderfoot(Creature* creature) : ScriptedAI(creature) { }
 
-    void sQuestAccept(Player* player, Quest const* quest) override
+    void OnQuestAccept(Player* player, Quest const* quest) override
     {
         if (quest->GetQuestId() == QUEST_A_NEIGHBORS_DURY)
         {

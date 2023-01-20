@@ -621,7 +621,7 @@ struct npc_undertaker_mordo : public ScriptedAI
         }
     }
 
-    void sQuestAccept(Player* player, Quest const* quest) override
+    void OnQuestAccept(Player* player, Quest const* quest) override
     {
         if (quest->GetQuestId() == TirisfalGlades::QUEST_THE_SHADOW_GRAVE)
             player->CastSpell(player, TirisfalGlades::SPELL_SUMMON_DARNELL);

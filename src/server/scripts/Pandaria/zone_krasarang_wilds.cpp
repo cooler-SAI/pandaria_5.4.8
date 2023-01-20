@@ -2954,7 +2954,7 @@ struct npc_lorekeeper_vaeldrin : public ScriptedAI
             me->HandleEmoteStateCommand(EMOTE_STATE_READ);
     }
 
-    void sQuestAccept(Player* player, Quest const* quest) override
+    void OnQuestAccept(Player* player, Quest const* quest) override
     {
         uint64 playerGuid = player->GetGUID();
         uint32 delay = 0;

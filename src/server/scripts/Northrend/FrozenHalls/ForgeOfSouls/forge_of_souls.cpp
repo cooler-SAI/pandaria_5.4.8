@@ -151,7 +151,7 @@ class npc_sylvanas_fos : public CreatureScript
                     StartScene(player);
             }
 
-            void sQuestAccept(Player* player, Quest const* /*quest*/) override
+            void OnQuestAccept(Player* player, Quest const* /*quest*/) override
             {
                 StartScene(player, 5000);
             }
@@ -201,7 +201,7 @@ class npc_jaina_fos : public CreatureScript
                     StartScene(player);
             }
 
-            void sQuestAccept(Player* player, Quest const* /*quest*/) override
+            void OnQuestAccept(Player* player, Quest const* /*quest*/) override
             {
                 StartScene(player, 5000);
             }
