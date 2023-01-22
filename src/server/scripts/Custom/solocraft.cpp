@@ -399,6 +399,7 @@ public:
 
         D649H10 = sConfigMgr->GetFloatDefault("Solocraft.ArgentTournamentRaidH10", 10.0);  // Trial of the Crusader 10 Heroic
         D649H25 = sConfigMgr->GetFloatDefault("Solocraft.ArgentTournamentRaidH25", 25.0);  // Trial of the Crusader 25 Heroic
+        TC_LOG_INFO("script.solocraft.loading", ">> Loaded solocraft config");
     }
 };
 
@@ -816,5 +817,4 @@ void AddSC_solocraft_system()
     new solocraft_system_config();
     new solocraft_system_announce();
     new solocraft_system_player_instance_handler();
-
 }

@@ -3405,7 +3405,7 @@ Transmogrification.SetCopperCost = 0
 ###################################################################################################
 # SOLOCRAFT
 
-Solocraft.Enable = 1
+Solocraft.Enable = 0
 Solocraft.Announce = 1
 
 SoloCraft.Debuff.Enable = 1
@@ -3958,7 +3958,7 @@ Rate.Modw.InGame = 1
 #          2) mop core is difference with wlk, lua from wlk core may need modify to fit this core.
 ###################################################################################################################
 
-Eluna.Enabled = 1
+Eluna.Enabled = 0
 Eluna.TraceBack = false
 Eluna.ScriptPath = "lua_scripts"
 
