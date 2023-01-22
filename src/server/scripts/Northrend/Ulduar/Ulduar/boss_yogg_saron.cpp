@@ -1912,10 +1912,10 @@ class npc_observation_ring_keeper : public CreatureScript
                 DoCast(SPELL_KEEPER_ACTIVE);
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 /*action*/) override
             {
                 if (sender != 10333)
-                    return;
+                    return false;
 
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                 me->DespawnOrUnsummon(2000);
@@ -1938,6 +1938,7 @@ class npc_observation_ring_keeper : public CreatureScript
                         me->SummonCreature(NPC_MIMIRON_YS, YSKeepersPos[3]);
                         break;
                 }
+                return true;
             }
 
             void UpdateAI(uint32 /*diff*/) override { }

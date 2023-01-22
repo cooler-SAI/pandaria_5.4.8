@@ -140,7 +140,7 @@ void WorldSession::HandleQuestgiverHelloOpcode(WorldPacket& recvData)
     _player->PrepareGossipMenu(creature, creature->GetGossipMenuId(), true);
     _player->SendPreparedGossip(creature);
 
-    creature->AI()->sGossipHello(_player);
+    creature->AI()->OnGossipHello(_player);
 }
 
 void WorldSession::HandleQuestgiverAcceptQuestOpcode(WorldPacket& recvData)
@@ -513,7 +513,7 @@ void WorldSession::HandleQuestgiverChooseRewardOpcode(WorldPacket& recvData)
                     }
 
                     if (creatureQGiver)
-                        creatureQGiver->AI()->sQuestReward(_player, quest, reward);
+                        creatureQGiver->AI()->OnQuestReward(_player, quest, reward);
                 }
                 break;
             }

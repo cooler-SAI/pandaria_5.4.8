@@ -1007,7 +1007,7 @@ class npc_margrave_dhakar : public CreatureScript
                 _summons.DespawnAll();
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 if (player->GetQuestStatus(QUEST_FLESH_GIANT_CHAMPION) == QUEST_STATUS_INCOMPLETE && !player->IsInCombat())
                 {
@@ -1017,6 +1017,7 @@ class npc_margrave_dhakar : public CreatureScript
                         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                     }
                 }
+                return true;
             }
 
             void UpdateAI(uint32 diff) override

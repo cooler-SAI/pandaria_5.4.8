@@ -928,7 +928,7 @@ class npc_alchemist_adrianna : public CreatureScript
         {
             npc_alchemist_adriannaAI(Creature* creature) : ScriptedAI(creature) { }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 if (sender == 11034 && action == 0)
                 {
@@ -943,6 +943,7 @@ class npc_alchemist_adrianna : public CreatureScript
                         }
                     }
                 }
+                return true;
             }
         };
 
@@ -3929,13 +3930,13 @@ class npc_icc_ormus_the_penitent : public CreatureScript
         {
             npc_icc_ormus_the_penitentAI(Creature* creature) : ScriptedAI(creature) { }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 if (sender != 10998 || action != 0)
-                    return;
+                    return false;
 
                 if (!CheckAshenVerdictRingRetrieveAvailability(player))
-                    return;
+                    return false;
 
                 player->CLOSE_GOSSIP_MENU();
 
@@ -3946,7 +3947,7 @@ class npc_icc_ormus_the_penitent : public CreatureScript
                         ownedClass = c;
 
                 if (ownedClass == -1)
-                    return;
+                    return false;
 
                 // Find max owned ring rank
                 int8 ownedRank = -1;
@@ -3956,9 +3957,10 @@ class npc_icc_ormus_the_penitent : public CreatureScript
                             ownedRank = r;
 
                 if (ownedRank == -1)
-                    return;
+                    return false;
 
                 player->AddItem(AshenVerdictRingItemIDs[ownedClass][ownedRank], 1);
+                return true;
             }
         };
 

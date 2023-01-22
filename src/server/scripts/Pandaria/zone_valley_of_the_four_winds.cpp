@@ -1005,7 +1005,7 @@ struct npc_francis_the_shepherd_boy : public ScriptedAI
 {
     npc_francis_the_shepherd_boy(Creature* creature) : ScriptedAI(creature) { }
 
-    void sQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
+    void OnQuestReward(Player* player, Quest const* quest, uint32 /*opt*/) override
     {
         if (quest->GetQuestId() == QUEST_A_NEIGHBORS_DURY)
         {
@@ -1135,11 +1135,12 @@ struct npc_just_a_folk_story_quest : public ScriptedAI
 {
     npc_just_a_folk_story_quest(Creature* creature) : ScriptedAI(creature) { }
 
-    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+    bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
     {
         player->CLOSE_GOSSIP_MENU();
         player->KilledMonsterCredit(me->GetEntry());
         Talk(0, player);
+        return true;
     }
 };
 

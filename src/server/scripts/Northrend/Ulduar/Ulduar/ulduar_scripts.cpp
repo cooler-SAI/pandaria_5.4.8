@@ -286,13 +286,13 @@ class npc_brann_bronzebeard : public CreatureScript
                     loaded = false;
             }
 
-            void sGossipSelect(Player* player, uint32 menuId, uint32 optionId) override
+            bool OnGossipSelect(Player* player, uint32 menuId, uint32 optionId) override
             {
                 if (!player)
-                    return;
+                    return false;
 
                 if (instance->GetData(DATA_SHIELD_DISABLED) || instance->GetBossState(BOSS_LEVIATHAN) == DONE)
-                    return;
+                    return false;
 
                 if (menuId == 10355 && optionId == 0)
                 {
@@ -303,6 +303,7 @@ class npc_brann_bronzebeard : public CreatureScript
 
                     SetGUID(player->GetGUID(), ACTION_START);
                 }
+                return true;
             }
 
             void EventBrann()
@@ -626,13 +627,13 @@ class npc_ulduar_lorekeeper : public CreatureScript
                 return event;
             }
 
-            void sGossipSelect(Player* player, uint32 menuId, uint32 optionId) override
+            bool OnGossipSelect(Player* player, uint32 menuId, uint32 optionId) override
             {
                 if (!player)
-                    return;
+                    return false;
 
                 if (instance->GetData(DATA_SHIELD_DISABLED) || instance->GetData(DATA_LEVI_HARD_MODE) || instance->GetBossState(BOSS_LEVIATHAN) == DONE)
-                    return;
+                    return false;
 
                 if (menuId == 10477 && optionId == 0)
                 {
@@ -645,6 +646,7 @@ class npc_ulduar_lorekeeper : public CreatureScript
                     hardTimer = 100;
                     HardMode(player->GetGUID());
                 }
+                return true;
             }
 
             void Intro()

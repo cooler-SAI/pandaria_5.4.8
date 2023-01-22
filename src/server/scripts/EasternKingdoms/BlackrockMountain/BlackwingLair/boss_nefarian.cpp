@@ -359,7 +359,7 @@ class boss_victor_nefarius : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 if (sender == GOSSIP_ID && action == GOSSIP_OPTION_ID)
                 {
@@ -367,6 +367,7 @@ class boss_victor_nefarius : public CreatureScript
                     Talk(SAY_GAMESBEGIN_1);
                     BeginEvent(player);
                 }
+                return true;
             }
 
             private:

@@ -999,11 +999,12 @@ class npc_high_overlord_saurfang_icc : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == 10953 && action == 0 && me->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
                     DoAction(ACTION_START_EVENT);
+                return true;
             }
 
         private:
@@ -1395,11 +1396,12 @@ class npc_muradin_bronzebeard_icc : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == 10934 && action == 0 && me->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
                     DoAction(ACTION_START_EVENT);
+                return true;
             }
 
         private:
@@ -1641,10 +1643,11 @@ class npc_saurfang_event_post_npc : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 if (sender == 10949 && action == 1)
                     player->CLOSE_GOSSIP_MENU();
+                return true;
             }
 
         private:

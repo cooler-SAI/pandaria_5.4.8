@@ -729,9 +729,10 @@ public:
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
             {
                 DoCast(player, SPELL_SUMMON_ASHWOOD_BRAND);
+                return true;
             }
 
         private:

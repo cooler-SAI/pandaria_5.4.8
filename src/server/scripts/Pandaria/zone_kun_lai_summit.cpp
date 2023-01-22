@@ -2141,11 +2141,12 @@ struct npc_kota_kon : public VehicleAI
 
     uint64 guid;
 
-    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+    bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
     {
         guid = player->GetGUID();
         player->CLOSE_GOSSIP_MENU();
         me->CastSpell(player, SPELL_THE_BURLAP_GRIND_BEGIN_RIDE);
+        return true;
     }
 
     void JustSummoned(Creature* summon) override

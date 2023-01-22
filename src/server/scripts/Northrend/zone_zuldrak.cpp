@@ -1237,12 +1237,13 @@ public:
                 return;
         }
 
-        void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+        bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
         {
             _events.ScheduleEvent(EVENT_RECRUIT_1, 100);
             player->CLOSE_GOSSIP_MENU();
             me->CastSpell(player, SPELL_QUEST_CREDIT, true);
             me->SetFacingToObject(player);
+            return true;
         }
 
         private:
@@ -1517,13 +1518,14 @@ public:
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 DoCast(player, SPELL_ALCHEMIST_APPRENTICE_INVISBUFF);
                 _playerGUID = player->GetGUID();
                 _getingredienttry = 1;
                 _events.ScheduleEvent(EVENT_EASY_123, 100);
+                return true;
             }
 
         private:
