@@ -3,6 +3,8 @@
 
 Discord link: https://discord.gg/byBCHbwJEg
 
+Client exe files" https://mega.nz/file/xUJDkIDA#I3TMdPymMw8ISNwIUgSaXLl5oHJHYFxAKyPNMXUQjgY
+
 Geodata: https://mega.nz/file/EAZUmZiD#PxdHN7jcEKCA8qaIBTIWLWLGZcT5PdsKfIgkygTZgTs
 Geodata (RU dbc): https://mega.nz/file/EAZUmZiD#PxdHN7jcEKCA8qaIBTIWLWLGZcT5PdsKfIgkygTZgTs
 
