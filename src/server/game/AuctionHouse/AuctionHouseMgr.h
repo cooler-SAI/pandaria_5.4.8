@@ -64,6 +64,13 @@ enum MailAuctionAnswers
     AUCTION_SALE_PENDING        = 6
 };
 
+enum AuctionHouses
+{
+    AUCTIONHOUSE_ALLIANCE       = 2,
+    AUCTIONHOUSE_HORDE          = 6,
+    AUCTIONHOUSE_NEUTRAL        = 7
+};
+
 struct AuctionEntry
 {
     uint32 Id;
@@ -151,7 +158,7 @@ class AuctionHouseObject
 
     void AddAuction(AuctionEntry* auction, bool skipLock = false);
 
-    bool RemoveAuction(AuctionEntry* auction, uint32 itemEntry, bool skipLock = false);
+    bool RemoveAuction(AuctionEntry* auction, bool skipLock = false);
 
     void Update();
 

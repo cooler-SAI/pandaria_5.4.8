@@ -92,6 +92,7 @@ void AddSC_titles_commandscript();
 void AddSC_warden_commandscript();
 void AddSC_wp_commandscript();
 void AddSC_mmaps_commandscript();
+void AddSC_ahbot_commandscript();
 
 // Battlegrounds
 void AddSC_alterac_valley();
@@ -1132,6 +1133,7 @@ void AddCommandScripts()
     AddSC_warden_commandscript();
     AddSC_wp_commandscript();
     AddSC_mmaps_commandscript();
+    AddSC_ahbot_commandscript();
 }
 
 void AddWorldScripts()
