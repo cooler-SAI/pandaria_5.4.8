@@ -27,6 +27,8 @@
 #include "ModelInstance.h"
 #include <vector>
 
+#include "SharedDefines.h"
+
 // ******************************************
 // Map file format defines
 // ******************************************
