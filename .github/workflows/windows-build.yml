@@ -2,7 +2,9 @@ name: windows-build
 
 on:
   push:
-    branches: [ master, development ]
+    paths-ignore:
+      - 'sql/**'    
+  pull_request:
     paths-ignore:
       - 'sql/**'
       
