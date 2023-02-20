@@ -1087,9 +1087,13 @@ void ExtractDBCFiles(int l, bool basicLocale)
             }
 
             filename = foundFile.cFileName;
-            filename = outputPath + filename.substr(filename.rfind('\\'));
-            if (ExtractFile(dbcFile, filename.c_str()))
-                ++count;
+            size_t path_sper_pos_found = filename.rfind('\\');
+            if (path_sper_pos_found != std::string::npos)
+            {
+                filename = outputPath + filename.substr(path_sper_pos_found + 1);
+                if (ExtractFile(dbcFile, filename.c_str()))
+                    ++count;
+            }
 
             SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));
@@ -1130,9 +1134,13 @@ void ExtractDB2Files(int l, bool basicLocale)
             }
 
             filename = foundFile.cFileName;
-            filename = outputPath + filename.substr(filename.rfind('\\'));
-            if (ExtractFile(dbcFile, filename.c_str()))
-                ++count;
+            size_t path_sper_pos_found = filename.rfind('\\');
+            if (path_sper_pos_found != std::string::npos)
+            {
+                filename = outputPath + filename.substr(path_sper_pos_found + 1);
+                if (ExtractFile(dbcFile, filename.c_str()))
+                    ++count;
+            }
 
             SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));

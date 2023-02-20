@@ -19,6 +19,7 @@
 
 #include "PathCommon.h"
 #include "MapBuilder.h"
+#include "Timer.h"
 
 using namespace MMAP;
 
