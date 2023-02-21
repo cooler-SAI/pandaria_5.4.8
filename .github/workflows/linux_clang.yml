@@ -9,19 +9,19 @@ on:
       - 'sql/**'
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v2
     - name: Dependencies
       run: |
-        sudo apt-get update && sudo apt-get install -yq libboost-all-dev clang-12 libace-dev
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-12 100 
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-12 100
+        sudo apt-get update && sudo apt-get install -yq libboost-all-dev clang-14 libace-dev
+        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 
+        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
     - name: Setup
       run: |
         mkdir bin
         cd bin
-        cmake ../ -DTOOLS=1 -DELUNA=0 -DCMAKE_INSTALL_PREFIX=check_install
+        cmake ../ -DTOOLS=1 -DELUNA=1 -DCMAKE_INSTALL_PREFIX=check_install
         cd ..
     - name: Build
       run: |
