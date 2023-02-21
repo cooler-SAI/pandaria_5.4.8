@@ -1,0 +1,2 @@
+-- Fix creature damage on creatures - 57384,57382,57387,57388,57386,57333 .This is hackfix. Physical damage should calculated by level.
+UPDATE `creature_template` SET `dmg_multiplier`= 1, `mindmg`=4328, `maxdmg`=7359 WHERE `entry` in (57384,57382,57387,57388,57386,57333);
