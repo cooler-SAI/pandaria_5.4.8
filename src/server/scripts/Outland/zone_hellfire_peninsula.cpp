@@ -28,7 +28,6 @@ npc_ancestral_wolf
 go_haaleshi_altar
 npc_naladu
 npc_tracy_proudwell
-npc_trollbane
 npc_wounded_blood_elf
 EndContentData */
 
@@ -294,58 +293,6 @@ public:
 };
 
 /*######
-## npc_trollbane
-######*/
-
-#define GOSSIP_TROLLBANE_ITEM1      "Tell me of the Sons of Lothar."
-#define GOSSIP_TROLLBANE_ITEM2      "<more>"
-#define GOSSIP_TROLLBANE_ITEM3      "Tell me of your homeland."
-
-enum Trollbane
-{
-    GOSSIP_TEXTID_TROLLBANE1        = 9932,
-    GOSSIP_TEXTID_TROLLBANE2        = 9933,
-    GOSSIP_TEXTID_TROLLBANE3        = 8772
-};
-
-class npc_trollbane : public CreatureScript
-{
-public:
-    npc_trollbane() : CreatureScript("npc_trollbane") { }
-
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
-    {
-        player->PlayerTalkClass->ClearMenus();
-        switch (action)
-        {
-            case GOSSIP_ACTION_INFO_DEF+1:
-                player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_TROLLBANE_ITEM2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
-                player->SEND_GOSSIP_MENU(GOSSIP_TEXTID_TROLLBANE1, creature->GetGUID());
-                break;
-            case GOSSIP_ACTION_INFO_DEF+2:
-                player->SEND_GOSSIP_MENU(GOSSIP_TEXTID_TROLLBANE2, creature->GetGUID());
-                break;
-            case GOSSIP_ACTION_INFO_DEF+3:
-                player->SEND_GOSSIP_MENU(GOSSIP_TEXTID_TROLLBANE3, creature->GetGUID());
-                break;
-        }
-
-        return true;
-    }
-
-    bool OnGossipHello(Player* player, Creature* creature) override
-    {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_TROLLBANE_ITEM1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_TROLLBANE_ITEM3, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-        return true;
-    }
-};
-
-/*######
 ## npc_wounded_blood_elf
 ######*/
 
@@ -516,7 +463,6 @@ void AddSC_hellfire_peninsula()
     new npc_ancestral_wolf();
     new npc_naladu();
     new npc_tracy_proudwell();
-    new npc_trollbane();
     new npc_wounded_blood_elf();
     new npc_fel_guard_hound();
 }
