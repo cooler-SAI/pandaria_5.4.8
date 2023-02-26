@@ -539,8 +539,8 @@ void AddSC_shattrath_city()
 {
     new npc_raliq_the_drunk();
     new npc_salsalabim();
-    new npc_shattrathflaskvendors();
-    new npc_zephyr();
+    //new npc_shattrathflaskvendors();
+    //new npc_zephyr();
     new npc_kservant();
     new npc_ishanah();
     new npc_khadgar();
