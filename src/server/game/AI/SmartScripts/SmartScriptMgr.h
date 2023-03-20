@@ -30,18 +30,22 @@
 
 struct WayPoint
 {
-    WayPoint(uint32 _id, float _x, float _y, float _z)
+    WayPoint(uint32 _id, float _x, float _y, float _z,Optional<float> _orientation = { }, uint32 _delay = 0)
     {
-        id = _id;
-        x = _x;
-        y = _y;
-        z = _z;
+        id    = _id;
+        x     = _x;
+        y     = _y;
+        z     = _z;
+        o     = _orientation;
+        delay = _delay;
     }
 
     uint32 id;
     float x;
     float y;
     float z;
+    Optional<float> o;
+    uint32 delay;
 };
 
 enum eSmartAI

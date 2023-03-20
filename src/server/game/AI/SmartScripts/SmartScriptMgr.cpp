@@ -71,6 +71,10 @@ void SmartWaypointMgr::LoadFromDB()
         x = fields[2].GetFloat();
         y = fields[3].GetFloat();
         z = fields[4].GetFloat();
+        Optional<float> o;
+        if (!fields[5].IsNull())
+            o = fields[5].GetFloat();
+        uint32 delay = fields[6].GetUInt32();
 
         if (last_entry != entry)
         {
@@ -83,7 +87,7 @@ void SmartWaypointMgr::LoadFromDB()
             TC_LOG_ERROR("sql.sql", "SmartWaypointMgr::LoadFromDB: Path entry %u, unexpected point id %u, expected %u.", entry, id, last_id);
 
         last_id++;
-        (*waypoint_map[entry])[id] = new WayPoint(id, x, y, z);
+        (*waypoint_map[entry])[id] = new WayPoint(id, x, y, z, o, delay);
 
         last_entry = entry;
         total++;
