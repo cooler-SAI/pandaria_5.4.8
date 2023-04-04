@@ -48,6 +48,8 @@ struct WayPoint
     uint32 delay;
 };
 
+typedef uint32 SAIBool;
+
 enum eSmartAI
 {
     SMART_EVENT_PARAM_COUNT     = 4,
@@ -584,7 +586,14 @@ struct SmartAction
         {
             uint32 textGroupID;
             uint32 duration;
+            SAIBool useTalkTarget;
         } talk;
+
+        struct
+        {
+            uint32 textGroupID;
+            uint32 duration;
+        } simpleTalk;
 
         struct
         {
@@ -600,7 +609,9 @@ struct SmartAction
         struct
         {
             uint32 sound;
-            uint32 onlySelf;
+            SAIBool onlySelf;
+            uint32 distance;
+            uint32 keyBroadcastTextId; // UNUSED: param reserved for compatibility with master branch            
         } sound;
 
         struct
@@ -612,6 +623,12 @@ struct SmartAction
         {
             uint32 quest;
         } quest;
+
+        struct
+        {
+            uint32 questID;
+            SAIBool directAdd;
+        } questOffer;
 
         struct
         {
@@ -1653,6 +1670,7 @@ class SmartAIMgr
         }
 
         //bool IsTextValid(SmartScriptHolder const& e, uint32 id);
+        static bool IsTextValid(SmartScriptHolder const& e, uint32 id);
 
         struct SpellEffectPair
         {

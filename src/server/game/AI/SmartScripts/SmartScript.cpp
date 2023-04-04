@@ -39,32 +39,6 @@
 #include "GameEventMgr.h"
 #include "Chat.h"
 
-// class TrinityStringTextBuilder
-// {
-//     public:
-//         TrinityStringTextBuilder(WorldObject* obj, ChatMsg msgtype, int32 id, uint32 language, uint64 targetGUID)
-//             : _source(obj), _msgType(msgtype), _textId(id), _language(language), _targetGUID(targetGUID)
-//         {
-//         }
-
-//         size_t operator()(WorldPacket* data, LocaleConstant locale, uint64 guid) const
-//         {
-//             std::string text = sObjectMgr->GetTrinityString(_textId, locale);
-//             std::string localizedName = _source->GetNameForLocaleIdx(locale);
-//             ObjectGuid receiverGuid = guid ? guid : _targetGUID;
-
-//             ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _source->GetGUID(), _targetGUID, text, 0,
-//                 _source->GetNameForLocaleIdx(locale));
-//             return ChatHandler::BuildChatPacket(*data, _msgType, Language(_language), _talker, _target, text, 0, "", locale);
-//         }
-
-//         WorldObject* _source;
-//         ChatMsg _msgType;
-//         int32 _textId;
-//         uint32 _language;
-//         uint64 _targetGUID;
-// };
-
 SmartScript::SmartScript()
 {
     go = NULL;
@@ -148,20 +122,27 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         case SMART_ACTION_TALK:
         {
             ObjectList* targets = GetTargets(e, unit);
-            Creature* talker = me;
-            Player* targetPlayer = NULL;
+            Creature* talker = e.target.type == 0 ? me : nullptr;
+            //Player* targetPlayer = nullptr;
+            Unit* talkTarget = nullptr;
             if (targets)
             {
                 for (ObjectList::const_iterator itr = targets->begin(); itr != targets->end(); ++itr)
                 {
                     if (IsCreature((*itr)) && !(*itr)->ToCreature()->IsPet()) // Prevented sending text to pets.
                     {
-                        talker = (*itr)->ToCreature();
+                        if (e.action.talk.useTalkTarget)
+                        {
+                            talker = me;
+                            talkTarget = (*itr)->ToCreature();
+                        }
+                        else
+                            talker = (*itr)->ToCreature();
                         break;
                     }
                     else if (IsPlayer((*itr)))
                     {
-                        targetPlayer = (*itr)->ToPlayer();
+                        talkTarget = (*itr)->ToPlayer();
                         break;
                     }
                 }
@@ -169,18 +150,15 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                 delete targets;
             }
 
+            if (!talkTarget)
+                talkTarget = GetLastInvoker();
+            
             if (!talker)
                 break;
 
             mTalkerEntry = talker->GetEntry();
             mLastTextID = e.action.talk.textGroupID;
             mTextTimer = e.action.talk.duration;
-            Unit* talkTarget = NULL;
-            if (IsPlayer(GetLastInvoker())) // used for $vars in texts and whisper target
-                talkTarget = GetLastInvoker();
-            else
-                talkTarget = targetPlayer;
-
             mUseTextTimer = true;
             sCreatureTextMgr->SendChat(talker, uint8(e.action.talk.textGroupID), talkTarget);
             TC_LOG_DEBUG("scripts.ai", "SmartScript::ProcessAction: SMART_ACTION_TALK: talker: %s (GuidLow: %u), textGuid: %u",
@@ -997,7 +975,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
         {
             if (me)
             {
-                me->CallForHelp((float)e.action.callHelp.range);
+                me->CallForHelp(float(e.action.callHelp.range));
                 if (e.action.callHelp.withEmote)
                 {
                     Trinity::BroadcastTextBuilder builder(me, CHAT_MSG_MONSTER_EMOTE, BROADCAST_TEXT_CALL_FOR_HELP, me->getGender());
