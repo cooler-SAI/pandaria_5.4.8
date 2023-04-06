@@ -1284,7 +1284,7 @@ public:
         for (auto at : areatriggers)
             handler->PSendSysMessage("|cFFFFFFFFTrigger %u, x: %.5f, y: %.5f, z: %.5f, radius: %g, box: { %g, %g, %g, %g }", at->id, at->x, at->y, at->z, at->radius, at->box_x, at->box_y, at->box_z, at->box_orientation);
 
-        handler->PSendSysMessage("Found near areatriggers (distance %f): %u", distance, areatriggers.size());
+        handler->PSendSysMessage("Found near areatriggers (distance %f): %lu", distance, areatriggers.size());
 
         return true;
     }
@@ -1811,12 +1811,12 @@ public:
             totalPlayerTime   = target->GetTotalPlayedTime();
             level             = target->GetLevel();
             latency           = target->GetSession()->GetLatency();
-            raceid            = target->getRace();
-            classid           = target->getClass();
+            raceid            = target->GetRace();
+            classid           = target->GetClass();
             mapId             = target->GetMapId();
             areaId            = target->GetAreaId();
             alive             = target->IsAlive() ? "Yes" : "No";
-            gender            = target->getGender();
+            gender            = target->GetGender();
             phase             = target->GetPhaseMask();
         }
         // get additional information from DB
@@ -3082,14 +3082,14 @@ public:
             handler->PSendSysMessage(LANG_COMMAND_FREEZE, name.c_str());
 
             // stop combat + make player unattackable + duel stop + stop some spells
-            player->setFaction(35);
+            player->SetFaction(35);
             player->CombatStop();
             if (player->IsNonMeleeSpellCasted(true))
                 player->InterruptNonMeleeSpells(true);
             player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
             // if player class = hunter || warlock remove pet if alive
-            if ((player->getClass() == CLASS_HUNTER) || (player->getClass() == CLASS_WARLOCK))
+            if ((player->GetClass() == CLASS_HUNTER) || (player->GetClass() == CLASS_WARLOCK))
                 player->RemovePet(PET_REMOVE_DISMISS, PET_REMOVE_FLAG_RESET_CURRENT);
 
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(9454))
@@ -3126,7 +3126,7 @@ public:
             handler->PSendSysMessage(LANG_COMMAND_UNFREEZE, name.c_str());
 
             // Reset player faction + allow combat + allow duels
-            player->setFactionForRace(player->getRace());
+            player->setFactionForRace(player->GetRace());
             player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
             // Remove Freeze spell (allowing movement and spells)
@@ -3907,9 +3907,9 @@ public:
                 objects[category.first].insert(info.first);
 
         handler->PSendSysMessage("Reloaded visibility settings for:");
-        handler->PSendSysMessage("- %u Creatures", objects[CustomVisibility::Type::Creature].size());
-        handler->PSendSysMessage("- %u GameObjects", objects[CustomVisibility::Type::GameObject].size());
-        handler->PSendSysMessage("- %u DynamicObjects", objects[CustomVisibility::Type::DynamicObject].size());
+        handler->PSendSysMessage("- %lu Creatures", objects[CustomVisibility::Type::Creature].size());
+        handler->PSendSysMessage("- %lu GameObjects", objects[CustomVisibility::Type::GameObject].size());
+        handler->PSendSysMessage("- %lu DynamicObjects", objects[CustomVisibility::Type::DynamicObject].size());
 
         // Update all entries that either previously had or currently have settings
         uint32 count = 0;
@@ -3952,7 +3952,7 @@ public:
         Map* map = handler->GetSession()->GetPlayer()->GetMap();
         {
             auto&& objects = map->GetCustomVisibilityObjects();
-            handler->PSendSysMessage("%u map-wide objects:", objects.size());
+            handler->PSendSysMessage("%lu map-wide objects:", objects.size());
 
             std::map<CustomVisibility::Importance, uint32> counts;
             for (auto&& obj : objects)
@@ -3964,7 +3964,7 @@ public:
         }
         {
             auto&& objects = map->GetCustomVisibilityObjects(handler->GetSession()->GetPlayer()->GetZoneId());
-            handler->PSendSysMessage("%u zone-wide objects:", objects.size());
+            handler->PSendSysMessage("%lu zone-wide objects:", objects.size());
 
             std::map<CustomVisibility::Importance, uint32> counts;
             for (auto&& obj : objects)

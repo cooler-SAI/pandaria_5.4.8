@@ -969,7 +969,7 @@ class spell_halloween_wand : public SpellScript
             return;
 
         uint32 spellId = 0;
-        uint8 gender = target->getGender();
+        uint8 gender = target->GetGender();
 
         switch (GetSpellInfo()->Id)
         {

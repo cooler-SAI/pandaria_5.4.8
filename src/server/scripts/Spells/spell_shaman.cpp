@@ -2508,7 +2508,7 @@ class spell_sha_stormlash_totem : public AuraScript
         if (!player)
             return;
 
-        WeaponAttackType attack = actor->getClass() == CLASS_HUNTER ? RANGED_ATTACK : BASE_ATTACK;
+        WeaponAttackType attack = actor->GetClass() == CLASS_HUNTER ? RANGED_ATTACK : BASE_ATTACK;
         if (eventInfo.GetTypeMask() & PROC_FLAG_DONE_OFFHAND_ATTACK)
             attack = OFF_ATTACK;
 
@@ -3215,7 +3215,7 @@ class spell_sha_summon_elemental_familiar : public SpellScript
             if (TempSummon* familiar = GetCaster()->GetMap()->SummonCreature(familiars[urand(0, familiars.size() - 1)], pos, sSummonPropertiesStore.LookupEntry(64)))
             {
                 familiar->SetTempSummonType(TEMPSUMMON_MANUAL_DESPAWN);
-                familiar->setFaction(GetCaster()->getFaction());
+                familiar->SetFaction(GetCaster()->GetFaction());
                 familiar->SetOwnerGUID(GetCaster()->GetGUID());
                 familiar->SetUInt64Value(UNIT_FIELD_DEMON_CREATOR, GetCaster()->GetGUID());
                 familiar->AI()->EnterEvadeMode();

@@ -602,9 +602,9 @@ void ServiceMgr::_LoadPremium()
 Creature* ServiceMgr::GetPremiumAuc(Player *player)
 {
     uint8 faction;
-    if (player->getRaceMask() & RACEMASK_ALLIANCE)
+    if (player->GetRaceMask() & RACEMASK_ALLIANCE)
         faction = TEAM_ALLIANCE;
-    else if (player->getRaceMask() & RACEMASK_HORDE)
+    else if (player->GetRaceMask() & RACEMASK_HORDE)
         faction = TEAM_HORDE;
     else // just in case
         return nullptr;

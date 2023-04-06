@@ -497,10 +497,10 @@ bool Transmogrification::SuitableForTransmogrification(Player* player, ItemTempl
     if ((proto->Flags2 & ITEM_FLAGS_EXTRA_ALLIANCE_ONLY) && player->GetTeamId() != TEAM_ALLIANCE)
         return false;
 
-    if (!IgnoreReqClass && (proto->AllowableClass & player->getClassMask()) == 0)
+    if (!IgnoreReqClass && (proto->AllowableClass & player->GetClassMask()) == 0)
         return false;
 
-    if (!IgnoreReqRace && (proto->AllowableRace & player->getRaceMask()) == 0)
+    if (!IgnoreReqRace && (proto->AllowableRace & player->GetRaceMask()) == 0)
         return false;
 
     if (!IgnoreReqSkill && proto->RequiredSkill != 0)

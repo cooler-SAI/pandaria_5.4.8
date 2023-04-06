@@ -563,13 +563,13 @@ protected:
     {
         uint32 classBalance = 100;
 
-        if (solocraftConfig.classes.find(player->getClass()) == solocraftConfig.classes.end())
+        if (solocraftConfig.classes.find(player->GetClass()) == solocraftConfig.classes.end())
         {
             return classBalance;
         }
-        else if (solocraftConfig.classes[player->getClass()] <= 100)
+        else if (solocraftConfig.classes[player->GetClass()] <= 100)
         {
-            return solocraftConfig.classes[player->getClass()];
+            return solocraftConfig.classes[player->GetClass()];
         }
         else
             return classBalance;
@@ -617,7 +617,7 @@ protected:
                 player->SetFullHealth();
                 player->CastSpell(player, 6962, true);
 
-                if (player->GetPowerType() == POWER_MANA || player->getClass() == 11)
+                if (player->GetPowerType() == POWER_MANA || player->GetClass() == 11)
                 {
                     player->SetPower(POWER_MANA, player->GetMaxPower(POWER_MANA));
 

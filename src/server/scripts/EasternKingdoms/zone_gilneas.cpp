@@ -1106,7 +1106,7 @@ public:
     {
         if (quest->GetQuestId() == QUEST_FROM_THE_SHADOWS)
         {
-            if (player->getClass() == CLASS_HUNTER)
+            if (player->GetClass() == CLASS_HUNTER)
                 player->UnsummonPetTemporaryIfAny();
 
             player->CastSpell(player, SPELL_SUMMON_MASTIFF, false);
@@ -1123,7 +1123,7 @@ public:
                     if (Creature* mastiff = charm->ToCreature())
                         mastiff->DespawnOrUnsummon();
 
-        if (player->getClass() == CLASS_HUNTER)
+        if (player->GetClass() == CLASS_HUNTER)
             player->ResummonPetTemporaryUnSummonedIfAny();
 
         return true;

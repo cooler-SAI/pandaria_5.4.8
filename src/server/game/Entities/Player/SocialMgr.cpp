@@ -238,7 +238,7 @@ void SocialMgr::GetFriendInfo(Player* player, uint64 friendGUID, FriendInfo& fri
 
         friendInfo.Area = target->GetZoneId();
         friendInfo.Level = target->GetLevel();
-        friendInfo.Class = target->getClass();
+        friendInfo.Class = target->GetClass();
     }
 }
 

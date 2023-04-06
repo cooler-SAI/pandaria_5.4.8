@@ -1304,7 +1304,7 @@ void BattlegroundQueue::BattlegroundQueueUpdate(uint32 /*diff*/, BattlegroundTyp
 SoloPlayer::SoloPlayer(Player* player)
     : Target(player)
 {
-    Class = player->getClass();
+    Class = player->GetClass();
     Specialization = Specializations(player->GetTalentSpecialization());
     Role = SoloQueue::GetRole(Specialization);
 }

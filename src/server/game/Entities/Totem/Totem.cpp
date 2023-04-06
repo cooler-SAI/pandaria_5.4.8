@@ -57,7 +57,7 @@ void Totem::InitStats(uint32 duration)
     if (GetOwner()->GetTypeId() == TYPEID_PLAYER && m_slot >= SUMMON_SLOT_TOTEM && m_slot < SUMMON_SLOT_MAX_TOTEM)
     {
         // set display id depending on caster's race
-        if (GetOwner()->getClass() == CLASS_SHAMAN)
+        if (GetOwner()->GetClass() == CLASS_SHAMAN)
         {
             uint32 modelId = GetOwner()->GetModelForTotem(PlayerTotemType(m_Properties->Id));
             if (modelId)

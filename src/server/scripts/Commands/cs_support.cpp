@@ -887,7 +887,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT guid, sum(count) FROM item_instance WHERE itemEntry = %u AND owner_guid = %u", item->ItemId, GUID_LOPART(guid)))
                     {
                         CharacterDatabase.PExecute("DELETE FROM item_instance WHERE guid = %u", (*result)[0].GetUInt32());
-                        handler->PSendSysMessage("Item %d (%u, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
+                        handler->PSendSysMessage("Item %d (%s, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't item %s (%u).", name.c_str(), GUID_LOPART(guid), item->Name1.c_str(), item->ItemId);
@@ -1247,9 +1247,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (player->HasAchieved(ach->ID, true))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1262,9 +1262,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", name.c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", name.c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1304,7 +1304,7 @@ public:
                         handler->PSendSysMessage("Achievement %u removed from player %s (guid: %u).", ach->ID, handler->GetNameLink(player).c_str(), GUID_LOPART(guid));
                     }
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) did not know achievement %u.", handler->GetNameLink(player).c_str(), ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %u) did not know achievement %u.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1433,9 +1433,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (player->HasAchieved(ach->ID, false))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1450,9 +1450,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM account_achievement WHERE account = %u AND achievement = %u", account, ach->ID))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u on account.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u on account.", name.c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u on account.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u on account.", name.c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1857,7 +1857,7 @@ public:
                     {
                         CharacterDatabase.PExecute("DELETE FROM character_aura WHERE spell = %u AND guid = %u", spell->Id, GUID_LOPART(guid));
                         CharacterDatabase.PExecute("DELETE FROM character_aura_effect WHERE slot = %u AND guid = %u", (*result)[0].GetUInt32(), GUID_LOPART(guid));
-                        handler->PSendSysMessage("Aura %s removed from player %s (guid: %u).", name.c_str(), GUID_LOPART(guid), spell->Id);
+                        handler->PSendSysMessage("Aura %u removed from player %s (guid: %u).", spell->Id, name.c_str(), GUID_LOPART(guid));
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't aura %u.", name.c_str(), GUID_LOPART(guid), spell->Id);
@@ -2899,7 +2899,7 @@ public:
 
             LoginDatabase.PExecute("DELETE FROM character_account_data WHERE guid = %u", guid);
 
-            handler->PSendSysMessage("Cache for player %s (guid: %u) removed.", name.c_str(), guid);
+            handler->PSendSysMessage("Cache for player %s (guid: %lu) removed.", name.c_str(), guid);
         }
         return true;
     }
@@ -3267,7 +3267,7 @@ public:
         if (player)
         {
             player->ModifyMoney(money, true);
-            handler->PSendSysMessage("Changed money for player %s (%u) on amount %u.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), money);
+            handler->PSendSysMessage("Changed money for player %s (%u) on amount %ld.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), money);
             player->SaveToDB();
         }
         else
@@ -3281,7 +3281,7 @@ public:
                     money = currentAmount + money;
 
                 CharacterDatabase.PExecute("UPDATE characters SET money = %u WHERE guid = %u", money, GUID_LOPART(guid));
-                handler->PSendSysMessage("Changed money for player %s (%u) on amount %u.", name.c_str(), GUID_LOPART(guid), money);
+                handler->PSendSysMessage("Changed money for player %s (%u) on amount %ld.", name.c_str(), GUID_LOPART(guid), money);
             }
         }
         return true;

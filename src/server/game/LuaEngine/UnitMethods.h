@@ -684,7 +684,7 @@ namespace LuaUnit
         if (type == -1)
         {
 
-            switch (unit->getClass())
+            switch (unit->GetClass())
             {
                 case 1:
                     type = POWER_RAGE;
@@ -724,7 +724,7 @@ namespace LuaUnit
         if (type == -1)
         {
 
-            switch (unit->getClass())
+            switch (unit->GetClass())
             {
                 case 1:
                     type = POWER_RAGE;
@@ -785,19 +785,19 @@ namespace LuaUnit
 
     int GetGender(lua_State* L, Unit* unit)
     {
-        sEluna->Push(L, unit->getGender());
+        sEluna->Push(L, unit->GetGender());
         return 1;
     }
 
     int GetRace(lua_State* L, Unit* unit)
     {
-        sEluna->Push(L, unit->getRace());
+        sEluna->Push(L, unit->GetRace());
         return 1;
     }
 
     int GetClass(lua_State* L, Unit* unit)
     {
-        sEluna->Push(L, unit->getClass());
+        sEluna->Push(L, unit->GetClass());
         return 1;
     }
 
@@ -810,7 +810,7 @@ namespace LuaUnit
     int GetClassAsString(lua_State* L, Unit* unit)
     {
         const char* str = NULL;
-        switch (unit->getClass())
+        switch (unit->GetClass())
         {
             case 1:
                 str = "Warrior";
@@ -853,14 +853,14 @@ namespace LuaUnit
 
     int GetFaction(lua_State* L, Unit* unit)
     {
-        sEluna->Push(L, unit->getFaction());
+        sEluna->Push(L, unit->GetFaction());
         return 1;
     }
 
     int SetFaction(lua_State* L, Unit* unit)
     {
         uint32 factionId = luaL_checkunsigned(L, 1);
-        unit->setFaction(factionId);
+        unit->SetFaction(factionId);
         return 0;
     }
 
@@ -1650,7 +1650,7 @@ namespace LuaUnit
         if (summon->HasUnitTypeMask(UNIT_MASK_GUARDIAN))
             ((Guardian*)summon)->InitStatsForLevel(unit->GetLevel());
         if (properties && properties->Category == SUMMON_CATEGORY_ALLY)
-            summon->setFaction(unit->getFaction());
+            summon->SetFaction(unit->GetFaction());
         if (summon->GetEntry() == 27893)
         {
             if (uint32 weapon = unit->GetUInt32Value(PLAYER_FIELD_VISIBLE_ITEMS + 16))

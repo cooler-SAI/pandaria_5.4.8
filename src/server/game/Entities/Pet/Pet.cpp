@@ -224,7 +224,7 @@ bool Pet::LoadPetFromDB(PetLoadMode mode, uint32 param, Position const* pos)
     AddToTransportIfNeeded(owner->GetTransport());
 
     setPetType(petType);
-    setFaction(owner->getFaction());
+    SetFaction(owner->GetFaction());
     SetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL, summonSpellId);
 
     CreatureTemplate const* cinfo = GetCreatureTemplate();
@@ -695,7 +695,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
     PetType petType = MAX_PET_TYPE;
     if (IsPet() && GetOwner()->GetTypeId() == TYPEID_PLAYER)
     {
-        switch (GetOwner()->getClass())
+        switch (GetOwner()->GetClass())
         {
             case CLASS_WARLOCK:
             case CLASS_SHAMAN:
@@ -708,7 +708,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
                 m_unitTypeMask |= UNIT_MASK_HUNTER_PET;
                 break;
             default:
-                TC_LOG_ERROR("entities.pet", "Unknown type pet %u is summoned by player class %u", GetEntry(), GetOwner()->getClass());
+                TC_LOG_ERROR("entities.pet", "Unknown type pet %u is summoned by player class %u", GetEntry(), GetOwner()->GetClass());
                 break;
         }
     }
@@ -776,7 +776,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
 
     if (GetOwner()->ToPlayer())
     {
-        if (auto scaling = sGtSpellScalingStore.LookupEntry((GetOwner()->getClass() - 1) * 100 + GetOwner()->GetLevel() - 1))
+        if (auto scaling = sGtSpellScalingStore.LookupEntry((GetOwner()->GetClass() - 1) * 100 + GetOwner()->GetLevel() - 1))
         {
             float min = scaling->value;
             float max = scaling->value;
@@ -797,7 +797,7 @@ bool Guardian::InitStatsForLevel(uint8 petlevel)
     {
         case SUMMON_PET:
         {
-            switch (GetOwner()->getClass())
+            switch (GetOwner()->GetClass())
             {
                 case CLASS_WARLOCK:
                     if (GetOwner()->HasAura(77219) && !HasAura(115556)) // Master demonologist
@@ -1510,7 +1510,7 @@ bool Pet::IsPermanentPetFor(Player* owner) const
     switch (getPetType())
     {
         case SUMMON_PET:
-            switch (owner->getClass())
+            switch (owner->GetClass())
             {
                 case CLASS_WARLOCK:
                     return GetCreatureTemplate()->type == CREATURE_TYPE_DEMON;

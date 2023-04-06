@@ -129,7 +129,7 @@ namespace LuaPlayer
 
         uint64 guid = creature ? creature->GetGUIDLow() : player->GetGUIDLow();
 
-        AuctionHouseEntry const* ahEntry = AuctionHouseMgr::GetAuctionHouseEntry(player->getFaction());
+        AuctionHouseEntry const* ahEntry = AuctionHouseMgr::GetAuctionHouseEntry(player->GetFaction());
         if (!ahEntry)
             return 0;
 

@@ -1678,7 +1678,7 @@ struct npc_wrathion_xuen_challenge : public customCreatureAI
             hasDefeat = true;
             summons.DespawnAll();
             events.Reset();
-            me->setFaction(35);
+            me->SetFaction(35);
             DoCast(me, SPELL_CHALLENGE_DONE_CREDIT, true);
             me->DespawnOrUnsummon(5 * IN_MILLISECONDS);
         }
@@ -2081,7 +2081,7 @@ struct npc_willy_wilder : public ScriptedAI
     {
         events.Reset();
 
-        me->setFaction(35); // by default
+        me->SetFaction(35); // by default
 
         scheduler
             .Schedule(Milliseconds(3000), [this](TaskContext context)
@@ -2098,7 +2098,7 @@ struct npc_willy_wilder : public ScriptedAI
             {
                 me->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
                 me->SetHomePosition(*me);
-                me->setFaction(7);
+                me->SetFaction(7);
                 Talk(TALK_INTRO);
             });
         });

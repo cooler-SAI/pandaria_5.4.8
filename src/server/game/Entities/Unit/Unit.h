@@ -1470,11 +1470,16 @@ public:
         i_AI = newAI;
     }
 
+public:
+
     void AddToWorld() override;
     void RemoveFromWorld() override;
 
     void CleanupBeforeRemoveFromMap(bool finalCleanup);
     void CleanupsBeforeDelete(bool finalCleanup = true) override;                        // used in ~Creature/~Player (or before mass creature delete to remove cross-references to already deleted units)
+
+    // uint32 GetDynamicFlags() const override { return GetUInt32Value(UNIT_DYNAMIC_FLAGS); }
+    // void ReplaceAllDynamicFlags(uint32 flag) override { SetUInt32Value(UNIT_DYNAMIC_FLAGS, flag); }
 
     DiminishingLevels GetDiminishing(DiminishingGroup  group);
     void IncrDiminishing(DiminishingGroup group);
@@ -1576,60 +1581,24 @@ public:
     uint8 GetLevel() const { return uint8(GetUInt32Value(UNIT_FIELD_LEVEL)); }
     uint8 GetLevelForTarget(WorldObject const* /*target*/) const override { return GetLevel(); }
     void SetLevel(uint8 lvl, bool sendUpdate = true);
-
-    uint8 getRace() const
-    {
-        return GetByteValue(UNIT_FIELD_SEX, 0);
-    }
-    uint32 getRaceMask() const
-    {
-        return 1 << (getRace() - 1);
-    }
-    uint8 getClass() const
-    {
-        return GetByteValue(UNIT_FIELD_SEX, 1);
-    }
-    uint32 getClassMask() const
-    {
-        return 1 << (getClass() - 1);
-    }
-    uint8 getGender() const
-    {
-        return GetByteValue(UNIT_FIELD_SEX, 3);
-    }
+    // uint8 GetRace() const { return GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_RACE); }
+    // void SetRace(uint8 race) { SetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_RACE, race); }
+    uint8 GetRace() const { return GetByteValue(UNIT_FIELD_SEX, 0); }
+    void SetRace(uint8 race) { SetByteValue(UNIT_FIELD_SEX, 0, race);}
+    uint32 GetRaceMask() const { return 1 << (GetRace() - 1); }
+    uint8 GetClass() const { return GetByteValue(UNIT_FIELD_SEX, 1); }
+    void SetClass(uint8 newClass) { SetByteValue(UNIT_FIELD_SEX, 1, newClass);}
+    uint32 GetClassMask() const { return 1 << (GetClass() - 1); }
+    uint8 GetGender() const { return GetByteValue(UNIT_FIELD_SEX, 3); }
+    void SetGender(uint8 gender) { SetByteValue(UNIT_FIELD_SEX, 3, gender); }
 
     // Gender GetGender() const { return Gender(GetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_GENDER)); }
     // void SetGender(Gender gender) { SetByteValue(UNIT_FIELD_BYTES_0, UNIT_BYTES_0_OFFSET_GENDER, gender); }
 
-    void SetRace(uint8 race)
-    {
-        SetByteValue(UNIT_FIELD_SEX, 0, race);
-    }
-    void SetClass(uint8 newClass)
-    {
-        SetByteValue(UNIT_FIELD_SEX, 1, newClass);
-    }
-    void SetGender(uint8 gender)
-    {
-        SetByteValue(UNIT_FIELD_SEX, 3, gender);
-    }
-
-    float GetStat(Stats stat) const
-    {
-        return float(GetUInt32Value(UNIT_FIELD_STATS + stat));
-    }
-    void SetStat(Stats stat, int32 val)
-    {
-        SetStatInt32Value(UNIT_FIELD_STATS + stat, val);
-    }
-    uint32 GetArmor() const
-    {
-        return GetResistance(SPELL_SCHOOL_NORMAL);
-    }
-    void SetArmor(int32 val)
-    {
-        SetResistance(SPELL_SCHOOL_NORMAL, val);
-    }
+    float GetStat(Stats stat) const { return float(GetUInt32Value(UNIT_FIELD_STATS + stat)); }
+    void SetStat(Stats stat, int32 val) { SetStatInt32Value(UNIT_FIELD_STATS + stat, val); }
+    uint32 GetArmor() const { return GetResistance(SPELL_SCHOOL_NORMAL); }
+    void SetArmor(int32 val) { SetResistance(SPELL_SCHOOL_NORMAL, val); }
 
     uint32 GetResistance(SpellSchools school) const
     {
@@ -1726,24 +1695,15 @@ public:
         SetFloatValue(UNIT_FIELD_ATTACK_ROUND_BASE_TIME + att, val*m_modAttackSpeedPct [att]);
     }
 
-    SheathState GetSheath() const
-    {
-        return SheathState(GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 0));
-    }
-    virtual void SetSheath(SheathState sheathed)
-    {
-        SetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 0, sheathed);
-    }
+    Emote GetEmoteState() const { return Emote(GetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE)); }
+    void SetEmoteState(Emote emote) { SetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE, emote); }
+
+    SheathState GetSheath() const { return SheathState(GetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 0)); }
+    virtual void SetSheath(SheathState sheathed) { SetByteValue(UNIT_FIELD_SHAPESHIFT_FORM, 0, sheathed); }
 
     // faction template id
-    uint32 getFaction() const
-    {
-        return GetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE);
-    }
-    void setFaction(uint32 faction)
-    {
-        SetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE, faction);
-    }
+    uint32 GetFaction() const { return GetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE); }
+    void SetFaction(uint32 faction) { SetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE, faction); }
     FactionTemplateEntry const* GetFactionTemplateEntry() const;
 
     ReputationRank GetReactionTo(Unit const* target) const;
@@ -1773,11 +1733,11 @@ public:
     bool IsStandState() const;
     void SetStandState(uint8 state);
 
-    void  SetStandFlags(uint8 flags)
+    void SetStandFlags(uint8 flags)
     {
         SetByteFlag(UNIT_FIELD_ANIM_TIER, 2, flags);
     }
-    void  RemoveStandFlags(uint8 flags)
+    void RemoveStandFlags(uint8 flags)
     {
         RemoveByteFlag(UNIT_FIELD_ANIM_TIER, 2, flags);
     }

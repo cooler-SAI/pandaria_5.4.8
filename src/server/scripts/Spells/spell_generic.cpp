@@ -320,7 +320,7 @@ class spell_gen_aura_service_uniform : public AuraScript
 
         if (target->GetTypeId() == TYPEID_PLAYER)
         {
-            if (target->getGender() == GENDER_MALE)
+            if (target->GetGender() == GENDER_MALE)
                 target->SetDisplayId(MODEL_GOBLIN_MALE);
             else
                 target->SetDisplayId(MODEL_GOBLIN_FEMALE);
@@ -984,7 +984,7 @@ class spell_gen_dalaran_disguise : public SpellScriptLoader
             {
                 if (Player* player = GetHitPlayer())
                 {
-                    uint8 gender = player->getGender();
+                    uint8 gender = player->GetGender();
 
                     uint32 spellId = GetSpellInfo()->Id;
 
@@ -2165,11 +2165,11 @@ class spell_gen_on_tournament_mount : public SpellScriptLoader
                     case NPC_ARGENT_WARHORSE:
                     {
                         if (player->HasAchieved(ACHIEVEMENT_CHAMPION_ALLIANCE) || player->HasAchieved(ACHIEVEMENT_CHAMPION_HORDE))
-                            return player->getClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_CHAMPION : SPELL_PENNANT_ARGENT_CRUSADE_CHAMPION;
+                            return player->GetClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_CHAMPION : SPELL_PENNANT_ARGENT_CRUSADE_CHAMPION;
                         else if (player->HasAchieved(ACHIEVEMENT_ARGENT_VALOR))
-                            return player->getClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_VALIANT : SPELL_PENNANT_ARGENT_CRUSADE_VALIANT;
+                            return player->GetClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_VALIANT : SPELL_PENNANT_ARGENT_CRUSADE_VALIANT;
                         else
-                            return player->getClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_ASPIRANT : SPELL_PENNANT_ARGENT_CRUSADE_ASPIRANT;
+                            return player->GetClass() == CLASS_DEATH_KNIGHT ? SPELL_PENNANT_EBON_BLADE_ASPIRANT : SPELL_PENNANT_ARGENT_CRUSADE_ASPIRANT;
                     }
                     default:
                         return 0;
@@ -2264,7 +2264,7 @@ class spell_gen_orc_disguise : public SpellScriptLoader
                 Unit* caster = GetCaster();
                 if (Player* target = GetHitPlayer())
                 {
-                    uint8 gender = target->getGender();
+                    uint8 gender = target->GetGender();
                     if (!gender)
                         caster->CastSpell(target, SPELL_ORC_DISGUISE_MALE, true);
                     else
@@ -2446,7 +2446,7 @@ class spell_gen_running_wild : public SpellScriptLoader
                 Unit* target = GetTarget();
                 PreventDefaultAction();
 
-                target->Mount(target->getGender() == GENDER_FEMALE ? RUNNING_WILD_MODEL_FEMALE : RUNNING_WILD_MODEL_MALE, 0, 0);
+                target->Mount(target->GetGender() == GENDER_FEMALE ? RUNNING_WILD_MODEL_FEMALE : RUNNING_WILD_MODEL_MALE, 0, 0);
 
                 // cast speed aura
                 if (MountCapabilityEntry const* mountCapability = sMountCapabilityStore.LookupEntry(aurEff->GetAmount()))
@@ -3871,9 +3871,9 @@ class spell_gen_noodle_cart : public SpellScript
             { RACE_PANDAREN_HORDE,      { 40002,    40003 } },
         };
 
-        auto itr = map.find(GetCaster()->getRace());
+        auto itr = map.find(GetCaster()->GetRace());
         if (itr != map.end())
-            return itr->second[GetCaster()->getGender()];
+            return itr->second[GetCaster()->GetGender()];
         return 39980;
     }
 
@@ -4220,7 +4220,7 @@ class spell_gen_capacitance : public AuraScript
         {
             if (Unit* target = ObjectAccessor::GetUnit(*GetUnitOwner(), GetUnitOwner()->GetTarget()))
             {
-                uint32 spell = GetUnitOwner()->getClass() == CLASS_HUNTER ? SPELL_LIGHTNING_STRIKE_RANGED : SPELL_LIGHTNING_STRIKE_MELEE;
+                uint32 spell = GetUnitOwner()->GetClass() == CLASS_HUNTER ? SPELL_LIGHTNING_STRIKE_RANGED : SPELL_LIGHTNING_STRIKE_MELEE;
                 GetUnitOwner()->CastSpell(target, spell, true);
             }
             Remove();
@@ -4241,7 +4241,7 @@ class spell_gen_clearcasting_trigger : public AuraScript
     void HandleProc(ProcEventInfo& eventInfo)
     {
         uint32 spellId = 0;
-        switch (GetUnitOwner()->getClass())
+        switch (GetUnitOwner()->GetClass())
         {
             case CLASS_DRUID:  spellId = 137247; break;
             case CLASS_PALADIN:spellId = 137288; break;
@@ -4271,7 +4271,7 @@ class spell_gen_leyaras_locket : public SpellScript
         if (!caster)
             return;
 
-        caster->CastSpell(caster, caster->getGender() == GENDER_MALE ? 101185 : 101186);
+        caster->CastSpell(caster, caster->GetGender() == GENDER_MALE ? 101185 : 101186);
     }
 
     void Register() override
