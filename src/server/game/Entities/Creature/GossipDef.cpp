@@ -26,6 +26,7 @@
 GossipMenu::GossipMenu()
 {
     _menuId = 0;
+    //_senderGUID.Clear(); //need fix
 }
 
 GossipMenu::~GossipMenu()
@@ -76,55 +77,53 @@ void GossipMenu::AddMenuItem(uint32 menuId, uint32 menuItemId, uint32 sender, ui
 {
     /// Find items for given menu id.
     GossipMenuItemsMapBounds bounds = sObjectMgr->GetGossipMenuItemsMapBounds(menuId);
-    /// Return if there are none.
-    if (bounds.first == bounds.second)
+    auto itr = std::find_if(bounds.first, bounds.second, [menuItemId](std::pair<uint32 const, GossipMenuItems> const& itemPair)
+    {
+        return itemPair.second.OptionID == menuItemId;
+    });
+
+    if (itr == bounds.second)
         return;
 
-    /// Iterate over each of them.
-    for (GossipMenuItemsContainer::const_iterator itr = bounds.first; itr != bounds.second; ++itr)
+    /// Store texts for localization.
+    std::string strOptionText, strBoxText;
+    BroadcastText const* optionBroadcastText = sObjectMgr->GetBroadcastText(itr->second.OptionBroadcastTextID);
+    BroadcastText const* boxBroadcastText = sObjectMgr->GetBroadcastText(itr->second.BoxBroadcastTextID);
+
+    /// OptionText
+    if (optionBroadcastText)
+        strOptionText = optionBroadcastText->GetText(GetLocale());
+    else
+        strOptionText = itr->second.OptionText;
+
+    /// BoxText
+    if (boxBroadcastText)
+        strBoxText = boxBroadcastText->GetText(GetLocale());
+    else
+        strBoxText = itr->second.BoxText;
+
+    /// Check need of localization.
+    if (GetLocale() != DEFAULT_LOCALE)
     {
-        /// Find the one with the given menu item id.
-        if (itr->second.OptionID != menuItemId)
-            continue;
-
-        /// Store texts for localization.
-        std::string strOptionText, strBoxText;
-        BroadcastText const* optionBroadcastText = sObjectMgr->GetBroadcastText(itr->second.OptionBroadcastTextID);
-        BroadcastText const* boxBroadcastText = sObjectMgr->GetBroadcastText(itr->second.BoxBroadcastTextID);
-
-        /// OptionText
-        if (optionBroadcastText)
-            strOptionText = optionBroadcastText->GetText(GetLocale());
-        else
-            strOptionText = itr->second.OptionText;
-
-        /// BoxText
-        if (boxBroadcastText)
-            strBoxText = boxBroadcastText->GetText(GetLocale());
-        else
-            strBoxText = itr->second.BoxText;
-
-        /// Check need of localization.
-        if (GetLocale() != DEFAULT_LOCALE)
+        if (!optionBroadcastText)
         {
-            if (!optionBroadcastText)
-            {
-                /// Find localizations from database.
-                if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, menuItemId))
-                    ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, GetLocale(), strOptionText);
-            }
-
-            if (!boxBroadcastText)
-            {
-                /// Find localizations from database.
-                if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, menuItemId))
-                    ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
-            }
+            /// Find localizations from database.
+            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, menuItemId))
+                ObjectMgr::GetLocaleString(gossipMenuLocale->OptionText, GetLocale(), strOptionText);
         }
 
-        /// Add menu item with existing method. Menu item id -1 is also used in ADD_GOSSIP_ITEM macro.
-        AddMenuItem(-1, itr->second.OptionIcon, strOptionText, sender, action, strBoxText, itr->second.BoxMoney, itr->second.BoxCoded);
+        if (!boxBroadcastText)
+        {
+            /// Find localizations from database.
+            if (GossipMenuItemsLocale const* gossipMenuLocale = sObjectMgr->GetGossipMenuItemsLocale(menuId, menuItemId))
+                ObjectMgr::GetLocaleString(gossipMenuLocale->BoxText, GetLocale(), strBoxText);
+        }
     }
+
+    /// Add menu item with existing method. Menu item id -1 is also used in ADD_GOSSIP_ITEM macro.
+    AddMenuItem(itr->second.OptionID, itr->second.OptionIcon, strOptionText, sender, action, strBoxText, itr->second.BoxMoney, itr->second.BoxCoded);
+    AddGossipMenuItemData(itr->second.OptionID, itr->second.ActionMenuID, itr->second.ActionPoiID);
+
 }
 
 void GossipMenu::AddGossipMenuItemData(uint32 menuItemId, uint32 gossipActionMenuId, uint32 gossipActionPoi)

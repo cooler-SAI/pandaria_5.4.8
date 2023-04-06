@@ -565,8 +565,71 @@ enum Taretha
     GOSSIP_ITEM_EPOCH1_MID  = 7849,
     GOSSIP_ITEM_EPOCH1_OID  = 0,                           //Strange wizard?
     GOSSIP_ITEM_EPOCH2_MID  = 7852,
-    GOSSIP_ITEM_EPOCH2_OID  = 0  
+    GOSSIP_ITEM_EPOCH2_OID  = 0                            //We'll get you out, Taretha. Don't worry. I doubt the wizard would wander too far away.
 };
+
+// struct npc_taretha : public EscortAI
+// {
+//     npc_taretha(Creature* creature) : EscortAI(creature)
+//     {
+//         instance = creature->GetInstanceScript();
+//     }
+
+//     InstanceScript* instance;
+
+//     void WaypointReached(uint32 waypointId, uint32 /*pathId*/) override
+//     {
+//         switch (waypointId)
+//         {
+//             case 6:
+//                 Talk(SAY_TA_FREE);
+//                 break;
+//             case 7:
+//                 me->HandleEmoteCommand(EMOTE_ONESHOT_CHEER);
+//                 break;
+//         }
+//     }
+
+//     void Reset() override { }
+//     void JustEngagedWith(Unit* /*who*/) override { }
+
+//     bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
+//     {
+//         uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+//         ClearGossipMenuFor(player);
+
+//         if (action == GOSSIP_ACTION_INFO_DEF + 1)
+//         {
+//             InitGossipMenuFor(player, GOSSIP_ITEM_EPOCH2_MID);
+//             AddGossipItemFor(player, GOSSIP_ITEM_EPOCH2_MID, GOSSIP_ITEM_EPOCH2_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+//             SendGossipMenuFor(player, GOSSIP_ID_EPOCH2, me->GetGUID());
+//         }
+//         if (action == GOSSIP_ACTION_INFO_DEF + 2)
+//         {
+//             CloseGossipMenuFor(player);
+
+//             if (instance->GetGuidData(DATA_EPOCH_HUNTER).IsEmpty())
+//                 me->SummonCreature(ENTRY_EPOCH, 2639.13f, 698.55f, 65.43f, 4.59f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 2min);
+
+//             if (Creature* thrall = ObjectAccessor::GetCreature(*me, instance->GetGuidData(DATA_THRALL)))
+//                 ENSURE_AI(npc_thrall_old_hillsbrad, thrall->AI())->StartWP();
+
+//             me->RemoveNpcFlag(UNIT_NPC_FLAG_GOSSIP);
+//         }
+//         return true;
+//     }
+
+//     bool OnGossipHello(Player* player) override
+//     {
+//         if (instance->GetData(TYPE_THRALL_EVENT) == OH_ESCORT_EPOCH_HUNTER && instance->GetBossState(DATA_EPOCH_HUNTER) != DONE)
+//         {
+//             InitGossipMenuFor(player, GOSSIP_ITEM_EPOCH1_MID);
+//             AddGossipItemFor(player, GOSSIP_ITEM_EPOCH1_MID, GOSSIP_ITEM_EPOCH1_OID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+//             SendGossipMenuFor(player, GOSSIP_ID_EPOCH1, me->GetGUID());
+//         }
+//         return true;
+//     }
+// };
 
 class npc_taretha : public CreatureScript
 {
@@ -662,4 +725,5 @@ void AddSC_old_hillsbrad()
     RegisterOldHillsbradCreatureAI(npc_erozion);
     new npc_thrall_old_hillsbrad();
     new npc_taretha();
+    //RegisterOldHillsbradCreatureAI(npc_taretha);
 }
