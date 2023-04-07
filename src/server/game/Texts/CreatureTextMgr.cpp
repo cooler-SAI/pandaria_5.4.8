@@ -77,6 +77,12 @@ class PlayerTextBuilder
         WorldObject const* _target;
 };
 
+CreatureTextMgr* CreatureTextMgr::instance()
+{
+    static CreatureTextMgr instance;
+    return &instance;
+}
+
 void CreatureTextMgr::LoadCreatureTexts()
 {
     uint32 oldMSTime = getMSTime();
@@ -230,7 +236,7 @@ uint32 CreatureTextMgr::SendChat(Creature* source, uint8 textGroup, WorldObject 
     }
 
     CreatureTextGroup const& textGroupContainer = itr->second;  //has all texts in the group
-    CreatureTextRepeatIds repeatGroup = GetRepeatGroup(source, textGroup);//has all textIDs from the group that were already said
+    CreatureTextRepeatIds repeatGroup = source->GetTextRepeatGroup(textGroup); //GetRepeatGroup(source, textGroup);//has all textIDs from the group that were already said
     CreatureTextGroup tempGroup;//will use this to talk after sorting repeatGroup
 
     for (CreatureTextGroup::const_iterator giter = textGroupContainer.begin(); giter != textGroupContainer.end(); ++giter)
@@ -414,21 +420,6 @@ void CreatureTextMgr::SendEmote(Unit* source, uint32 emote)
         return;
 
     source->HandleEmoteCommand(emote);
-}
-
-CreatureTextRepeatIds CreatureTextMgr::GetRepeatGroup(Creature* source, uint8 textGroup)
-{
-    ASSERT(source);//should never happen
-    CreatureTextRepeatIds ids;
-
-    CreatureTextRepeatMap::const_iterator mapItr = mTextRepeatMap.find(source->GetGUID());
-    if (mapItr != mTextRepeatMap.end())
-    {
-        CreatureTextRepeatGroup::const_iterator groupItr = (*mapItr).second.find(textGroup);
-        if (groupItr != mapItr->second.end())
-            ids = groupItr->second;
-    }
-    return ids;
 }
 
 bool CreatureTextMgr::TextExist(uint32 sourceEntry, uint8 textGroup)

@@ -25,6 +25,12 @@
 #include "Opcodes.h"
 #include "Group.h"
 
+class Creature;
+class Player;
+class Unit;
+class WorldObject;
+class WorldPacket;
+
 enum CreatureTextRange
 {
     TEXT_RANGE_NORMAL   = 0,
@@ -70,7 +76,7 @@ struct CreatureTextId
 
     bool operator<(CreatureTextId const& right) const
     {
-        return memcmp(this, &right, sizeof(CreatureTextId)) < 0;
+        return std::tie(entry, textGroup, textId) < std::tie(right.entry, right.textGroup, right.textId);
     }
 
     uint32 entry;
@@ -91,11 +97,12 @@ typedef std::unordered_map<uint64, CreatureTextRepeatGroup> CreatureTextRepeatMa
 
 class CreatureTextMgr
 {
-    friend class ACE_Singleton<CreatureTextMgr, ACE_Null_Mutex>;
-    CreatureTextMgr() { }
+    private:
+        CreatureTextMgr() { }
+        ~CreatureTextMgr() { }    
 
     public:
-        ~CreatureTextMgr() { }
+        static CreatureTextMgr* instance();
         void LoadCreatureTexts();
         void LoadCreatureTextLocales();
         CreatureTextMap  const& GetTextMap() const { return mTextMap; }
@@ -111,17 +118,14 @@ class CreatureTextMgr
         template<class Builder>
         void SendChatPacket(WorldObject* source, Builder const& builder, ChatMsg msgType, WorldObject const* whisperTarget = nullptr, CreatureTextRange range = TEXT_RANGE_NORMAL, Team team = TEAM_OTHER, bool gmOnly = false) const;
     private:
-        CreatureTextRepeatIds GetRepeatGroup(Creature* source, uint8 textGroup);
-
         void SendNonChatPacket(WorldObject* source, WorldPacket* data, ChatMsg msgType, WorldObject const* whisperTarget, CreatureTextRange range, Team team, bool gmOnly) const;
         float GetRangeForChatType(ChatMsg msgType) const;
 
         CreatureTextMap mTextMap;
-        CreatureTextRepeatMap mTextRepeatMap;
         LocaleCreatureTextMap mLocaleTextMap;
 };
 
-#define sCreatureTextMgr ACE_Singleton<CreatureTextMgr, ACE_Null_Mutex>::instance()
+#define sCreatureTextMgr CreatureTextMgr::instance()
 
 template<class Builder>
 class CreatureTextLocalizer
