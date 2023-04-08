@@ -2396,7 +2396,7 @@ struct npc_hidden_cultist : public ScriptedAI
 
     void AttackPlayer()
     {
-        me->SetFaction(FACTION_MONSTER);
+        me->SetFaction(FACTION_MASK_MONSTER); // FACTION_MONSTER
         if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
             AttackStart(player);
     }

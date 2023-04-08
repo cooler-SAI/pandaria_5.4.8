@@ -26,7 +26,7 @@
 GossipMenu::GossipMenu()
 {
     _menuId = 0;
-    //_senderGUID.Clear(); //need fix
+    _senderGUID.Clear(); 
 }
 
 GossipMenu::~GossipMenu()

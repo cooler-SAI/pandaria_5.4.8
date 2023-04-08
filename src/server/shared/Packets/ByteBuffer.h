@@ -110,6 +110,11 @@ public:
         return *this;
     }
 
+    void Clear() 
+    {
+        _data.u64 = 0;
+    }
+
 private:
     union
     {
@@ -118,6 +123,8 @@ private:
     } _data;
 
 };
+
+
 class ByteBuffer
 {
 public:
