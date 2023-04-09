@@ -2808,7 +2808,7 @@ TempSummon* WorldObject::SummonCreature(uint32 id, float x, float y, float z, fl
     return SummonCreature(id, pos, spwtype, despwtime, 0, visibleBySummonerOnly);
 }
 
-GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime)
+GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime, GOSummonType summonType)
 {
     if (!IsInWorld())
         return NULL;
@@ -2831,7 +2831,7 @@ GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float 
     go->AddToTransportIfNeeded(GetTransport());
 
     go->SetRespawnTime(respawnTime);
-    if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT) //not sure how to handle this
+    if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT && summonType == GO_SUMMON_TIMED_OR_CORPSE_DESPAWN) //not sure how to handle this
         ToUnit()->AddGameObject(go);
     else
         go->SetSpawnedByDefault(false);
