@@ -430,6 +430,7 @@ struct SmartEvent
             uint32 param2;
             uint32 param3;
             uint32 param4;
+            uint32 param5;
         } raw;
     };
 };
@@ -1268,6 +1269,7 @@ struct SmartTarget
             uint32 param1;
             uint32 param2;
             uint32 param3;
+            uint32 param4;
         } raw;
 
         struct

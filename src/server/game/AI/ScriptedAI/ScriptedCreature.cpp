@@ -588,11 +588,12 @@ void BossAI::_Reset()
     if (!me->IsAlive())
         return;
 
+    me->SetCombatPulseDelay(0);
     me->ResetLootMode();
     events.Reset();
     summons.DespawnAll();
     scheduler.CancelAll();
-    if (instance)
+    if (instance && instance->GetBossState(_bossId) != DONE)
         instance->SetBossState(_bossId, NOT_STARTED);
 }
 
@@ -604,7 +605,7 @@ void BossAI::_JustDied()
     if (instance)
     {
         instance->SetBossState(_bossId, DONE);
-        instance->SaveToDB();
+        instance->SaveToDB(); // will be removed
     }
 }
 
@@ -714,7 +715,11 @@ void BossAI::UpdateAI(uint32 diff)
         return;
 
     while (uint32 eventId = events.ExecuteEvent())
+    {
         ExecuteEvent(eventId);
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+    }
 
     DoMeleeAttackIfReady();
 }

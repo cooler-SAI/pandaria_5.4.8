@@ -37,9 +37,7 @@ class SummonList
     typedef StorageType::size_type size_type;
     typedef StorageType::value_type value_type;
 
-    explicit SummonList(Creature* creature)
-        : me(creature)
-    { }
+    explicit SummonList(Creature* creature) : me(creature) { }
 
     // And here we see a problem of original inheritance approach. People started
     // to exploit presence of std::list members, so I have to provide wrappers
@@ -77,6 +75,11 @@ class SummonList
     size_type size() const
     {
         return storage_.size();
+    }
+
+    void clear()
+    {
+        storage_.clear();
     }
 
     uint64 front()

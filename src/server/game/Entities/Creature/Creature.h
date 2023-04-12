@@ -660,6 +660,15 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         float GetWanderDistance() const { return m_wanderDistance; }
         void SetWanderDistance(float dist) { m_wanderDistance = dist; }
 
+        void DoImmediateBoundaryCheck() { m_boundaryCheckTime = 0; }
+        uint32 GetCombatPulseDelay() const { return m_combatPulseDelay; }
+        void SetCombatPulseDelay(uint32 delay) // (secs) interval at which the creature pulses the entire zone into combat (only works in dungeons)
+        {
+            m_combatPulseDelay = delay;
+            if (m_combatPulseTime == 0 || m_combatPulseTime > delay)
+                m_combatPulseTime = delay;
+        }
+
         float GetWalkMode() const { return m_WalkMode; }
 
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
@@ -767,6 +776,9 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         uint32 m_corpseDelay;                               // (secs) delay between death and corpse disappearance
         TimeValue m_pickpocketLootRestore;
         float m_wanderDistance;
+        uint32 m_boundaryCheckTime;                         // (msecs) remaining time for next evade boundary check
+        uint32 m_combatPulseTime;                           // (msecs) remaining time for next zone-in-combat pulse
+        uint32 m_combatPulseDelay;                          // (secs) how often the creature puts the entire zone in combat (only works in dungeons)        
         float m_WalkMode;
 
         ReactStates m_reactState;                           // for AI, not charmInfo
