@@ -14858,6 +14858,29 @@ void Unit::StopMoving()
     UpdateSplineMovement(1);
 }
 
+void Unit::PauseMovement(uint32 timer/* = 0*/, uint8 slot/* = 0*/, bool forced/* = true*/)
+{
+    if (IsInvalidMovementSlot(slot))
+        return;
+
+    // hack
+    // if (MovementGenerator* movementGenerator = GetMotionMaster()->GetCurrentMovementGenerator(MovementSlot(slot)))
+    //     movementGenerator->Pause(timer);
+
+    // if (forced && GetMotionMaster()->GetCurrentSlot() == MovementSlot(slot))
+    //     StopMoving();
+}
+
+void Unit::ResumeMovement(uint32 timer/* = 0*/, uint8 slot/* = 0*/)
+{
+    if (IsInvalidMovementSlot(slot))
+        return;
+
+    // hack
+    // if (MovementGenerator* movementGenerator = GetMotionMaster()->GetCurrentMovementGenerator(MovementSlot(slot)))
+    //     movementGenerator->Resume(timer);
+}
+
 void Unit::SendMovementFlagUpdate(bool self /* = false */)
 {
     WorldPacket data(SMSG_PLAYER_MOVE, 40);

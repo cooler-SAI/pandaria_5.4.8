@@ -29,6 +29,7 @@
 #include "Group.h"
 #include "Vehicle.h"
 #include "SmartAI.h"
+#include "CreatureGroups.h"
 #include "ScriptMgr.h"
 
 SmartAI::SmartAI(Creature* c) : CreatureAI(c)
@@ -605,7 +606,23 @@ int SmartAI::Permissible(const Creature* creature)
 
 void SmartAI::JustReachedHome()
 {
+    GetScript()->OnReset();
     GetScript()->ProcessEventsFor(SMART_EVENT_REACHED_HOME);
+
+    CreatureGroup* formation = me->GetFormation();
+    if (!formation || formation->GetLeader() == me || !formation->IsFormed())
+    {
+        // if (me->GetMotionMaster()->GetCurrentMovementGeneratorType(MOTION_SLOT_IDLE) != WAYPOINT_MOTION_TYPE) // MOTION_SLOT_DEFAULT hack
+        // {
+            if (me->GetWaypointPath())
+                me->GetMotionMaster()->MovePath(me->GetWaypointPath(), true);
+        // }
+
+        me->ResumeMovement();
+    }
+    else if (formation->IsFormed())
+        me->GetMotionMaster()->MoveIdle(); // wait the order of leader
+
 }
 
 void SmartAI::EnterCombat(Unit* enemy)
@@ -838,6 +855,41 @@ void SmartAI::SetFollow(Unit* target, float dist, float angle, uint32 credit, ui
     mFollowArrivedEntry = end;
     me->GetMotionMaster()->MoveFollow(target, mFollowDist, mFollowAngle);
     mFollowCreditType = creditType;
+}
+
+void SmartAI::StopFollow(bool complete)
+{
+    // _followGUID.Clear();
+    // _followDistance = 0;
+    // _followAngle = 0;
+    // _followCredit = 0;
+    // _followArrivedTimer = 1000;
+    // _followArrivedEntry = 0;
+    // _followCreditType = 0;
+    mFollowGuid = 0;
+    mFollowDist = 0;
+    mFollowAngle = 0;
+    mFollowArrivedTimer = 1000;
+    mFollowCredit = 0;
+    mFollowArrivedEntry = 0;    
+    me->GetMotionMaster()->Clear();
+    me->GetMotionMaster()->MoveIdle();
+
+    if (!complete)
+        return;
+
+    Player* player = ObjectAccessor::GetPlayer(*me, mFollowGuid);
+    if (player)
+    {
+        if (!mFollowCredit)
+            player->RewardPlayerAndGroupAtEvent(mFollowCredit, me);
+        else
+            player->GroupEventHappens(mFollowCredit, me);
+    }
+
+    SetDespawnTime(5000);
+    StartDespawn();
+    GetScript()->ProcessEventsFor(SMART_EVENT_FOLLOW_COMPLETED, player);
 }
 
 void SmartAI::SetUnfollow()

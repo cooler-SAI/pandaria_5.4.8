@@ -2690,24 +2690,14 @@ public:
         return i_motionMaster;
     }
 
-    bool IsStopped() const
-    {
-        return !(HasUnitState(UNIT_STATE_MOVING));
-    }
+    bool IsStopped() const { return !(HasUnitState(UNIT_STATE_MOVING)); }
     void StopMoving();
+    void PauseMovement(uint32 timer = 0, uint8 slot = 0, bool forced = true); // timer in ms
+    void ResumeMovement(uint32 timer = 0, uint8 slot = 0); // timer in ms
 
-    void AddUnitMovementFlag(uint32 f)
-    {
-        m_movementInfo.AddMovementFlag(f);
-    }
-    void RemoveUnitMovementFlag(uint32 f)
-    {
-        m_movementInfo.RemoveMovementFlag(f);
-    }
-    bool HasUnitMovementFlag(uint32 f) const
-    {
-        return m_movementInfo.HasMovementFlag(f);
-    }
+    void AddUnitMovementFlag(uint32 f) { m_movementInfo.AddMovementFlag(f); }
+    void RemoveUnitMovementFlag(uint32 f) { m_movementInfo.RemoveMovementFlag(f); }
+    bool HasUnitMovementFlag(uint32 f) const { return m_movementInfo.HasMovementFlag(f); }
     uint32 GetUnitMovementFlags() const
     {
         return m_movementInfo.GetMovementFlags();

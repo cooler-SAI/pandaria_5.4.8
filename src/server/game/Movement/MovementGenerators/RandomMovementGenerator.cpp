@@ -122,7 +122,7 @@ void RandomMovementGenerator<Creature>::_setRandomLocation(Creature* creature)
     init.Launch();
 
     //Call for creature group update
-    if (creature->GetFormation() && creature->GetFormation()->getLeader() == creature)
+    if (creature->GetFormation() && creature->GetFormation()->GetLeader() == creature)
         creature->GetFormation()->LeaderMoveTo(destX, destY, destZ);
 }
 

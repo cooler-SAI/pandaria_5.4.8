@@ -454,6 +454,11 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
             }
             break;
         }
+        case CONDITION_DIFFICULTY_ID:
+        {
+            condMeets = object->GetMap()->GetDifficulty() == ConditionValue1;
+            break;
+        }
         case CONDITION_SAI_PHASE:
         {
             if (Creature* creature = object->ToCreature())

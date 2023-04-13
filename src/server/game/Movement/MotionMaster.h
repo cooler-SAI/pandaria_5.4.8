@@ -52,7 +52,9 @@ enum MovementGeneratorType
     FOLLOW_MOTION_TYPE    = 14,
     ROTATE_MOTION_TYPE    = 15,
     EFFECT_MOTION_TYPE    = 16,
-    NULL_MOTION_TYPE      = 17
+    NULL_MOTION_TYPE      = 17,
+    FORMATION_MOTION_TYPE = 18,                             // FormationMovementGenerator.h
+    MAX_MOTION_TYPE                                         // SKIP
 };
 
 enum MovementSlot
@@ -79,6 +81,9 @@ enum RotateDirection
 
 // assume it is 25 yard per 0.6 second
 #define SPEED_CHARGE    42.0f
+
+inline bool IsInvalidMovementGeneratorType(uint8 const type) { return type == MAX_DB_MOTION_TYPE || type >= MAX_MOTION_TYPE; }
+inline bool IsInvalidMovementSlot(uint8 const slot) { return slot >= MAX_MOTION_SLOT; }
 
 class MotionMaster //: private std::stack<MovementGenerator *>
 {
@@ -124,6 +129,10 @@ class MotionMaster //: private std::stack<MovementGenerator *>
 
         bool empty() const { return (_top < 0); }
         int size() const { return _top + 1; }
+
+        //MovementGeneratorType GetCurrentMovementGeneratorType() const; // hack
+
+
         _Ty top() const { ASSERT(_top < MAX_MOTION_SLOT && _top >= 0);  return Impl[_top]; }
         _Ty GetMotionSlot(int slot) const { ASSERT(_top < MAX_MOTION_SLOT && _top >= 0); return Impl[slot]; }
 

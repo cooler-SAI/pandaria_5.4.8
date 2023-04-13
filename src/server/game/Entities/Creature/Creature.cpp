@@ -709,12 +709,12 @@ void Creature::Motion_Initialize()
 {
     if (!m_formation)
         GetMotionMaster()->Initialize();
-    else if (m_formation->getLeader() == this)
+    else if (m_formation->GetLeader() == this)
     {
         m_formation->FormationReset(false);
         GetMotionMaster()->Initialize();
     }
-    else if (m_formation->isFormed())
+    else if (m_formation->IsFormed())
         GetMotionMaster()->MoveIdle(); //wait the order of leader
     else
         GetMotionMaster()->Initialize();
@@ -1581,7 +1581,7 @@ void Creature::setDeathState(DeathState s)
         }
 
         //Dismiss group if is leader
-        if (m_formation && m_formation->getLeader() == this)
+        if (m_formation && m_formation->GetLeader() == this)
             m_formation->FormationReset(true);
 
         if ((CanFly() || IsFlying()))
