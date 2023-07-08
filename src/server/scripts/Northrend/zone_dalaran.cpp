@@ -48,12 +48,15 @@ enum Spells
     MAIL_DELIVER_DELAY_MIN                  = 5 * MINUTE,
     MAIL_DELIVER_DELAY_MAX                  = 15 * MINUTE,
 
-    NPC_APPLEBOUGH_A                        = 29547,
-    NPC_SWEETBERRY_H                        = 29715,
-    NPC_SILVER_COVENANT_GUARDIAN_MAGE       = 29254,
-    NPC_SUNREAVER_GUARDIAN_MAGE             = 29255,
-
     ZONE_DALARAN                            = 4395
+};
+
+enum NPCs // All outdoor guards are within 35.0f of these NPCs
+{
+    NPC_APPLEBOUGH_A                       = 29547,
+    NPC_SWEETBERRY_H                       = 29715,
+    NPC_SILVER_COVENANT_GUARDIAN_MAGE      = 29254,
+    NPC_SUNREAVER_GUARDIAN_MAGE            = 29255,
 };
 
 /*******************************************************
@@ -370,7 +373,7 @@ private:
 
 void AddSC_dalaran()
 {
-    new creature_script<npc_mageguard_dalaran>("npc_mageguard_dalaran");
+    RegisterCreatureAI(npc_mageguard_dalaran);
     new creature_script<npc_minigob_manabonk>("npc_minigob_manabonk");
     new creature_script<npc_archmage_landalock>("npc_archmage_landalock");
 }
