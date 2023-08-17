@@ -45,6 +45,7 @@
 #include "ScriptMgr.h"
 #include "AccountMgr.h"
 #include "Chat.h"
+#include "Errors.h"
 
 #if defined(__GNUC__)
 #pragma pack(1)
@@ -98,7 +99,7 @@ struct WorldClientPktHeader
 #endif
 
 WorldSocket::WorldSocket (void): WorldHandler(),
-m_LastPingTime(ACE_Time_Value::zero), m_OverSpeedPings(0), m_Session(0),
+m_LastPingTime(TimePoint::min()), m_OverSpeedPings(0), m_Session(0),
 m_RecvWPct(0), m_RecvPct(), m_Header(sizeof(AuthClientPktHeader)),
 m_WorldHeader(sizeof(WorldClientPktHeader)), m_OutBuffer(0),
 m_OutBufferSize(65536), m_OutActive(false),
@@ -187,11 +188,11 @@ int WorldSocket::SendPacket(WorldPacket const& pct)
     {
         // Put the packet on the buffer.
         if (m_OutBuffer->copy((char*) header.header, header.getHeaderLength()) == -1)
-            ACE_ASSERT (false);
+            ABORT();
 
         if (!pkt->empty())
             if (m_OutBuffer->copy((char*) pkt->contents(), pkt->size()) == -1)
-                ACE_ASSERT (false);
+                ABORT();
     }
     else
     {
@@ -239,7 +240,7 @@ int WorldSocket::open (void *a)
     m_OutActive = true;
 
     // Hook for the manager.
-    if (sWorldSocketMgr->OnSocketOpen(this) == -1)
+    if (sWorldSocketMgr.OnSocketOpen(this) == -1)
         return -1;
 
     // Allocate the buffer.
@@ -479,12 +480,12 @@ int WorldSocket::Update (void)
 
 int WorldSocket::handle_input_header (void)
 {
-    ACE_ASSERT(m_RecvWPct == NULL);
+    ASSERT(m_RecvWPct == NULL);
 
 
     if (m_Crypt.IsInitialized())
     {
-        ACE_ASSERT(m_WorldHeader.length() == sizeof(WorldClientPktHeader));
+        ASSERT(m_WorldHeader.length() == sizeof(WorldClientPktHeader));
         uint8* uintHeader = (uint8*)m_WorldHeader.rd_ptr();
         m_Crypt.DecryptRecv(uintHeader, sizeof(WorldClientPktHeader));
         WorldClientPktHeader& header = *(WorldClientPktHeader*)uintHeader;
@@ -510,11 +511,11 @@ int WorldSocket::handle_input_header (void)
             m_RecvPct.base ((char*) m_RecvWPct->contents(), m_RecvWPct->size());
         }
         else
-            ACE_ASSERT(m_RecvPct.space() == 0);
+            ASSERT(m_RecvPct.space() == 0);
     }
     else
     {
-        ACE_ASSERT(m_Header.length() == sizeof(AuthClientPktHeader));
+        ASSERT(m_Header.length() == sizeof(AuthClientPktHeader));
         uint8* uintHeader = (uint8*)m_Header.rd_ptr();
         AuthClientPktHeader& header = *((AuthClientPktHeader*)uintHeader);
 
@@ -538,7 +539,7 @@ int WorldSocket::handle_input_header (void)
             m_RecvPct.base ((char*) m_RecvWPct->contents(), m_RecvWPct->size());
         }
         else
-            ACE_ASSERT(m_RecvPct.space() == 0);
+            ASSERT(m_RecvPct.space() == 0);
     }
 
     return 0;
@@ -550,9 +551,9 @@ int WorldSocket::handle_input_payload (void)
 
     if (m_Crypt.IsInitialized())
     {
-        ACE_ASSERT (m_RecvPct.space() == 0);
-        ACE_ASSERT (m_WorldHeader.space() == 0);
-        ACE_ASSERT (m_RecvWPct != NULL);
+        ASSERT (m_RecvPct.space() == 0);
+        ASSERT (m_WorldHeader.space() == 0);
+        ASSERT (m_RecvWPct != NULL);
 
         const int ret = ProcessIncoming (m_RecvWPct);
 
@@ -569,9 +570,9 @@ int WorldSocket::handle_input_payload (void)
     }
     else
     {
-        ACE_ASSERT(m_RecvPct.space() == 0);
-        ACE_ASSERT(m_Header.space() == 0);
-        ACE_ASSERT(m_RecvWPct != NULL);
+        ASSERT(m_RecvPct.space() == 0);
+        ASSERT(m_Header.space() == 0);
+        ASSERT(m_RecvWPct != NULL);
 
         const int ret = ProcessIncoming(m_RecvWPct);
 
@@ -628,7 +629,7 @@ int WorldSocket::handle_input_missing_data (void)
                 if (m_WorldHeader.space() > 0)
                 {
                     // Couldn't receive the whole header this time.
-                    ACE_ASSERT (message_block.length() == 0);
+                    ASSERT (message_block.length() == 0);
                     errno = EWOULDBLOCK;
                     return -1;
                 }
@@ -636,7 +637,7 @@ int WorldSocket::handle_input_missing_data (void)
                 // We just received nice new header
                 if (handle_input_header() == -1)
                 {
-                    ACE_ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+                    ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
                     return -1;
                 }
             }
@@ -653,7 +654,7 @@ int WorldSocket::handle_input_missing_data (void)
                 if (m_Header.space() > 0)
                 {
                     // Couldn't receive the whole header this time.
-                    ACE_ASSERT (message_block.length() == 0);
+                    ASSERT (message_block.length() == 0);
                     errno = EWOULDBLOCK;
                     return -1;
                 }
@@ -661,7 +662,7 @@ int WorldSocket::handle_input_missing_data (void)
                 // We just received nice new header
                 if (handle_input_header() == -1)
                 {
-                    ACE_ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+                    ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
                     return -1;
                 }
             }
@@ -688,7 +689,7 @@ int WorldSocket::handle_input_missing_data (void)
             if (m_RecvPct.space() > 0)
             {
                 // Couldn't receive the whole data this time.
-                ACE_ASSERT (message_block.length() == 0);
+                ASSERT (message_block.length() == 0);
                 errno = EWOULDBLOCK;
                 return -1;
             }
@@ -697,7 +698,7 @@ int WorldSocket::handle_input_missing_data (void)
         //just received fresh new payload
         if (handle_input_payload() == -1)
         {
-            ACE_ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
+            ASSERT ((errno != EWOULDBLOCK) && (errno != EAGAIN));
             return -1;
         }
     }
@@ -746,7 +747,7 @@ int WorldSocket::schedule_wakeup_output (GuardType& g)
 
 int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
 {
-    ACE_ASSERT (new_pct);
+    ASSERT (new_pct);
 
     // manage memory ;)
     ACE_Auto_Ptr<WorldPacket> aptr(new_pct);
@@ -1139,7 +1140,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     // Sleep this Network thread for
     uint32 sleepTime = sWorld->getIntConfig(CONFIG_SESSION_ADD_DELAY);
-    ACE_OS::sleep(ACE_Time_Value(0, sleepTime));
+    std::this_thread::sleep_for(Microseconds(sleepTime));
 
     sWorld->AddSession(m_Session);
     return 0;
@@ -1147,6 +1148,8 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
 int WorldSocket::HandlePing (WorldPacket& recvPacket)
 {
+    using namespace std::chrono;
+
     uint32 ping;
     uint32 latency;
 
@@ -1154,16 +1157,18 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
     recvPacket >> latency;
     recvPacket >> ping;
 
-    if (m_LastPingTime == ACE_Time_Value::zero)
-        m_LastPingTime = ACE_OS::gettimeofday(); // for 1st ping
+    if (m_LastPingTime == steady_clock::time_point())
+        m_LastPingTime = steady_clock::now(); // for 1st ping
     else
     {
-        ACE_Time_Value cur_time = ACE_OS::gettimeofday();
-        ACE_Time_Value diff_time (cur_time);
-        diff_time -= m_LastPingTime;
-        m_LastPingTime = cur_time;
 
-        if (diff_time < ACE_Time_Value (27))
+        steady_clock::time_point now = steady_clock::now();
+
+        steady_clock::duration diff = now - m_LastPingTime;
+
+        m_LastPingTime = now;
+
+        if (diff < seconds(27))
         {
             ++m_OverSpeedPings;
 

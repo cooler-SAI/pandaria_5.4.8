@@ -17,6 +17,7 @@
 
 #include "DatabaseEnv.h"
 #include "Transaction.h"
+#include "Task.h"
 
 std::mutex TransactionTask::_lock;
 

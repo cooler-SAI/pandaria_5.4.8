@@ -22,15 +22,14 @@
 #ifndef SF_WORLD_H
 #define SF_WORLD_H
 
-#include "Common.h"
-#include "Timer.h"
 #include <ace/Singleton.h>
 #include <ace/Atomic_Op.h>
+#include <ace/Future.h>
+#include <ace/Future_Set.h>
+#include "Common.h"
+#include "Timer.h"
 #include "SharedDefines.h"
-#include "QueryResult.h"
-#include "Callback.h"
 #include "ByteBuffer.h"
-#include "Transaction.h"
 
 #include <thread>
 #include <map>
@@ -47,6 +46,14 @@ class Quest;
 enum class DevToolType : uint8;
 union DevToolSettings;
 struct CliCommandHolder;
+
+class PreparedResultSet;
+//class SQLTransaction;
+class Transaction;
+typedef std::shared_ptr<Transaction> SQLTransaction;
+class Field;
+//class PreparedQueryResult;
+typedef std::shared_ptr<PreparedResultSet> PreparedQueryResult;
 
 // ServerMessages.dbc
 enum ServerMessageType
@@ -1532,7 +1539,7 @@ class World
         static int32 m_visibility_notify_periodInBGArenas;
 
         // CLI command holder to be thread safe
-        ACE_Based::LockedQueue<CliCommandHolder*, ACE_Thread_Mutex> cliCmdQueue;
+        LockedQueue<CliCommandHolder*> cliCmdQueue;
 
         // scheduled reset times
         time_t m_NextDailyQuestReset;
@@ -1548,7 +1555,7 @@ class World
 
         // sessions that are added async
         void AddSession_(WorldSession* s);
-        ACE_Based::LockedQueue<WorldSession*, ACE_Thread_Mutex> addSessQueue;
+        LockedQueue<WorldSession*> addSessQueue;
 
         // used versions
         std::string m_DBVersion;

@@ -230,5 +230,5 @@ void Thread::setPriority(Priority type)
 
 void Thread::Sleep(unsigned long msecs)
 {
-    ACE_OS::sleep(ACE_Time_Value(0, 1000 * msecs));
+    std::this_thread::sleep_for(std::chrono::milliseconds(msecs));
 }

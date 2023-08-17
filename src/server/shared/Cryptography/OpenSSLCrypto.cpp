@@ -18,11 +18,11 @@
 #include <OpenSSLCrypto.h>
 #include <openssl/crypto.h>
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x1010000fL
-#include <ace/Thread_Mutex.h>
 #include <vector>
-#include <ace/Thread.h>
+#include <thread>
+#include <mutex>
 
-std::vector<ACE_Thread_Mutex*> cryptoLocks;
+std::vector<std::mutex*> cryptoLocks;
 
 static void lockingCallback(int mode, int type, const char* /*file*/, int /*line*/)
 {
@@ -34,7 +34,8 @@ static void lockingCallback(int mode, int type, const char* /*file*/, int /*line
 
 static void threadIdCallback(CRYPTO_THREADID * id)
 {
-    CRYPTO_THREADID_set_numeric(id, ACE_Thread::self());
+    (void)id;
+    CRYPTO_THREADID_set_numeric(id, std::hash<std::thread::id>()(std::this_thread::get_id()));
 }
 #elif OPENSSL_VERSION_NUMBER >= 0x30000000L
 #include <openssl/provider.h>
@@ -48,9 +49,12 @@ void OpenSSLCrypto::threadsSetup()
     cryptoLocks.resize(CRYPTO_num_locks());
     for(int i = 0 ; i < CRYPTO_num_locks(); ++i)
     {
-        cryptoLocks[i] = new ACE_Thread_Mutex();
+        cryptoLocks[i] = new std::mutex();
     }
+    (void)&threadIdCallback;
     CRYPTO_THREADID_set_callback(threadIdCallback);
+
+    (void)&lockingCallback;
     CRYPTO_set_locking_callback(lockingCallback);
 #elif OPENSSL_VERSION_NUMBER >= 0x30000000L
 #ifdef WIN32
@@ -64,8 +68,8 @@ void OpenSSLCrypto::threadsSetup()
 void OpenSSLCrypto::threadsCleanup()
 {
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x1010000fL
-    CRYPTO_set_locking_callback(NULL);
-    CRYPTO_THREADID_set_callback(NULL);
+    CRYPTO_set_locking_callback(nullptr);
+    CRYPTO_THREADID_set_callback(nullptr);
     for(int i = 0 ; i < CRYPTO_num_locks(); ++i)
     {
         delete cryptoLocks[i];

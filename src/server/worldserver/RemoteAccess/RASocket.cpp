@@ -60,7 +60,7 @@ int RASocket::handle_close(ACE_HANDLE /*handle*/, ACE_Reactor_Mask /*mask*/)
     // RASocket::commandfinished to be completed. Calling destroy() before the latter function ends
     // will lead to using a freed pointer -> crash.
     while (_commandExecuting.value())
-        ACE_OS::sleep(1);
+        std::this_thread::sleep_for(1s);
 
     destroy();
     return 0;
@@ -94,7 +94,7 @@ int RASocket::recv_line(ACE_Message_Block& buffer)
             return -1;
         }
 
-        ACE_ASSERT(n == sizeof(byte));
+        ASSERT(n == sizeof(byte));
 
         if (byte == '\n')
             break;

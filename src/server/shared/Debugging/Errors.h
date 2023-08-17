@@ -23,17 +23,27 @@
 
 namespace Trinity
 {
+    DECLSPEC_NORETURN void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message);
+    DECLSPEC_NORETURN void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message, char const* format, ...) ATTR_PRINTF(6, 7);
     DECLSPEC_NORETURN void Fatal(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
 
     DECLSPEC_NORETURN void Error(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
+
+    DECLSPEC_NORETURN void Abort(char const* file, int line, char const* function) ATTR_NORETURN;
+    DECLSPEC_NORETURN void Abort(char const* file, int line, char const* function, char const* message, ...) ATTR_NORETURN;
 
     void Warning(char const* file, int line, char const* function, char const* message);
 
 } // namespace Trinity
 
+std::string GetDebugInfo();
+
+#define WPAssert(cond, ...) do { if (!(cond)) Trinity::Assert(__FILE__, __LINE__, __FUNCTION__, GetDebugInfo(), #cond, ##__VA_ARGS__); } while(0) 
+#define WPAssert_NODEBUGINFO(cond, ...) do { if (!(cond)) Trinity::Assert(__FILE__, __LINE__, __FUNCTION__, "", #cond, ##__VA_ARGS__); } while(0) 
 #define WPFatal(cond, msg) do { if (!(cond)) Trinity::Fatal(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)
 #define WPError(cond, msg) do { if (!(cond)) Trinity::Error(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)
 #define WPWarning(cond, msg) do { if (!(cond)) Trinity::Warning(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)
+#define WPAbort() do { Trinity::Abort(__FILE__, __LINE__, __FUNCTION__); } while(0)
 
 #define STR(x) #x
 #define STR_(x) STR(x)
@@ -43,14 +53,9 @@ namespace Trinity
 #ifdef _WIN32
 __declspec(noreturn)
 #endif
-void LogAndDie(char const* msg, char const* func);
 
-#ifdef _WIN32
-#define WPAssert(assertion) do { if (!(assertion)) LogAndDie(DEBUG_STR((assertion)), __FUNCTION__); } while(0)
-#else
-#define WPAssert(assertion) do { if (!(assertion)) LogAndDie(DEBUG_STR((assertion)), __PRETTY_FUNCTION__); } while(0)
-#endif
 #define ASSERT WPAssert
+#define ABORT WPAbort
 
 void LogNotImplementedCall(char const* name);
 

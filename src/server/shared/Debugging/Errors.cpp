@@ -16,12 +16,79 @@
 */
 
 #include "Errors.h"
+#include "StringFormat.h"
 #include "Log.h"
-#include <ace/Stack_Trace.h>
-#include <ace/OS_NS_unistd.h>
+#include <cstdio>
 #include <cstdlib>
+#include <thread>
+#include <cstdarg>
+
+/**
+    @file Errors.cpp
+
+    @brief This file contains definitions of functions used for reporting critical application errors
+
+    It is very important that (std::)abort is NEVER called in place of *((volatile int*)NULL) = 0;
+    Calling abort() on Windows does not invoke unhandled exception filters - a mechanism used by WheatyExceptionReport
+    to log crashes. exit(1) calls here are for static analysis tools to indicate that calling functions defined in this file
+    terminates the application.
+ */
+
+#ifdef _WIN32
+#include <Windows.h>
+#define Crash(message) \
+    ULONG_PTR execeptionArgs[] = { reinterpret_cast<ULONG_PTR>(strdup(message)), reinterpret_cast<ULONG_PTR>(_ReturnAddress()) }; \
+    RaiseException(EXCEPTION_ASSERTION_FAILURE, 0, 2, execeptionArgs);
+#else
+// should be easily accessible in gdb
+extern "C" { char const* TrinityAssertionFailedMessage = nullptr; }
+#define Crash(message) \
+    TrinityAssertionFailedMessage = strdup(message); \
+    *((volatile int*)nullptr) = 0; \
+    exit(1);
+#endif
+
+namespace
+{
+    std::string FormatAssertionMessage(char const* format, va_list args)
+    {
+        std::string formatted;
+        va_list len;
+
+        va_copy(len, args);
+        int32 length = vsnprintf(nullptr, 0, format, len);
+        va_end(len);
+
+        formatted.resize(length);
+        vsnprintf(&formatted[0], length + 1, format, args);
+
+        return formatted;
+    }
+}
 
 namespace Trinity {
+
+void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message)
+{
+    std::string formattedMessage = StringFormat("\n%s:%i in %s ASSERTION FAILED:\n  %s\n", file, line, function, message) + debugInfo + '\n';
+    fprintf(stderr, "%s", formattedMessage.c_str());
+    fflush(stderr);
+    Crash(formattedMessage.c_str());
+}
+
+void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message, char const* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+
+    std::string formattedMessage = StringFormat("\n%s:%i in %s ASSERTION FAILED:\n  %s\n", file, line, function, message) + FormatAssertionMessage(format, args) + '\n' + debugInfo + '\n';
+    va_end(args);
+
+    fprintf(stderr, "%s", formattedMessage.c_str());
+    fflush(stderr);
+
+    Crash(formattedMessage.c_str());
+}
 
 void Fatal(char const* file, int line, char const* function, char const* message)
 {
@@ -43,16 +110,37 @@ void Warning(char const* file, int line, char const* function, char const* messa
                    file, line, function, message);
 }
 
-} // namespace Trinity
-
-void LogAndDie(char const* msg, char const* func)
+void Abort(char const* file, int line, char const* function)
 {
-    ACE_Stack_Trace st;
-    sLog->outError("server", "%s\nIn funtion: %s\n%s", msg, func, st.c_str());
-    //std::abort();
+    std::string formattedMessage = StringFormat("\n%s:%i in %s ABORTED.\n", file, line, function);
+    fprintf(stderr, "%s", formattedMessage.c_str());
+    fflush(stderr);
+    Crash(formattedMessage.c_str());
 }
+
+void Abort(char const* file, int line, char const* function, char const* message, ...)
+{
+    va_list args;
+    va_start(args, message);
+
+    std::string formattedMessage = StringFormat("\n%s:%i in %s ABORTED:\n", file, line, function) + FormatAssertionMessage(message, args) + '\n';
+    va_end(args);
+
+    fprintf(stderr, "%s", formattedMessage.c_str());
+    fflush(stderr);
+
+    Crash(formattedMessage.c_str());
+}
+
+
+} // namespace Trinity
 
 void LogNotImplementedCall(char const* func)
 {
     sLog->outError("server", "Call of not implemented function: %s", func);
+}
+
+std::string GetDebugInfo()
+{
+    return "";
 }

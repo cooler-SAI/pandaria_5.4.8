@@ -26,7 +26,6 @@
 #include <ace/Dev_Poll_Reactor.h>
 #include <ace/TP_Reactor.h>
 #include <ace/ACE.h>
-#include <ace/Sig_Handler.h>
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
 
@@ -206,12 +205,15 @@ extern int main(int argc, char** argv)
     }
 
     // Initialize the signal handlers
-    AuthServerSignalHandler SignalINT, SignalTERM;
+    Trinity::SignalHandler signalHandler;
+    auto const _handler = [](int) { stopEvent = true; };
 
     // Register authservers's signal handlers
-    ACE_Sig_Handler Handler;
-    Handler.register_handler(SIGINT, &SignalINT);
-    Handler.register_handler(SIGTERM, &SignalTERM);
+    signalHandler.handle_signal(SIGINT, _handler);
+    signalHandler.handle_signal(SIGTERM, _handler);
+#if defined(_WIN32)
+    signalHandler.handle_signal(SIGBREAK, _handler);
+#endif
 
 #if defined(_WIN32) || defined(__linux__)
 

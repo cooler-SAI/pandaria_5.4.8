@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include <ace/OS_NS_string.h>
 #include <ace/INET_Addr.h>
 #include <ace/SString.h>
@@ -106,7 +107,7 @@ bool RealmSocket::recv_soft(char *buf, size_t len)
     if (input_buffer_.length() < len)
         return false;
 
-    ACE_OS::memcpy(buf, input_buffer_.rd_ptr(), len);
+    std::memcpy(buf, input_buffer_.rd_ptr(), len);
 
     return true;
 }

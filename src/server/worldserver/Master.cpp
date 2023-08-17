@@ -19,7 +19,6 @@
     \ingroup Trinityd
 */
 
-#include <ace/Sig_Handler.h>
 
 #include "Common.h"
 #include "SystemConfig.h"
@@ -60,26 +59,28 @@ extern int m_ServiceStatus;
 #endif
 
 /// Handle worldservers's termination signals
-class WorldServerSignalHandler : public Trinity::SignalHandler
+void HandleSignal(int sigNum)
 {
-    public:
-        virtual void HandleSignal(int sigNum)
-        {
-            switch (sigNum)
-            {
-                case SIGINT:
-                    World::StopNow(RESTART_EXIT_CODE);
-                    break;
-                case SIGTERM:
+    switch (sigNum)
+    {
+        case SIGINT:
+            World::StopNow(RESTART_EXIT_CODE);
+            break;
+        case SIGTERM:
 #ifdef _WIN32
-                case SIGBREAK:
-                    if (m_ServiceStatus != 1)
+        case SIGBREAK:
+            if (m_ServiceStatus != 1)
 #endif
-                    World::StopNow(SHUTDOWN_EXIT_CODE);
-                    break;
-            }
-        }
-};
+                World::StopNow(SHUTDOWN_EXIT_CODE);
+            break;
+            /*case SIGSEGV:
+                sLog->outString("ZOMG! SIGSEGV handled!");
+                World::StopNow(SHUTDOWN_EXIT_CODE);
+                break;*/
+        default:
+            break;
+    }
+}
 
 class FreezeDetectorRunnable : public ACE_Based::Runnable
 {
@@ -215,17 +216,11 @@ int Master::Run()
     RunAuthserverIfNeed();
 
     ///- Initialize the signal handlers
-    WorldServerSignalHandler signalINT, signalTERM;
-    #ifdef _WIN32
-    WorldServerSignalHandler signalBREAK;
-    #endif /* _WIN32 */
-
-    ///- Register worldserver's signal handlers
-    ACE_Sig_Handler handle;
-    handle.register_handler(SIGINT, &signalINT);
-    handle.register_handler(SIGTERM, &signalTERM);
-#ifdef _WIN32
-    handle.register_handler(SIGBREAK, &signalBREAK);
+    Trinity::SignalHandler signalHandler;
+    signalHandler.handle_signal(SIGINT, &HandleSignal);
+    signalHandler.handle_signal(SIGTERM, &HandleSignal);
+#if defined(_WIN32)
+    signalHandler.handle_signal(SIGBREAK, &HandleSignal);
 #endif
 
     ///- Launch WorldRunnable thread
@@ -330,7 +325,7 @@ int Master::Run()
     uint16 worldPort = uint16(sWorld->getIntConfig(CONFIG_PORT_WORLD));
     std::string bindIp = sConfigMgr->GetStringDefault("BindIP", "0.0.0.0");
 
-    if (sWorldSocketMgr->StartNetwork(worldPort, bindIp.c_str()) == -1)
+    if (sWorldSocketMgr.StartNetwork(worldPort, bindIp.c_str()) == -1)
     {
         TC_LOG_ERROR("server.worldserver", "Failed to start network");
         World::StopNow(ERROR_EXIT_CODE);

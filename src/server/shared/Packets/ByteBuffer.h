@@ -22,7 +22,6 @@
 #include "Errors.h"
 #include "ByteConverter.h"
 
-#include <ace/OS_NS_time.h>
 #include <exception>
 #include <list>
 #include <map>
@@ -51,7 +50,7 @@ class ByteBufferPositionException : public ByteBufferException
 public:
     ByteBufferPositionException(bool add, size_t pos, size_t size, size_t valueSize);
 
-    ~ByteBufferPositionException() throw() { }
+    ~ByteBufferPositionException() noexcept = default;
 };
 
 class ByteBufferSourceException : public ByteBufferException
@@ -59,7 +58,15 @@ class ByteBufferSourceException : public ByteBufferException
 public:
     ByteBufferSourceException(size_t pos, size_t size, size_t valueSize);
 
-    ~ByteBufferSourceException() throw() { }
+    ~ByteBufferSourceException() noexcept = default;
+};
+
+class ByteBufferInvalidValueException : public ByteBufferException
+{
+public:
+    ByteBufferInvalidValueException(char const* type, char const* value);
+
+    ~ByteBufferInvalidValueException() noexcept = default;
 };
 
 //! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
@@ -643,20 +650,9 @@ public:
             append(str.c_str(), len);
     }
 
-    uint32 ReadPackedTime()
-    {
-        uint32 packedDate = read<uint32>();
-        tm lt = tm();
+    std::string ReadCString(bool requireValidUtf8 = true);
 
-        lt.tm_min = packedDate & 0x3F;
-        lt.tm_hour = (packedDate >> 6) & 0x1F;
-        //lt.tm_wday = (packedDate >> 11) & 7;
-        lt.tm_mday = ((packedDate >> 14) & 0x3F) + 1;
-        lt.tm_mon = (packedDate >> 20) & 0xF;
-        lt.tm_year = ((packedDate >> 24) & 0x1F) + 100;
-
-        return uint32(mktime(&lt));
-    }
+    uint32 ReadPackedTime();
 
     ByteBuffer& ReadPackedTime(uint32& time)
     {
@@ -693,22 +689,7 @@ public:
     {
         return append((const uint8 *)src, cnt * sizeof(T));
     }
-
-    void append(const uint8 *src, size_t cnt)
-    {
-        if (!cnt)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        if (!src)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        ASSERT(size() < 10000000);
-
-        if (_storage.size() < _wpos + cnt)
-            _storage.resize(_wpos + cnt);
-        std::memcpy(&_storage[_wpos], src, cnt);
-        _wpos += cnt;
-    }
+    void append(uint8 const* src, size_t cnt);
 
     void append(const ByteBuffer& buffer)
     {
@@ -756,7 +737,7 @@ public:
     void AppendPackedTime(time_t time)
     {
         tm lt;
-        ACE_OS::localtime_r(&time, &lt);
+        localtime_r(&time, &lt);
         append<uint32>((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min);
     }
 

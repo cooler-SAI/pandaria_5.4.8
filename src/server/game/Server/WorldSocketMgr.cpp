@@ -28,7 +28,6 @@
 #include <ace/Reactor_Impl.h>
 #include <ace/TP_Reactor.h>
 #include <ace/Dev_Poll_Reactor.h>
-#include <ace/Guard_T.h>
 #include <ace/Atomic_Op.h>
 #include <ace/os_include/arpa/os_inet.h>
 #include <ace/os_include/netinet/os_tcp.h>
@@ -108,7 +107,7 @@ class ReactorRunnable : protected ACE_Task_Base
 
         int AddSocket (WorldSocket* sock)
         {
-            TRINITY_GUARD(ACE_Thread_Mutex, m_NewSockets_Lock);
+            std::lock_guard<std::mutex> guard(m_NewSockets_Lock);
 
             ++m_Connections;
             sock->AddReference();
@@ -129,7 +128,7 @@ class ReactorRunnable : protected ACE_Task_Base
 
         void AddNewSockets()
         {
-            TRINITY_GUARD(ACE_Thread_Mutex, m_NewSockets_Lock);
+            std::lock_guard<std::mutex> guard(m_NewSockets_Lock);
 
             if (m_NewSockets.empty())
                 return;
@@ -156,7 +155,7 @@ class ReactorRunnable : protected ACE_Task_Base
         {
             TC_LOG_DEBUG("misc", "Network Thread Starting");
 
-            ACE_ASSERT (m_Reactor);
+            ASSERT (m_Reactor);
 
             SocketSet::iterator i, t;
 
@@ -207,7 +206,7 @@ class ReactorRunnable : protected ACE_Task_Base
         SocketSet m_Sockets;
 
         SocketSet m_NewSockets;
-        ACE_Thread_Mutex m_NewSockets_Lock;
+        std::mutex m_NewSockets_Lock;
 };
 
 WorldSocketMgr::WorldSocketMgr() :
@@ -222,6 +221,12 @@ WorldSocketMgr::~WorldSocketMgr()
 {
     delete [] m_NetThreads;
     delete m_Acceptor;
+}
+
+WorldSocketMgr& WorldSocketMgr::Instance()
+{
+    static WorldSocketMgr instance;
+    return instance;
 }
 
 int
@@ -349,7 +354,7 @@ WorldSocketMgr::OnSocketOpen (WorldSocket* sock)
     // we skip the Acceptor Thread
     size_t min = 1;
 
-    ACE_ASSERT (m_NetThreadsCount >= 1);
+    ASSERT (m_NetThreadsCount >= 1);
 
     for (size_t i = 1; i < m_NetThreadsCount; ++i)
         if (m_NetThreads[i].Connections() < m_NetThreads[min].Connections())

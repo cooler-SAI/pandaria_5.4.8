@@ -19,12 +19,12 @@
 #define _TRANSACTION_H
 
 #include "SQLOperation.h"
-#include "Task.h"
 #include <memory>
 #include <mutex>
 
 //- Forward declare (don't include header to prevent circular includes)
 class PreparedStatement;
+template<typename U> class Task;
 
 /*! Transactions, high level class. */
 class Transaction

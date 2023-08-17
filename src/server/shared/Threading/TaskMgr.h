@@ -68,7 +68,7 @@ public:
 
 private:
     typedef std::shared_ptr<TaskBase> TaskObject;
-    ACE_Based::LockedQueue<TaskObject, ACE_Thread_Mutex> _queue;
+    LockedQueue<TaskObject> _queue;
     std::list<TaskObject> _tasks;
     std::chrono::milliseconds _max = std::chrono::milliseconds(25);
     static std::unique_ptr<ThreadPool> _pool;
