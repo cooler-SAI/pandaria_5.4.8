@@ -2719,6 +2719,8 @@ UnitAura::UnitAura(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
     : Aura(spellproto, owner, caster, castItem, casterGUID, effMask, baseAmount)
 {
     m_AuraDRGroup = DIMINISHING_NONE;
+    LoadScripts();
+    _InitEffects(effMask, caster, baseAmount);
     GetUnitOwner()->_AddAura(this, caster);
 }
 
