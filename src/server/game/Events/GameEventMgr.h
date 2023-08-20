@@ -22,7 +22,6 @@
 #include "SharedDefines.h"
 #include "Define.h"
 #include "WorldStateBuilder.h"
-#include <ace/Singleton.h>
 
 #define max_ge_check_delay DAY  // 1 day in seconds
 
@@ -103,13 +102,13 @@ class Quest;
 
 class GameEventMgr
 {
-    friend class ACE_Singleton<GameEventMgr, ACE_Null_Mutex>;
-
     private:
         GameEventMgr();
         ~GameEventMgr() { };
 
     public:
+        static GameEventMgr* instance();
+        
         typedef std::set<uint16> ActiveEvents;
         typedef std::vector<GameEventData> GameEventDataMap;
         ActiveEvents const& GetActiveEventList() const { return m_ActiveEvents; }
@@ -192,7 +191,7 @@ class GameEventMgr
         std::vector<uint32> modifiedHolidays;
 };
 
-#define sGameEventMgr ACE_Singleton<GameEventMgr, ACE_Null_Mutex>::instance()
+#define sGameEventMgr GameEventMgr::instance()
 
 bool IsHolidayActive(HolidayIds id);
 bool IsEventActive(uint16 event_id);

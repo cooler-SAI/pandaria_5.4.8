@@ -20,7 +20,6 @@
 
 #include "Define.h"
 #include "Errors.h"
-#include <ace/Singleton.h>
 #include <list>
 #include <map>
 
@@ -256,13 +255,14 @@ typedef std::map<uint32, ConditionList> ConditionReferenceContainer;//only used 
 
 class ConditionMgr
 {
-    friend class ACE_Singleton<ConditionMgr, ACE_Null_Mutex>;
 
     private:
         ConditionMgr();
         ~ConditionMgr();
 
     public:
+        static ConditionMgr* instance();
+
         void LoadConditions(bool isReload = false);
         bool isConditionTypeValid(Condition* cond);
         ConditionList GetConditionReferences(uint32 refId);
@@ -306,6 +306,6 @@ class ConditionMgr
         std::unordered_set<VehicleAIBase*> m_vehicleAIs;
 };
 
-#define sConditionMgr ACE_Singleton<ConditionMgr, ACE_Null_Mutex>::instance()
+#define sConditionMgr ConditionMgr::instance()
 
 #endif

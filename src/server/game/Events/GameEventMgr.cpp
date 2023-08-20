@@ -30,6 +30,12 @@
 #include "GameObjectAI.h"
 #include "ScriptMgr.h"
 
+GameEventMgr* GameEventMgr::instance()
+{
+    static GameEventMgr instance;
+    return &instance;
+}
+
 bool GameEventMgr::CheckOneGameEvent(uint16 entry) const
 {
     switch (mGameEvent[entry].state)
@@ -2074,7 +2080,7 @@ namespace AprilFoolsDay
 
         if (activate)
         {
-            TRINITY_READ_GUARD(HashMapHolder<Creature>::LockType, *HashMapHolder<Creature>::GetLock());
+            std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
             for (auto ref : ObjectAccessor::GetCreatures())
             {
                 Creature* creature = ref.second;
@@ -2162,7 +2168,7 @@ namespace AprilFoolsDay
                     *proto = pair.second;
             entryToOriginalTemplate.clear();
 
-            TRINITY_READ_GUARD(HashMapHolder<Creature>::LockType, *HashMapHolder<Creature>::GetLock());
+            std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
             for (auto ref : ObjectAccessor::GetCreatures())
             {
                 Creature* creature = ref.second;
@@ -2216,14 +2222,14 @@ void GameEventMgr::RunSmartAIScripts(uint16 event_id, bool activate)
     //! Iterate over every supported source type (creature and gameobject)
     //! Not entirely sure how this will affect units in non-loaded grids.
     {
-        TRINITY_READ_GUARD(HashMapHolder<Creature>::LockType, *HashMapHolder<Creature>::GetLock());
+        std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
         HashMapHolder<Creature>::MapType const& m = ObjectAccessor::GetCreatures();
         for (HashMapHolder<Creature>::MapType::const_iterator iter = m.begin(); iter != m.end(); ++iter)
             if (iter->second->IsInWorld())
                 iter->second->AI()->sOnGameEvent(activate, event_id);
     }
     {
-        TRINITY_READ_GUARD(HashMapHolder<GameObject>::LockType, *HashMapHolder<GameObject>::GetLock());
+        std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
         HashMapHolder<GameObject>::MapType const& m = ObjectAccessor::GetGameObjects();
         for (HashMapHolder<GameObject>::MapType::const_iterator iter = m.begin(); iter != m.end(); ++iter)
             if (iter->second->IsInWorld())

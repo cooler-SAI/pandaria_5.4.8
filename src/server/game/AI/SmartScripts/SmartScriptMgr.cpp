@@ -43,6 +43,12 @@
     } \
 }
 
+SmartWaypointMgr* SmartWaypointMgr::instance()
+{
+    static SmartWaypointMgr instance;
+    return &instance;
+}
+
 void SmartWaypointMgr::LoadFromDB()
 {
     uint32 oldMSTime = getMSTime();
@@ -108,15 +114,28 @@ void SmartWaypointMgr::LoadFromDB()
 
 }
 
-SmartWaypointMgr::~SmartWaypointMgr()
+WPPath* SmartWaypointMgr::GetPath(uint32 id)
 {
-    for (std::unordered_map<uint32, WPPath*>::iterator itr = waypoint_map.begin(); itr != waypoint_map.end(); ++itr)
-    {
-        for (WPPath::iterator pathItr = itr->second->begin(); pathItr != itr->second->end(); ++pathItr)
-            delete pathItr->second;
+    if (waypoint_map.find(id) != waypoint_map.end())
+        return waypoint_map[id];
+    else return 0;
+}
 
-        delete itr->second;
-    }
+// SmartWaypointMgr::~SmartWaypointMgr()
+// {
+//     for (std::unordered_map<uint32, WPPath*>::iterator itr = waypoint_map.begin(); itr != waypoint_map.end(); ++itr)
+//     {
+//         for (WPPath::iterator pathItr = itr->second->begin(); pathItr != itr->second->end(); ++pathItr)
+//             delete pathItr->second;
+
+//         delete itr->second;
+//     }
+// }
+
+SmartAIMgr* SmartAIMgr::instance()
+{
+    static SmartAIMgr instance;
+    return &instance;
 }
 
 void SmartAIMgr::LoadSmartAIFromDB()

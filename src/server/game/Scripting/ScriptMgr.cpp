@@ -199,6 +199,12 @@ ScriptMgr::ScriptMgr()
 
 ScriptMgr::~ScriptMgr() { }
 
+ScriptMgr* ScriptMgr::instance()
+{
+    static ScriptMgr instance;
+    return &instance;
+}
+
 //#ifdef ELUNA
 //extern void StartEluna(bool restart);
 //#endif

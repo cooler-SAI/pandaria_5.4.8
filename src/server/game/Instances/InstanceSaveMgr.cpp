@@ -41,6 +41,12 @@ InstanceSaveManager::~InstanceSaveManager()
 {
 }
 
+InstanceSaveManager* InstanceSaveManager::instance()
+{
+    static InstanceSaveManager _instance;
+    return &_instance;
+}
+
 void InstanceSaveManager::Unload()
 {
     // it is undefined whether this or objectmgr will be unloaded first

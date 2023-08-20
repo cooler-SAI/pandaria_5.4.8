@@ -45,7 +45,6 @@
 #include "PetBattle.h"
 #include "Battleground.h"
 #include "BattlegroundSA.h"
-#include <ace/Stack_Trace.h>
 
 namespace Trinity
 {
@@ -1442,15 +1441,6 @@ static const uint32 achievIdForDungeon[][4] =
  */
 void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, uint64 miscValue1, uint64 miscValue2, uint64 miscValue3, Unit const* unit, Player* referencePlayer)
 {
-    if (referencePlayer && CurrentMap)
-    {
-        if (referencePlayer->GetMap() != CurrentMap)
-        {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "AchievementMgr::UpdateAchievementCriteria, player: %u, m_currMap: %u, CurrentMap: %u\n%s", referencePlayer->GetGUIDLow(), referencePlayer->GetMap()->GetId(), CurrentMap->GetId(), st.c_str());
-            return;
-        }
-    }
 
     if (type >= ACHIEVEMENT_CRITERIA_TYPE_TOTAL)
     {

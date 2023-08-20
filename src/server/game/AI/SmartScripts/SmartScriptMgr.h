@@ -1479,23 +1479,21 @@ typedef std::unordered_map<uint32, GuidList> GuidListMap;
 
 class SmartWaypointMgr
 {
-    friend class ACE_Singleton<SmartWaypointMgr, ACE_Null_Mutex>;
-    SmartWaypointMgr() { }
     public:
-        ~SmartWaypointMgr();
+        static SmartWaypointMgr* instance();    
 
         void LoadFromDB();
 
-        WPPath* GetPath(uint32 id)
-        {
-            if (waypoint_map.find(id) != waypoint_map.end())
-                return waypoint_map[id];
-            else return 0;
-        }
+        WPPath* GetPath(uint32 id);
 
     private:
+        SmartWaypointMgr() { }
+        ~SmartWaypointMgr() { }
+
         std::unordered_map<uint32, WPPath*> waypoint_map;
 };
+
+#define sSmartWaypointMgr SmartWaypointMgr::instance()
 
 // all events for a single entry
 typedef std::vector<SmartScriptHolder> SmartAIEventList;
@@ -1505,11 +1503,11 @@ typedef std::unordered_map<int32, SmartAIEventList> SmartAIEventMap;
 
 class SmartAIMgr
 {
-    friend class ACE_Singleton<SmartAIMgr, ACE_Null_Mutex>;
-    SmartAIMgr(){ }
+    private:
+        SmartAIMgr() { }
+        ~SmartAIMgr() { }
     public:
-        ~SmartAIMgr(){ }
-
+        static SmartAIMgr* instance();
         void LoadSmartAIFromDB();
 
         SmartAIEventList GetScript(int32 entry, SmartScriptType type)
@@ -1686,6 +1684,5 @@ class SmartAIMgr
         std::unordered_map<uint32, SpellEffectPair> _killCreditsSpellCache;
 };
 
-#define sSmartScriptMgr ACE_Singleton<SmartAIMgr, ACE_Null_Mutex>::instance()
-#define sSmartWaypointMgr ACE_Singleton<SmartWaypointMgr, ACE_Null_Mutex>::instance()
+#define sSmartScriptMgr SmartAIMgr::instance()
 #endif

@@ -609,6 +609,11 @@ void BossAI::_JustDied()
     }
 }
 
+void BossAI::_JustReachedHome()
+{
+    me->setActive(false);
+}
+
 bool BossAI::_EnterCombat()
 {
     if (instance)
