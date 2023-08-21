@@ -317,6 +317,11 @@ add_library(game STATIC
   ${game_STAT_SRCS}
 )
 
+target_link_libraries(game
+  INTERFACE
+    shared
+    Detour)
+
 if (ELUNA)
   add_dependencies(game lua)
   target_link_libraries(game

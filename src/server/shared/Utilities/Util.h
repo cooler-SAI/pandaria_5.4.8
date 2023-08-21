@@ -117,6 +117,8 @@ inline bool roll_chance_i(int chance)
     return chance > irand(0, 99);
 }
 
+struct tm* localtime_r(time_t const* time, struct tm *result);
+
 /*
 * SFMT wrapper satisfying UniformRandomNumberGenerator concept for use in <random> algorithms
 */

@@ -51,6 +51,7 @@
 #include "WaypointManager.h"
 #include "World.h"
 #include "Battleground.h"
+#include "Util.h"
 
 ScriptMapMap sSpellScripts;
 ScriptMapMap sEventScripts;

@@ -29,6 +29,7 @@
 #include "UnitAI.h"
 #include "GameObjectAI.h"
 #include "ScriptMgr.h"
+#include "Util.h"
 
 GameEventMgr* GameEventMgr::instance()
 {

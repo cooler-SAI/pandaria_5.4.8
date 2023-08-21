@@ -414,7 +414,7 @@ class UnitScript : public ScriptObject
         virtual void ModifySpellDamageTaken(Unit* /*target*/, Unit* /*attacker*/, int32& /*damage*/) { }
 };
 
-class CreatureScript : public ScriptObject, public UpdatableScript<Creature> 
+class CreatureScript : public ScriptObject
 {
     protected:
 
@@ -1045,7 +1045,6 @@ class ScriptMgr
         bool OnQuestReward(Player* player, Creature* creature, Quest const* quest, uint32 opt);
         uint32 GetDialogStatus(Player* player, Creature* creature);
         CreatureAI* GetCreatureAI(Creature* creature);
-        void OnCreatureUpdate(Creature* creature, uint32 diff);
 
     public: /* GameObjectScript */
 

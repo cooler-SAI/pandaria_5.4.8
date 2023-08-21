@@ -47,6 +47,7 @@ Copied events should probably have a new owner
 #include "GuildMgr.h"
 #include "WorldSession.h"
 #include "GameEventMgr.h"
+#include "Util.h"
 
 void WorldSession::HandleCalendarGetCalendar(WorldPacket& /*recvData*/)
 {

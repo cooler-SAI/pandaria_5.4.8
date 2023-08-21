@@ -167,7 +167,7 @@ void StartEluna(bool restart)
 
 Eluna* Eluna::instance()
 {
-    static Eluna* instance;
+    static Eluna instance;
     return &instance;
 }
 

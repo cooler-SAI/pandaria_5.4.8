@@ -23,6 +23,7 @@
 #include <sstream>
 #include <ctime>
 #include "StringFormat.h"
+#include "Util.h"
 
 ByteBufferPositionException::ByteBufferPositionException(bool add, size_t pos,
                                                          size_t size, size_t valueSize)
@@ -185,4 +186,11 @@ void ByteBuffer::hexlike() const
     }
     o << " ";
     TC_LOG_TRACE("network", "%s", o.str().c_str());
+}
+
+void ByteBuffer::AppendPackedTime(time_t time)
+{
+    tm lt;
+    localtime_r(&time, &lt);
+    append<uint32>((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min);
 }

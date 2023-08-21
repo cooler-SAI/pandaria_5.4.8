@@ -25,6 +25,7 @@
 #include "TypeList.h"
 #include "TaskScheduler.h"
 #include "AuthCrypt.h"
+#include "Util.h"
 #include <memory>
 #include <string>
 #include <vector>

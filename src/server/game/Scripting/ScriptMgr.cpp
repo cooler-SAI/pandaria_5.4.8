@@ -999,14 +999,6 @@ GameObjectAI* ScriptMgr::GetGameObjectAI(GameObject* gameobject)
     return tmpscript->GetAI(gameobject);
 }
 
-void ScriptMgr::OnCreatureUpdate(Creature* creature, uint32 diff)
-{
-    ASSERT(creature);
-
-    GET_SCRIPT(CreatureScript, creature->GetScriptId(), tmpscript);
-    tmpscript->OnUpdate(creature, diff);
-}
-
 bool ScriptMgr::OnGossipHello(Player* player, GameObject* go)
 {
     ASSERT(player);

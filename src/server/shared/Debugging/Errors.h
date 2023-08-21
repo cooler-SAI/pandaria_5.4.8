@@ -38,6 +38,10 @@ namespace Trinity
 
 std::string GetDebugInfo();
 
+#ifdef _WIN32
+#define EXCEPTION_ASSERTION_FAILURE 0xC0000420L
+#endif
+
 #define WPAssert(cond, ...) do { if (!(cond)) Trinity::Assert(__FILE__, __LINE__, __FUNCTION__, GetDebugInfo(), #cond, ##__VA_ARGS__); } while(0) 
 #define WPAssert_NODEBUGINFO(cond, ...) do { if (!(cond)) Trinity::Assert(__FILE__, __LINE__, __FUNCTION__, "", #cond, ##__VA_ARGS__); } while(0) 
 #define WPFatal(cond, msg) do { if (!(cond)) Trinity::Fatal(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)

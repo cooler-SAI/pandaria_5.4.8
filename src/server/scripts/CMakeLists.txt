@@ -225,6 +225,10 @@ if (ELUNA)
   )
 endif()
 
+target_link_libraries(scripts
+  PUBLIC
+    game)
+
 add_dependencies(scripts revision.h)
 
 # Generate precompiled header

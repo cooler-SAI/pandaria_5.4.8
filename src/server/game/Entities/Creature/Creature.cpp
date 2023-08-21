@@ -609,7 +609,6 @@ void Creature::Update(uint32 diff)
             break;
     }
 
-    sScriptMgr->OnCreatureUpdate(this, diff);
 }
 
 void Creature::RegenerateMana()

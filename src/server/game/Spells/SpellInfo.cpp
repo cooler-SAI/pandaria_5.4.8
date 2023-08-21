@@ -25,6 +25,7 @@
 #include "Battleground.h"
 #include "Vehicle.h"
 #include "InstanceScript.h"
+#include "Util.h"
 
 uint32 GetTargetFlagMask(SpellTargetObjectTypes objType)
 {

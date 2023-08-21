@@ -91,6 +91,13 @@ include_directories(
     ${OPENSSL_INCLUDE_DIR}
 )
 
+if(CMAKE_SYSTEM_NAME MATCHES "Windows")
+include_directories(
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/dep/acelite
+)
+endif()
+
 if (Boost_FOUND)
   include_directories(
     PRIVATE
