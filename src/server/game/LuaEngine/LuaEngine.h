@@ -377,6 +377,7 @@ class Eluna
 {
     public:
         friend class ScriptMgr;
+        static Eluna* instance();
         lua_State* L;
         EventMgr m_EventMgr;
 
@@ -698,7 +699,7 @@ class Eluna
             WorldObjectInRangeCheck(WorldObjectInRangeCheck const&);
         };
 };
-#define sEluna ACE_Singleton<Eluna, ACE_Null_Mutex>::instance()
+#define sEluna Eluna::instance()
 
 class LuaTaxiMgr
 {

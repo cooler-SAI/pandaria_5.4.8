@@ -18,8 +18,6 @@
 #ifndef SF_AUCTION_HOUSE_MGR_H
 #define SF_AUCTION_HOUSE_MGR_H
 
-#include <ace/Singleton.h>
-
 #include "Common.h"
 #include "DBCStructure.h"
 #include "DatabaseEnv.h"
@@ -179,18 +177,13 @@ class AuctionHouseObject
 
 class AuctionHouseMgr
 {
-    friend class ACE_Singleton<AuctionHouseMgr, ACE_Null_Mutex>;
 
     private:
         AuctionHouseMgr();
         ~AuctionHouseMgr();
 
     public:
-        static AuctionHouseMgr* instance()
-        {
-            static AuctionHouseMgr _instance;
-            return &_instance;
-        }
+        static AuctionHouseMgr* instance();
 
         void Unload();
 

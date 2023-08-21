@@ -108,6 +108,12 @@ AuctionHouseMgr::~AuctionHouseMgr()
         delete itr->second;
 }
 
+AuctionHouseMgr* AuctionHouseMgr::instance()
+{
+    static AuctionHouseMgr instance;
+    return &instance;
+}
+
 void AuctionHouseMgr::Unload()
 {
     searchQueries.queue()->close();

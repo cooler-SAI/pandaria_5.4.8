@@ -41,6 +41,12 @@ TicketMgr::~TicketMgr()
         delete itr->second;
 }
 
+TicketMgr* TicketMgr::instance()
+{
+    static TicketMgr instance;
+    return &instance;
+}
+
 void TicketMgr::Initialize()
 {
     SetFeedBackSystemStatus(sWorld->getBoolConfig(CONFIG_TICKETS_FEEDBACK_SYSTEM_ENABLED));

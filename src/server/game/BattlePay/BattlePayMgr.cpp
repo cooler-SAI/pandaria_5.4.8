@@ -51,6 +51,12 @@ BattlePayMgr::~BattlePayMgr()
     delete m_purchase;
 }
 
+BattlePayMgr* BattlePayMgr::instance()
+{
+    static BattlePayMgr instance;
+    return &instance;
+}
+
 void BattlePayMgr::LoadFromDb()
 {
     LoadProductsFromDb();

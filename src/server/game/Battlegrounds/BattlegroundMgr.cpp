@@ -68,6 +68,12 @@ BattlegroundMgr::~BattlegroundMgr()
     DeleteAllBattlegrounds();
 }
 
+BattlegroundMgr* BattlegroundMgr::instance()
+{
+    static BattlegroundMgr instance;
+    return &instance;
+}
+
 void BattlegroundMgr::DeleteAllBattlegrounds()
 {
     for (BattlegroundDataContainer::iterator itr1 = bgDataStore.begin(); itr1 != bgDataStore.end(); ++itr1)

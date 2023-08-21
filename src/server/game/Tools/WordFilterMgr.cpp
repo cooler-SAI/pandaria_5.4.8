@@ -79,6 +79,12 @@ WordFilterMgr::~WordFilterMgr()
 {
 }
 
+WordFilterMgr* WordFilterMgr::instance()
+{
+    static WordFilterMgr instance;
+    return &instance;
+}
+
 void WordFilterMgr::LoadLetterAnalogs()
 {
     uint32 oldMSTime = getMSTime();

@@ -24,7 +24,6 @@
 #include "Logger.h"
 
 #include <string>
-#include <ace/Singleton.h>
 
 #define LOGGER_ROOT "root"
 
@@ -32,15 +31,13 @@ typedef std::unordered_map<std::string, Logger> LoggerMap;
 
 class Log
 {
-    friend class ACE_Singleton<Log, ACE_Thread_Mutex>;
-
-
 
     private:
         Log();
         ~Log();
 
     public:
+        static Log* instance();
         void LoadFromConfig();
         void Close();
         bool ShouldLog(std::string const& type, LogLevel level) const;
@@ -81,7 +78,7 @@ class Log
         LogWorker* worker;
 };
 
-#define sLog ACE_Singleton<Log, ACE_Thread_Mutex>::instance()
+#define sLog Log::instance()
 
 #if COMPILER != COMPILER_MICROSOFT
 #define TC_LOG_MESSAGE_BODY(level__, call__, filterType__, ...)     \

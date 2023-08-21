@@ -30,11 +30,11 @@ class ChannelMgr
 {
     typedef std::map<std::wstring, Channel*> ChannelMap;
 
-    public:
-        ChannelMgr() : team(0)
-        { }
-
+    protected:
+        explicit ChannelMgr(uint32 team) : team(team) { }
         ~ChannelMgr();
+
+    public:
 
         static ChannelMgr * forTeam(uint32 team);
         void setTeam(uint32 newTeam) { team = newTeam; }
@@ -49,8 +49,5 @@ class ChannelMgr
 
         void MakeNotOnPacket(WorldPacket* data, std::string const& name);
 };
-
-class AllianceChannelMgr : public ChannelMgr { };
-class HordeChannelMgr    : public ChannelMgr { };
 
 #endif

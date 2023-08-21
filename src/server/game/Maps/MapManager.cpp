@@ -46,6 +46,12 @@ MapManager::MapManager()
 
 MapManager::~MapManager() { }
 
+MapManager* MapManager::instance()
+{
+    static MapManager instance;
+    return &instance;
+}
+
 void MapManager::Initialize()
 {
     Map::InitStateMachine();

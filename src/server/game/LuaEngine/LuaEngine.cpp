@@ -165,6 +165,12 @@ void StartEluna(bool restart)
     TC_LOG_INFO("server.loading", "");
 }
 
+Eluna* Eluna::instance()
+{
+    static Eluna* instance;
+    return &instance;
+}
+
 // Loads lua scripts from given directory
 void Eluna::LoadDirectory(const char* Dirname, LoadedScripts* lscr)
 {

@@ -264,6 +264,7 @@ enum GossipEvents
 
 struct HookMgr
 {
+    static HookMgr* instance();
     struct ElunaCreatureAI;
     struct ElunaGameObjectAI;
     struct ElunaWorldAI;
@@ -385,7 +386,7 @@ struct HookMgr
     void OnDisband(Group* group);
     void OnCreate(Group* group, uint64 leaderGuid, GroupType groupType);
 };
-#define sHookMgr ACE_Singleton<HookMgr, ACE_Null_Mutex>::instance()
+#define sHookMgr HookMgr::instance()
 
 class ElunaCreatureScript : public CreatureScript
 {

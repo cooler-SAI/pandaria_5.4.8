@@ -39,6 +39,12 @@ Log::~Log()
     Close();
 }
 
+Log* Log::instance()
+{
+    static Log instance;
+    return &instance;
+}
+
 uint8 Log::NextAppenderId()
 {
     return AppenderId++;

@@ -15,7 +15,6 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
  
-#include <ace/Singleton.h>
 #include <ace/Thread_Mutex.h>
 #include <ace/Log_Msg.h>
 
@@ -23,7 +22,8 @@
 
 DelayExecutor* DelayExecutor::instance()
 {
-    return ACE_Singleton<DelayExecutor, ACE_Thread_Mutex>::instance();
+    static DelayExecutor instance;
+    return &instance;
 }
 
 DelayExecutor::DelayExecutor()

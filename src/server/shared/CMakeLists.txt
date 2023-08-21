@@ -72,7 +72,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast
     ${CMAKE_SOURCE_DIR}/dep/SFMT
     ${CMAKE_SOURCE_DIR}/dep/fmt/include
-    ${CMAKE_SOURCE_DIR}/dep/sockets/include
     ${CMAKE_SOURCE_DIR}/dep/utf8cpp
     ${CMAKE_SOURCE_DIR}/src/server
     ${CMAKE_CURRENT_SOURCE_DIR}

@@ -24,8 +24,8 @@ AppenderFile::AppenderFile(uint8 id, std::string const& name, LogLevel level, co
     filename(_filename),
     logDir(_logDir),
     mode(_mode),
-    maxFileSize(fileSize),
-    fileSize(0)
+    maxFileSize(0),
+    _fileSize(0)
 {
     dynamicName = std::string::npos != filename.find("%s");
     backup = _flags & APPENDER_FLAGS_MAKE_FILE_BACKUP;
@@ -40,7 +40,7 @@ AppenderFile::~AppenderFile()
 
 void AppenderFile::_write(LogMessage const& message)
 {
-    bool exceedMaxSize = maxFileSize > 0 && (fileSize.value() + message.Size()) > maxFileSize;
+    bool exceedMaxSize = maxFileSize > 0 && (_fileSize.load() + message.Size()) > maxFileSize;
 
     if (dynamicName)
     {
@@ -56,7 +56,7 @@ void AppenderFile::_write(LogMessage const& message)
 
     fprintf(logfile, "%s%s", message.prefix.c_str(), message.text.c_str());
     fflush(logfile);
-    fileSize += uint64(message.Size());
+    _fileSize += uint64(message.Size());
 
     if (dynamicName)
         CloseFile();
@@ -76,7 +76,7 @@ FILE* AppenderFile::OpenFile(std::string const &filename, std::string const &mod
 
     if (FILE* ret = fopen(fullName.c_str(), mode.c_str()))
     {
-        fileSize = ftell(ret);
+        _fileSize = ftell(ret);
         return ret;
     }
 

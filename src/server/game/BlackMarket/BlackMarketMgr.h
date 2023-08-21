@@ -18,8 +18,6 @@
 #ifndef BLACK_MARKET_H
 #define BLACK_MARKET_H
 
-#include <ace/Singleton.h>
-
 #include "Common.h"
 #include "DatabaseEnv.h"
 #include "DBCStructure.h"
@@ -128,13 +126,13 @@ typedef std::map<uint32, BlackMarketAuction*> BMAuctionStore;
 
 class BlackMarketMgr
 {
-    friend class ACE_Singleton<BlackMarketMgr, ACE_Null_Mutex>;
 
 private:
     BlackMarketMgr();
     ~BlackMarketMgr();
 
 public:
+    static BlackMarketMgr* instance();
     void Update();
     time_t GetLastUpdate() const { return _lastUpdate; }
 
@@ -162,6 +160,6 @@ private:
     time_t _lastUpdate = time_t(0);
 };
 
-#define sBlackMarketMgr ACE_Singleton<BlackMarketMgr, ACE_Null_Mutex>::instance()
+#define sBlackMarketMgr BlackMarketMgr::instance()
 
 #endif

@@ -42,6 +42,12 @@ BlackMarketMgr::~BlackMarketMgr()
 
 BlackMarketMgr::BlackMarketMgr() { }
 
+BlackMarketMgr* BlackMarketMgr::instance()
+{
+    static BlackMarketMgr instance;
+    return &instance;
+}
+
 BlackMarketAuctionTemplate* BlackMarketAuction::GetTemplate() const
 {
     if (BlackMarketAuctionTemplate* bmTemplate = sBlackMarketMgr->GetTemplate(GetTemplateId()))

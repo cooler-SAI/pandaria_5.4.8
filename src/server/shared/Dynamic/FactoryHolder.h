@@ -29,8 +29,7 @@ class FactoryHolder
 {
     public:
         typedef ObjectRegistry<FactoryHolder<T, Key >, Key > FactoryHolderRegistry;
-        friend class ACE_Singleton<FactoryHolderRegistry, ACE_Null_Mutex>;
-        typedef ACE_Singleton<FactoryHolderRegistry, ACE_Null_Mutex> FactoryHolderRepository;
+        typedef FactoryHolderRegistry FactoryHolderRepository;
 
         FactoryHolder(Key k) : i_key(k) { }
         virtual ~FactoryHolder() { }

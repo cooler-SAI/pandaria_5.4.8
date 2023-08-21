@@ -31,6 +31,12 @@ AccountMgr::~AccountMgr()
 {
 }
 
+AccountMgr* AccountMgr::instance()
+{
+    static AccountMgr instance;
+    return &instance;
+}
+
 AccountOpResult AccountMgr::CreateAccount(std::string username, std::string password, std::string email /*= ""*/, uint32 bnetAccountId /*= 0*/, uint8 bnetIndex /*= 0*/)
 {
     if (utf8length(username) > MAX_ACCOUNT_STR)

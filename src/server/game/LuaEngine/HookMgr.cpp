@@ -7,6 +7,12 @@
 #include "HookMgr.h"
 #include "LuaEngine.h"
 
+HookMgr* HookMgr::instance()
+{
+    static HookMgr instance;
+    return &instance;
+}
+
 void HookMgr::OnWorldUpdate(uint32 diff)
 {
     sEluna->m_EventMgr.Update(diff);

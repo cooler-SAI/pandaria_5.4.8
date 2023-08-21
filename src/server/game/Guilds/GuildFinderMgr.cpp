@@ -28,6 +28,12 @@ GuildFinderMgr::~GuildFinderMgr()
 {
 }
 
+GuildFinderMgr* GuildFinderMgr::instance()
+{
+    static GuildFinderMgr instance;
+    return &instance;
+}
+
 void GuildFinderMgr::LoadFromDB()
 {
     LoadGuildSettings();

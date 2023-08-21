@@ -35,6 +35,12 @@ WardenCheckMgr::~WardenCheckMgr()
         delete itr->second;
 }
 
+WardenCheckMgr* WardenCheckMgr::instance()
+{
+    static WardenCheckMgr instance;
+    return &instance;
+}
+
 void WardenCheckMgr::LoadWardenChecks(bool reload)
 {
     // Check if Warden is enabled by config before loading anything
