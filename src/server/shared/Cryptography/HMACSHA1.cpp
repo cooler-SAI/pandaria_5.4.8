@@ -23,14 +23,14 @@
 HMAC_CTX* HMAC_CTX_new()
 {
     HMAC_CTX *ctx = new HMAC_CTX();
-    HMAC_CTX_init(ctx);
+    HMAC_CTX_init(m_ctx);
     return ctx;
 }
 
 void HMAC_CTX_free(HMAC_CTX* ctx)
 {
-    HMAC_CTX_cleanup(ctx);
-    delete ctx;
+    HMAC_CTX_cleanup(m_ctx);
+    delete m_ctx;
 }
 
 #endif
