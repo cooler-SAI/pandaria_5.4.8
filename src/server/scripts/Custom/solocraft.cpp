@@ -435,7 +435,7 @@ class solocraft_system_announce : public PlayerScript
         {
             if (solocraftConfig.SoloCraftEnable && solocraftConfig.SoloCraftAnnounceModule)
             {
-                ChatHandler(player->GetSession()).SendSysMessage(player->GetSession()->GetTrinityString(SOLOCRAFT_TRINITYSTRING_ACTIVE));
+                ChatHandler(player->GetSession()).SendSysMessage(SOLOCRAFT_TRINITYSTRING_ACTIVE);
             }
         }
 

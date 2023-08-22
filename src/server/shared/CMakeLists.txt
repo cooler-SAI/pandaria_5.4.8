@@ -92,10 +92,10 @@ include_directories(
 )
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
-include_directories(
-  PRIVATE
-    ${CMAKE_SOURCE_DIR}/dep/acelite
-)
+  include_directories(
+    PRIVATE
+      ${CMAKE_SOURCE_DIR}/dep/acelite
+  )
 endif()
 
 if (Boost_FOUND)
