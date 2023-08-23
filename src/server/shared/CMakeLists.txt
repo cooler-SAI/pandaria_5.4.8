@@ -113,8 +113,8 @@ target_link_libraries(shared
   PRIVATE
     sfmt
     fmt
+    ${ACE_LIBRARY}
 )
-#    ${ACE_LIBRARY}
 
 
 # Generate precompiled header
