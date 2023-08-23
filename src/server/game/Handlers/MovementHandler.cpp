@@ -32,7 +32,6 @@
 #include "ObjectMgr.h"
 #include "MovementStructures.h"
 #include "BattlePetMgr.h"
-#include <ace/Stack_Trace.h>
 #include <boost/accumulators/statistics/variance.hpp>
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
@@ -102,8 +101,7 @@ void WorldSession::HandleMoveWorldportAckOpcode()
     bool invalidZ = false;
     if (GetPlayer()->GetPositionZ() > 500000.0f || GetPlayer()->GetPositionZ() <= -200000.0f)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "WorldSession::HandleMoveWorldportAckOpcode z coordinate fucked: %s, map %u, z %f\n%s", GetPlayerInfo().c_str(), newMap->GetId(), GetPlayer()->GetPositionZ(), st.c_str());
+        TC_LOG_ERROR("shitlog", "WorldSession::HandleMoveWorldportAckOpcode z coordinate fucked: %s, map %u, z %f\n", GetPlayerInfo().c_str(), newMap->GetId(), GetPlayer()->GetPositionZ());
         invalidZ = true;
     }
 

@@ -67,7 +67,6 @@
 #include "AreaTrigger.h"
 #include <math.h>
 #include <numeric>
-#include <ace/Stack_Trace.h>
 #include "SpellScript.h"
 #include "PetBattle.h"
 #include "GameEventMgr.h"
@@ -4094,11 +4093,10 @@ void Unit::RemoveOwnedAura(AuraMap::iterator &i, AuraRemoveMode removeMode)
         Unit* caster = aura->GetCaster();
         if (!caster)
         {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+            TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
             caster = ObjectAccessor::FindPlayerInOrOutOfWorld(aura->GetCasterGUID());
             if (!caster)
-                TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster and !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+                TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster and !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
         }
         // ASSERT(caster);
         if (caster)
@@ -4955,16 +4953,14 @@ void Unit::UnbindAura(Aura* aura)
     auto listit = m_boundAuras.find(aura->GetId());
     if (listit == m_boundAuras.end())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::UnbindAura listit == m_boundAuras.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n%s" , aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::UnbindAura listit == m_boundAuras.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n" , aura->GetId(), GetGUID(), GetEntry());
         return;
     }
     auto& list = m_boundAuras[aura->GetId()];
     auto it = std::find(list.begin(), list.end(), aura);
     if (it == list.end())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::UnbindAura it == list.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::UnbindAura it == list.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
         return;
     }
     list.erase(it);
@@ -15767,8 +15763,7 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
     // But we have bug with killing unit than it is dead
     if (!victim->IsAlive())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::Kill, victim isn't alive, killer: " UI64FMTD " (%u), victim: " UI64FMTD " (%u)\n%s", GetGUID(), GetEntry(), victim->GetGUID(), victim->GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::Kill, victim isn't alive, killer: " UI64FMTD " (%u), victim: " UI64FMTD " (%u)\n", GetGUID(), GetEntry(), victim->GetGUID(), victim->GetEntry());
         return;
     }
 

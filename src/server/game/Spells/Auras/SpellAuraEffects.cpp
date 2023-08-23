@@ -5680,8 +5680,7 @@ void AuraEffect::HandleAuraSetVehicle(AuraApplication const* aurApp, uint8 mode,
 
     if (apply && target->IsPet())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "AuraEffect::HandleAuraSetVehicle, target is pet, spell: %u, caster: " UI64FMTD "\n%s", GetSpellInfo()->Id, GetCasterGUID(), st.c_str());
+        TC_LOG_ERROR("shitlog", "AuraEffect::HandleAuraSetVehicle, target is pet, spell: %u, caster: " UI64FMTD "\n", GetSpellInfo()->Id, GetCasterGUID());
     }
 
     uint32 vehicleId = GetMiscValue();

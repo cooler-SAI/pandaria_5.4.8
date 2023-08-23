@@ -89,7 +89,6 @@
 #include "PoolMgr.h"
 #include "Vignette.h"
 #include "LootLockoutMap.h"
-#include <ace/Stack_Trace.h>
 
 #define ZONE_UPDATE_INTERVAL (1*IN_MILLISECONDS)
 
@@ -2347,8 +2346,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
 {
     if (z > 500000.0f || z <= -200000.0f)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "WorldSession::HandleMoveWorldportAckOpcode z coordinate fucked: %s, map %u, z %f\n%s", GetSession()->GetPlayerInfo().c_str(), mapid, z, st.c_str());
+        TC_LOG_ERROR("shitlog", "WorldSession::HandleMoveWorldportAckOpcode z coordinate fucked: %s, map %u, z %f\n", GetSession()->GetPlayerInfo().c_str(), mapid, z);
     }
 
     if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))

@@ -890,8 +890,7 @@ void Creature::SetLootRecipient(Unit* unit)
 
     if (IsPet())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Creature::SetLootRecipient unit: %s guid: " UI64FMTD "\n%s\n", unit->GetName().c_str(), unit->GetGUID(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Creature::SetLootRecipient unit: %s guid: " UI64FMTD "\n%s\n", unit->GetName().c_str(), unit->GetGUID());
         return;
     }
 

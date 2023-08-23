@@ -28,7 +28,6 @@
 #include "Player.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
-#include <ace/Stack_Trace.h>
 #include "DatabaseEnv.h"
 
 void AddItemsSetItem(Player* player, Item* item)
@@ -1878,26 +1877,23 @@ void Item::AddToUpdate()
     {
         if (GetOwnerGUID() != 0) // TODO: this is guild bank...no complaints...so, no need to update ?
         {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner not found, guid %u, entry %u, owner %u\n%s",
-                GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+            TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner not found, guid %u, entry %u, owner %u\n",
+                GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         }
         return;
     }
 
     if (!owner->FindMap())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner hasn't map, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner hasn't map, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (owner->FindMap() != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
         TC_LOG_ERROR("shitlog", "Item::AddToUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n%s",
-            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld(), st.c_str());
+            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld());
         return;
     }
 
@@ -1910,25 +1906,22 @@ void Item::RemoveFromUpdate()
     Player* owner = ObjectAccessor::FindPlayerInOrOutOfWorld(GetOwnerGUID());   // player can be out of world - logout, teleport to cross-server
     if (!owner)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner not found, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner not found, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (!owner->FindMap())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner hasn't map, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner hasn't map, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (owner->FindMap() != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n%s",
-            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n",
+            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld());
         return;
     }
 

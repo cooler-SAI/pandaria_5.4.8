@@ -28,7 +28,6 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "Spline.h"
-#include <ace/Stack_Trace.h>
 
 class IAreaTriggerOnceChecker
 {
@@ -377,8 +376,7 @@ void AreaTrigger::Remove()
             Unit* auraOwner = ObjectAccessor::GetUnit(*this, m_auraOwner);
             if (!auraOwner)
             {
-                ACE_Stack_Trace st;
-                TC_LOG_ERROR("shitlog", "!auraOwner, spell %u, owner " UI64FMTD ", caster " UI64FMTD "\n%s", GetSpellId(), m_auraOwner, GetCasterGUID(), st.c_str());
+                TC_LOG_ERROR("shitlog", "!auraOwner, spell %u, owner " UI64FMTD ", caster " UI64FMTD "\n%s", GetSpellId(), m_auraOwner, GetCasterGUID());
             }
             else
             {

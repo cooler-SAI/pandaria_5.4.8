@@ -60,7 +60,6 @@
 #include "Guild.h"
 #include "LootLockoutMap.h"
 #include "BattlePetMgr.h"
-#include <ace/Stack_Trace.h>
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
@@ -8174,9 +8173,8 @@ SpellEvent::~SpellEvent()
     }
     else
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.\n%s",
-            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->Id, st.c_str());
+        TC_LOG_ERROR("shitlog", "~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.\n",
+            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->Id);
         //ASSERT(false);
     }
 }
