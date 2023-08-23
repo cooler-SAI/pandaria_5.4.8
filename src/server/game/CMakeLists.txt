@@ -307,6 +307,7 @@ if (ELUNA)
     PRIVATE
       ${CMAKE_SOURCE_DIR}/dep/lualib
       ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine
+      ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders
   )
 endif()
 
