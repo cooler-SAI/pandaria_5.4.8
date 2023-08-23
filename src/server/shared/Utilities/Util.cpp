@@ -37,6 +37,13 @@ static SFMTRand* GetRng()
     return sfmtRand.get();
 }
 
+#if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
+struct tm* localtime_r(time_t const* time, struct tm *result)
+{
+    localtime_s(result, time);
+    return result;
+}
+#endif
 
 // typedef ACE_TSS<SFMTRand> SFMTRandTSS;
 // static SFMTRandTSS sfmtRand;

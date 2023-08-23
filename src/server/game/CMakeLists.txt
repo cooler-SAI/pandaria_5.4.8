@@ -286,6 +286,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Warden/Modules
     ${CMAKE_CURRENT_SOURCE_DIR}/Weather
     ${CMAKE_CURRENT_SOURCE_DIR}/World
+    ${CMAKE_SOURCE_DIR}/dep/zlib
 )
 
 if (Boost_FOUND)
@@ -316,9 +317,11 @@ add_library(game STATIC
 )
 
 target_link_libraries(game
-  INTERFACE
+  PRIVATE
     shared
-    Detour)
+    Detour
+    zlib
+)
 
 if (ELUNA)
   add_dependencies(game lua)
