@@ -183,7 +183,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
     ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
     ${CMAKE_SOURCE_DIR}/dep/SFMT
-    ${CMAKE_SOURCE_DIR}/dep/zlib
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
     ${OPENSSL_INCLUDE_DIR}
@@ -287,8 +286,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Warden/Modules
     ${CMAKE_CURRENT_SOURCE_DIR}/Weather
     ${CMAKE_CURRENT_SOURCE_DIR}/World
-    ${CMAKE_SOURCE_DIR}/src/server/scripts/Pandaria/TimelessIsle
-    ${CMAKE_SOURCE_DIR}/src/server/scripts/PrecompiledHeaders          
 )
 
 if (Boost_FOUND)

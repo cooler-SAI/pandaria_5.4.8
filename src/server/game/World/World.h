@@ -22,8 +22,6 @@
 #ifndef SF_WORLD_H
 #define SF_WORLD_H
 
-#include <ace/Singleton.h>
-#include <ace/Atomic_Op.h>
 #include <ace/Future.h>
 #include <ace/Future_Set.h>
 #include "Common.h"
@@ -35,6 +33,7 @@
 #include <map>
 #include <set>
 #include <list>
+#include <atomic>
 
 class Object;
 class WorldPacket;
@@ -1173,7 +1172,7 @@ class World
         World();
         ~World();
     public:
-        static ACE_Atomic_Op<ACE_Thread_Mutex, uint32> m_worldLoopCounter;
+        static uint32 m_worldLoopCounter;
 
         static World* instance()
         {
@@ -1298,7 +1297,7 @@ class World
         void ShutdownMsg(bool show = false, Player* player = NULL);
         static uint8 GetExitCode() { return m_ExitCode; }
         static void StopNow(uint8 exitcode) { m_stopEvent = true; m_ExitCode = exitcode; }
-        static bool IsStopped() { return m_stopEvent.value(); }
+        static bool IsStopped() { return m_stopEvent; }
 
         void Update(uint32 diff);
 
@@ -1477,7 +1476,7 @@ class World
         void DBCleanup();
 
     private:
-        static ACE_Atomic_Op<ACE_Thread_Mutex, bool> m_stopEvent;
+        static std::atomic_long m_stopEvent;
         static uint8 m_ExitCode;
         uint32 m_ShutdownTimer;
         uint32 m_ShutdownMask;

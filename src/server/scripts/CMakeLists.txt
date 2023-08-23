@@ -217,6 +217,10 @@ add_library(scripts STATIC
   ${scripts_STAT_SRCS} 
 )
 
+target_link_libraries(scripts
+  PUBLIC
+    game)
+
 if (ELUNA)
   add_dependencies(scripts lua)
   target_link_libraries(scripts
@@ -225,9 +229,7 @@ if (ELUNA)
   )
 endif()
 
-target_link_libraries(scripts
-  PUBLIC
-    game)
+
 
 add_dependencies(scripts revision.h)
 

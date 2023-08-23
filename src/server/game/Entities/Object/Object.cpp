@@ -52,7 +52,7 @@
 #include "BattlefieldMgr.h"
 #include "Chat.h"
 #include "Transport.h"
-#include "timeless_isle.h"
+// #include "timeless_isle.h" remove hack , fix in future
 
 #define STEALTH_VISIBILITY_UPDATE_TIMER 500
 
@@ -2204,10 +2204,11 @@ bool WorldObject::CanNeverSee(WorldObject const* obj) const
     Player const* player = ToPlayer();
     if (obj->GetTypeId() == TYPEID_GAMEOBJECT && player && !player->IsGameMaster())
     {
-        auto itr = timelessRareChestsMap.find(obj->GetEntry());
-        if (itr != timelessRareChestsMap.end())
-            if (player->GetQuestStatus(itr->second) == QUEST_STATUS_REWARDED || player->IsWeeklyQuestDone(itr->second) || player->IsDailyQuestDone(itr->second))
-                return true;
+        // remove hack , fix in future
+        // auto itr = timelessRareChestsMap.find(obj->GetEntry());
+        // if (itr != timelessRareChestsMap.end())
+        //     if (player->GetQuestStatus(itr->second) == QUEST_STATUS_REWARDED || player->IsWeeklyQuestDone(itr->second) || player->IsDailyQuestDone(itr->second))
+        //         return true;
     }
 
     if (GetMap() != obj->GetMap() || !InSamePhase(obj))
