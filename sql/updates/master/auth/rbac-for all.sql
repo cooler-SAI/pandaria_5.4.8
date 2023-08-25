@@ -15,11 +15,11 @@
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 
--- Dumping database structure for auth2
-CREATE DATABASE IF NOT EXISTS `auth2` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
-USE `auth2`;
+-- Dumping database structure for auth
+CREATE DATABASE IF NOT EXISTS `auth` /*!40100 DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci */ /*!80016 DEFAULT ENCRYPTION='N' */;
+USE `auth`;
 
--- Dumping structure for table auth2.rbac_account_permissions
+-- Dumping structure for table auth.rbac_account_permissions
 CREATE TABLE IF NOT EXISTS `rbac_account_permissions` (
   `accountId` int unsigned NOT NULL COMMENT 'Account id',
   `permissionId` int unsigned NOT NULL COMMENT 'Permission id',
@@ -31,9 +31,9 @@ CREATE TABLE IF NOT EXISTS `rbac_account_permissions` (
   CONSTRAINT `fk__rbac_account_roles__rbac_permissions` FOREIGN KEY (`permissionId`) REFERENCES `rbac_permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Account-Permission relation';
 
--- Dumping data for table auth2.rbac_account_permissions: ~0 rows (approximately)
+-- Dumping data for table auth.rbac_account_permissions: ~0 rows (approximately)
 
--- Dumping structure for table auth2.rbac_default_permissions
+-- Dumping structure for table auth.rbac_default_permissions
 CREATE TABLE IF NOT EXISTS `rbac_default_permissions` (
   `secId` int unsigned NOT NULL COMMENT 'Security Level id',
   `permissionId` int unsigned NOT NULL COMMENT 'permission id',
@@ -42,14 +42,14 @@ CREATE TABLE IF NOT EXISTS `rbac_default_permissions` (
   CONSTRAINT `fk__rbac_default_permissions__rbac_permissions` FOREIGN KEY (`permissionId`) REFERENCES `rbac_permissions` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Default permission to assign to different account security levels';
 
--- Dumping data for table auth2.rbac_default_permissions: ~4 rows (approximately)
+-- Dumping data for table auth.rbac_default_permissions: ~4 rows (approximately)
 REPLACE INTO `rbac_default_permissions` (`secId`, `permissionId`) VALUES
 	(3, 192),
 	(2, 193),
 	(1, 194),
 	(0, 195);
 
--- Dumping structure for table auth2.rbac_linked_permissions
+-- Dumping structure for table auth.rbac_linked_permissions
 CREATE TABLE IF NOT EXISTS `rbac_linked_permissions` (
   `id` int unsigned NOT NULL COMMENT 'Permission id',
   `linkedId` int unsigned NOT NULL COMMENT 'Linked Permission id',
@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `rbac_linked_permissions` (
   CONSTRAINT `fk__rbac_linked_permissions__rbac_permissions2` FOREIGN KEY (`linkedId`) REFERENCES `rbac_permissions` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Permission - Linked Permission relation';
 
--- Dumping data for table auth2.rbac_linked_permissions: ~182 rows (approximately)
+-- Dumping data for table auth.rbac_linked_permissions: ~182 rows (approximately)
 REPLACE INTO `rbac_linked_permissions` (`id`, `linkedId`) VALUES
 	(192, 21),
 	(192, 42),
@@ -689,14 +689,14 @@ REPLACE INTO `rbac_linked_permissions` (`id`, `linkedId`) VALUES
 	(199, 525),
 	(199, 534);
 
--- Dumping structure for table auth2.rbac_permissions
+-- Dumping structure for table auth.rbac_permissions
 CREATE TABLE IF NOT EXISTS `rbac_permissions` (
   `id` int unsigned NOT NULL DEFAULT '0' COMMENT 'Permission id',
   `name` varchar(100) NOT NULL COMMENT 'Permission name',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb3 COMMENT='Permission List';
 
--- Dumping data for table auth2.rbac_permissions: ~643 rows (approximately)
+-- Dumping data for table auth.rbac_permissions: ~643 rows (approximately)
 REPLACE INTO `rbac_permissions` (`id`, `name`) VALUES
 	(1, 'Instant logout'),
 	(2, 'Skip Queue'),
