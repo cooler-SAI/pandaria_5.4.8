@@ -336,7 +336,7 @@ class InstanceScript : public ZoneScript
 
         // Complete Achievement for all players in instance
         DECLSPEC_DEPRECATED void DoCompleteAchievement(uint32 achievement) ATTR_DEPRECATED;
-        void DoCompleteAchievement(uint32 achievement);
+        //void DoCompleteAchievement(uint32 achievement);
 
         // Update Achievement Criteria for all players in instance
         void DoUpdateAchievementCriteria(AchievementCriteriaTypes type, uint32 miscValue1 = 0, uint32 miscValue2 = 0, Unit* unit = NULL);
