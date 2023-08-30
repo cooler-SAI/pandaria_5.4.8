@@ -1,4 +1,4 @@
-name: Clang
+name: GCC
 
 on:
   push:
@@ -7,6 +7,7 @@ on:
   pull_request:
     paths-ignore:
       - 'sql/**'
+
 jobs:
   build:
     runs-on: ubuntu-22.04
@@ -14,9 +15,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Dependencies
       run: |
-        sudo apt-get update && sudo apt-get install -yq libboost-all-dev clang-14 libace-dev
-        sudo update-alternatives --install /usr/bin/clang clang /usr/bin/clang-14 100 
-        sudo update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-14 100
+        sudo apt-get update && sudo apt-get install -yq libboost-all-dev g++-11 libace-dev
+        sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 --slave /usr/bin/g++ g++ /usr/bin/g++-11
     - name: Setup
       run: |
         mkdir bin
