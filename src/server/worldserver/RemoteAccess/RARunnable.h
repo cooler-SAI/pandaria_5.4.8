@@ -26,7 +26,7 @@
 
 #include <ace/Reactor.h>
 
-class RARunnable : public ACE_Based::Runnable
+class RARunnable : public MopCore::Runnable
 {
 public:
     RARunnable();

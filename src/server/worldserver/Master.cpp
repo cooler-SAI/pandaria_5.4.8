@@ -82,7 +82,7 @@ void HandleSignal(int sigNum)
     }
 }
 
-class FreezeDetectorRunnable : public ACE_Based::Runnable
+class FreezeDetectorRunnable : public MopCore::Runnable
 {
 private:
     uint32 _loops;
@@ -103,7 +103,7 @@ public:
         _lastChange = 0;
         while (!World::IsStopped())
         {
-            ACE_Based::Thread::Sleep(1000);
+            MopCore::Thread::Sleep(1000);
             uint32 curtime = getMSTime();
             // normal work
             uint32 worldLoopCounter = World::m_worldLoopCounter;
@@ -230,10 +230,10 @@ int Master::Run()
 #endif
 
     ///- Launch WorldRunnable thread
-    ACE_Based::Thread worldThread(new WorldRunnable);
-    worldThread.setPriority(ACE_Based::Highest);
+    MopCore::Thread worldThread(new WorldRunnable);
+    worldThread.setPriority(MopCore::Priority_Highest);
 
-    ACE_Based::Thread* cliThread = NULL;
+    MopCore::Thread* cliThread = NULL;
 
 #ifdef _WIN32
     if (sConfigMgr->GetBoolDefault("Console.Enable", true) && (m_ServiceStatus == -1)/* need disable console in service mode*/)
@@ -242,10 +242,10 @@ int Master::Run()
 #endif
     {
         ///- Launch CliRunnable thread
-        cliThread = new ACE_Based::Thread(new CliRunnable);
+        cliThread = new MopCore::Thread(new CliRunnable);
     }
 
-    ACE_Based::Thread rarThread(new RARunnable);
+    MopCore::Thread rarThread(new RARunnable);
 
 #if defined(_WIN32) || defined(__linux__)
     ///- Handle affinity for multiple processors and process priority
@@ -323,8 +323,8 @@ int Master::Run()
     {
         FreezeDetectorRunnable* fdr = new FreezeDetectorRunnable();
         fdr->SetDelayTime(freezeDelay * 1000);
-        ACE_Based::Thread freezeThread(fdr);
-        freezeThread.setPriority(ACE_Based::Highest);
+        MopCore::Thread freezeThread(fdr);
+        freezeThread.setPriority(MopCore::Priority_Highest);
     }
 
     ///- Launch the world listener socket

@@ -27,7 +27,7 @@ ConfigMgr* ConfigMgr::instance()
 // Defined here as it must not be exposed to end-users.
 bool ConfigMgr::GetValueHelper(const char* name, ACE_TString &result)
 {
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
 
     if (_config.get() == 0)
         return false;
@@ -52,7 +52,7 @@ bool ConfigMgr::LoadInitial(char const* file)
 {
     ASSERT(file);
 
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
 
     _filename = file;
     _config.reset(new ACE_Configuration_Heap());
@@ -69,7 +69,7 @@ bool ConfigMgr::LoadMore(char const* file)
     ASSERT(file);
     ASSERT(_config);
 
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
 
     return LoadData(file);
 }
@@ -122,7 +122,7 @@ bool ConfigMgr::SetValue(char const* name, char const* value)
     if (!_config)
         return false;
 
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
 
     ACE_TString section_name;
     ACE_Configuration_Section_Key section_key;
@@ -142,13 +142,13 @@ bool ConfigMgr::SetValue(char const* name, char const* value)
 
 std::string const& ConfigMgr::GetFilename()
 {
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
     return _filename;
 }
 
 std::list<std::string> ConfigMgr::GetKeysByString(std::string const& name)
 {
-    GuardType guard(_configLock);
+    std::lock_guard<std::mutex> guard(_configLock);
 
     std::list<std::string> keys;
     if (_config.get() == 0)
