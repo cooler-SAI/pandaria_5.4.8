@@ -50,21 +50,6 @@
 # define _TRINITY_REALM_CONFIG  "authserver.conf"
 #endif
 
-void AppenderDB::_write(LogMessage const& message)
-{
-    // Avoid infinite loop, PExecute triggers Logging with "sql.sql" type
-    if (!enabled || !message.type.find("sql"))
-        return;
-
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_LOG);
-    stmt->setUInt64(0, message.mtime);
-    stmt->setUInt32(1, realmId);
-    stmt->setString(2, message.type);
-    //stmt->setUInt8(3, uint8(message.level));
-    stmt->setString(3, message.text);
-    LoginDatabase.Execute(stmt);
-}
-
 bool StartDB();
 void StopDB();
 
@@ -97,7 +82,7 @@ void usage(const char* prog)
 }
 
 /// Launch the auth server
-extern int main(int argc, char** argv)
+int main(int argc, char** argv)
 {
     // Command line parsing to get the configuration file name
     char const* configFile = _TRINITY_REALM_CONFIG;
@@ -118,10 +103,12 @@ extern int main(int argc, char** argv)
         ++count;
     }
 
-    if (!sConfigMgr->LoadInitial(configFile))
+    std::string configError;
+    if (!sConfigMgr->LoadInitial(configFile,std::vector<std::string>(argv, argv + argc),configError))  
     {
         printf("Invalid or missing configuration file : %s\n", configFile);
         printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!\n");
+        printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
 
@@ -149,7 +136,7 @@ extern int main(int argc, char** argv)
 
     TC_LOG_INFO("server.authserver", "Using configuration file %s.", configFile);
 
-    TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    TC_LOG_INFO("server.authserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
 
 #if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);

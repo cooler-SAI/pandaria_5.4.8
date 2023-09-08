@@ -432,24 +432,26 @@ void World::LoadConfigSettings(bool reload)
 {
     if (reload)
     {
-        if (!sConfigMgr->Reload())
+        std::string configError;
+        if (!sConfigMgr->Reload(configError))
         {
-            TC_LOG_ERROR("misc", "World settings reload fail: can't read settings from %s.", sConfigMgr->GetFilename().c_str());
+
+            TC_LOG_ERROR("misc", "World settings reload fail: can't read settings from %s.", configError.c_str());
             return;
         }
     }
 
-    QueryResult result = LoginDatabase.PQuery("SELECT name, value FROM config WHERE (realmid = -1 OR realmid = '%u') AND value IS NOT NULL ORDER BY realmid ASC", sConfigMgr->GetIntDefault("RealmID", 0));
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            sConfigMgr->SetValue(fields[0].GetString().c_str(), fields[1].GetString().c_str());
-        } while (result->NextRow());
-    }
-    else
-        TC_LOG_ERROR("misc", "World settings load fail: can't read settings from auth database or the `config` table is empty.");
+    // QueryResult result = LoginDatabase.PQuery("SELECT name, value FROM config WHERE (realmid = -1 OR realmid = '%u') AND value IS NOT NULL ORDER BY realmid ASC", sConfigMgr->GetIntDefault("RealmID", 0));
+    // if (result)
+    // {
+    //     do
+    //     {
+    //         Field* fields = result->Fetch();
+    //         sConfigMgr->SetValue(fields[0].GetString().c_str(), fields[1].GetString().c_str());
+    //     } while (result->NextRow());
+    // }
+    // else
+    //     TC_LOG_ERROR("misc", "World settings load fail: can't read settings from auth database or the `config` table is empty.");
 
     if (reload)
         sLog->LoadFromConfig();

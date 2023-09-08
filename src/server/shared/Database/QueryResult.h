@@ -18,6 +18,7 @@
 #ifndef QUERYRESULT_H
 #define QUERYRESULT_H
 
+#include <memory>
 #include "Field.h"
 
 #ifdef _WIN32

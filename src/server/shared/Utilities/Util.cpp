@@ -587,3 +587,10 @@ std::string ByteArrayToHexStr(uint8 const* bytes, uint32 arrayLen, bool reverse 
 
     return ss.str();
 }
+
+bool StringToBool(std::string const& str)
+{
+    std::string lowerStr = str;
+    std::transform(str.begin(), str.end(), lowerStr.begin(), ::tolower);
+    return lowerStr == "1" || lowerStr == "true" || lowerStr == "yes";
+}

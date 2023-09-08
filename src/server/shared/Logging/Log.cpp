@@ -28,7 +28,7 @@
 #include <cstdio>
 #include <sstream>
 
-Log::Log() : worker(NULL)
+Log::Log()
 {
     m_logsTimestamp = "_" + GetTimestampStr();
     LoadFromConfig();
@@ -223,24 +223,20 @@ void Log::CreateLoggerFromConfig(std::string const& appenderName)
 
 void Log::ReadAppendersFromConfig()
 {
-    std::list<std::string> keys = sConfigMgr->GetKeysByString("Appender.");
+    std::vector<std::string> keys = sConfigMgr->GetKeysByString("Appender.");
 
-    while (!keys.empty())
-    {
-        CreateAppenderFromConfig(keys.front());
-        keys.pop_front();
-    }
+    for (std::string const& appenderName : keys)
+        CreateAppenderFromConfig(appenderName);
+
 }
 
 void Log::ReadLoggersFromConfig()
 {
-    std::list<std::string> keys = sConfigMgr->GetKeysByString("Logger.");
+    std::vector<std::string> keys = sConfigMgr->GetKeysByString("Logger.");
 
-    while (!keys.empty())
-    {
-        CreateLoggerFromConfig(keys.front());
-        keys.pop_front();
-    }
+    for (std::string const& loggerName : keys)
+        CreateLoggerFromConfig(loggerName);
+
 
     // Bad config configuration, creating default config
     if (loggers.find(LOGGER_ROOT) == loggers.end())
@@ -274,22 +270,12 @@ void Log::write(std::string const& type, LogLevel level, char const* str, char c
 {
     Logger const* logger = GetLoggerByType(type);
 
-    if (worker)
-    {
-        LogMessage* msg = new LogMessage(level, type, str);
-        msg->text.append("\n");
-        if (param)
-            msg->param1 = param;
-        worker->enqueue(new LogOperation(logger, msg));
-    }
-    else
-    {
-        LogMessage msg{ level, type, str };
-        msg.text.append("\n");
-        if (param)
-            msg.param1 = param;
-        logger->write(msg);
-    }
+    LogMessage msg{ level, type, str };
+    msg.text.append("\n");
+    if (param)
+        msg.param1 = param;
+    logger->write(msg);
+
 }
 
 std::string Log::GetTimestampStr()
@@ -437,8 +423,6 @@ void Log::SetRealmId(uint32 id)
 
 void Log::Close()
 {
-    delete worker;
-    worker = NULL;
     loggers.clear();
     for (AppenderMap::iterator it = appenders.begin(); it != appenders.end(); ++it)
     {
@@ -451,9 +435,6 @@ void Log::Close()
 void Log::LoadFromConfig()
 {
     Close();
-
-    if (sConfigMgr->GetBoolDefault("Log.Async.Enable", false))
-        worker = new LogWorker();
 
     AppenderId = 0;
     m_logsDir = sConfigMgr->GetStringDefault("LogsDir", "");
