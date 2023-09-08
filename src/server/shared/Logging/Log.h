@@ -20,7 +20,6 @@
 
 #include "Define.h"
 #include "Appender.h"
-#include "LogWorker.h"
 #include "Logger.h"
 
 #include <string>
@@ -75,7 +74,6 @@ class Log
         std::string m_logsDir;
         std::string m_logsTimestamp;
 
-        LogWorker* worker;
 };
 
 #define sLog Log::instance()

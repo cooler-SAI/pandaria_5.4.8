@@ -21,7 +21,6 @@
 
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
-#include <ace/Version.h>
 
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
@@ -127,17 +126,18 @@ extern int main(int argc, char** argv)
         ++c;
     }
 
-    if (!sConfigMgr->LoadInitial(cfg_file))
+    std::string configError;
+    if (!sConfigMgr->LoadInitial(cfg_file,std::vector<std::string>(argv, argv + argc),configError))
     {
         printf("Invalid or missing configuration file : %s\n", cfg_file);
         printf("Verify that the file exists and has \'[worldserver]' written in the top of the file!\n");
+        printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
 
     TC_LOG_INFO("server.worldserver", "Using configuration file %s.", cfg_file);
 
     TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
-    TC_LOG_INFO("server.worldserver", "Using ACE version: %s", ACE_VERSION);
 
     ///- and run the 'Master'
     /// @todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
