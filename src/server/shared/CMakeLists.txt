@@ -114,6 +114,7 @@ target_link_libraries(shared
     sfmt
     fmt
     ${ACE_LIBRARY}
+    ${MYSQL_LIBRARY}
 )
 
 
