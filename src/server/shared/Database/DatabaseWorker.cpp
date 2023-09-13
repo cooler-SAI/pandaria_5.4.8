@@ -22,32 +22,50 @@
 #include "MySQLThreading.h"
 
 DatabaseWorker::DatabaseWorker(MySQLConnection* conn)
-    : m_conn(conn)
+    : m_conn(conn), m_queue(new ProducerConsumerQueue<SQLOperation*>())
 {
+    
     _thr = std::thread([this]() { Run(); });
+    _cancelationToken = false;
 }
 
 DatabaseWorker::~DatabaseWorker()
 {
-    m_queue.queue()->deactivate();
+    //m_queue.queue()->deactivate();
+    _cancelationToken = true;
+    m_queue->Cancel();
     if (_thr.joinable())
         _thr.join();
 
     delete m_conn;
 }
 
+void DatabaseWorker::Enqueue(SQLOperation* op)
+{
+    ++_count;
+    m_queue->Push(op);    
+}
+
 void DatabaseWorker::Run()
 {
-    SQLOperation *request = NULL;
-    while (true)
-    {
-        request = (SQLOperation*)(m_queue.dequeue());
-        if (!request)
-            break;
+    if (!m_queue)
+        return;
 
-        request->SetConnection(m_conn);
-        request->call();
+    for (;;)
+    {
+        SQLOperation* operation = nullptr;
+        m_queue->WaitAndPop(operation);
+
+        // request = (SQLOperation*)(m_queue.dequeue());
+        // if (!operation)
+        //     break;
+        if (_cancelationToken || !operation)
+            return;
+        
+
+        operation->SetConnection(m_conn);
+        operation->call();
         --_count;
-        delete request;
+        delete operation;
     }
 }

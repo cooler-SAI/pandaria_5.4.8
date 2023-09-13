@@ -24,6 +24,12 @@
 
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
+#include "DatabaseWorkerPool.h"
+#include "Implementation/LoginDatabase.h"
+#include "Implementation/CharacterDatabase.h"
+#include "Implementation/WorldDatabase.h"
+#include "Implementation/ArchiveDatabase.h"
+
 #include "Configuration/Config.h"
 
 #include "Log.h"

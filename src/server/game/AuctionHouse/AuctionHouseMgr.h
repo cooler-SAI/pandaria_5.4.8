@@ -22,6 +22,9 @@
 #include "DBCStructure.h"
 #include "DatabaseEnv.h"
 
+#include <ace/Method_Request.h>
+#include <ace/Activation_Queue.h>
+
 class Item;
 class Player;
 class WorldPacket;

@@ -18,10 +18,10 @@
 #ifndef _WORKERTHREAD_H
 #define _WORKERTHREAD_H
 
-#include <ace/Activation_Queue.h>
 #include <thread>
 #include <atomic>
 #include "SQLOperation.h"
+#include "ProducerConsumerQueue.h"
 
 class MySQLConnection;
 
@@ -31,21 +31,20 @@ public:
     DatabaseWorker(MySQLConnection* conn);
     ~DatabaseWorker();
 
-    void Enqueue(SQLOperation* op)
-    {
-        ++_count;
-        m_queue.enqueue(op);
-    }
+    void Enqueue(SQLOperation* op);
 
     int32 Count() { return _count; }
 
 private:
     void Run();
 
-    ACE_Activation_Queue m_queue;
+    ProducerConsumerQueue<SQLOperation*>* m_queue;
     MySQLConnection* m_conn = nullptr;
     std::thread _thr;
     std::atomic<int32> _count{ 0 };
+
+    std::atomic<bool> _cancelationToken;
+
 };
 
 #endif

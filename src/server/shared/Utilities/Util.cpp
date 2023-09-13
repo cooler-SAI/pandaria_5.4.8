@@ -20,7 +20,6 @@
 #include "utf8.h"
 //#include "SFMT.h"
 #include "Errors.h" // for ASSERT
-#include <ace/TSS_T.h>
 //#include "Random.h"
 #include "SFMTRand.h"
 #include <memory>
@@ -44,9 +43,6 @@ struct tm* localtime_r(time_t const* time, struct tm *result)
     return result;
 }
 #endif
-
-// typedef ACE_TSS<SFMTRand> SFMTRandTSS;
-// static SFMTRandTSS sfmtRand;
 
 int32 irand(int32 min, int32 max)
 {

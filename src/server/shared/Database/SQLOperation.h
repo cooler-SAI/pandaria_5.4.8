@@ -18,9 +18,6 @@
 #ifndef _SQLOPERATION_H
 #define _SQLOPERATION_H
 
-#include <ace/Method_Request.h>
-#include <ace/Activation_Queue.h>
-
 #include "QueryResult.h"
 
 //- Forward declare (don't include header to prevent circular includes)
@@ -56,10 +53,10 @@ union SQLResultSetUnion
 
 class MySQLConnection;
 
-class SQLOperation : public ACE_Method_Request
+class SQLOperation
 {
     public:
-        SQLOperation(): m_conn(NULL) { }
+        SQLOperation(): m_conn(nullptr) { }
         virtual int call()
         {
             Execute();
