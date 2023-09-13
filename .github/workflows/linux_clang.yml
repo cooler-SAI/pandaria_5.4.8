@@ -2,7 +2,8 @@ name: Clang
 
 on:
   push:
-  @@ -7,16 +7,16 @@ on:
+    paths-ignore:
+      - 'sql/**'    
   pull_request:
     paths-ignore:
       - 'sql/**'
@@ -19,3 +20,15 @@ jobs:
     - name: Setup
       run: |
         mkdir bin
+        cd bin
+        cmake ../ -DTOOLS=1 -DELUNA=1 -DCMAKE_INSTALL_PREFIX=check_install
+        cd ..
+    - name: Build
+      run: |
+        cd bin
+        make -j 4 -k && make install
+    #- name: Check executables
+    #  run: |
+    #    cd bin/check_install/bin
+    #    ./authserver --version
+    #    ./worldserver --version
