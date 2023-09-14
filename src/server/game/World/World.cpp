@@ -4190,7 +4190,6 @@ std::vector<Quest const*> const* World::GetprojectDailyQuestRelation(uint32 entr
 
 void World::ResetprojectDailyQuests()
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
     for (auto&& info : m_projectMemberInfos)
     {
         info.second.CompletedDailyQuestsCount = 0;
@@ -4318,13 +4317,11 @@ bool World::LoadprojectMemberInfoIfNeeded(uint32 accountId)
 
 void World::AddprojectMemberInfo(uint32 memberId, projectMemberInfo const& info)
 {
-    TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
     m_projectMemberInfos[memberId] = info;
 }
 
 projectMemberInfo* World::GetprojectMemberInfo(uint32 memberId, bool logError)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
     auto itr = m_projectMemberInfos.find(memberId);
     if (itr == m_projectMemberInfos.end())
     {
@@ -4337,7 +4334,6 @@ projectMemberInfo* World::GetprojectMemberInfo(uint32 memberId, bool logError)
 
 void World::SendprojectMemberInfoContainer()
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
     //sCross->SendUpdate(m_projectMemberInfos);
 }
 
@@ -4798,7 +4794,6 @@ void World::UpdateprojectMemberInfos()
 #ifndef CROSS_SERVER
     time_t now = time(nullptr);
 
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
     for (auto&& pair : m_projectMemberInfos)
     {
         projectMemberInfo& info = pair.second;

@@ -43,7 +43,6 @@ AuctionQueryContext::~AuctionQueryContext()
 {
     if (Player* player = ObjectAccessor::FindPlayerInOrOutOfWorld(playerGuid))
     {
-        TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, player->m_activeAuctionQueriesLock);
         player->m_activeAuctionQueries.erase(this);
     }
 }
@@ -453,8 +452,6 @@ void AuctionHouseMgr::LoadAuctions()
 
 void AuctionHouseMgr::AddAItem(Item* it)
 {
-    TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, mAitemsLock);
-
     ASSERT(it);
     ASSERT(mAitems.find(it->GetGUIDLow()) == mAitems.end());
     mAitems[it->GetGUIDLow()] = it;
@@ -462,8 +459,6 @@ void AuctionHouseMgr::AddAItem(Item* it)
 
 bool AuctionHouseMgr::RemoveAItem(uint32 id)
 {
-    TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, mAitemsLock);
-
     ItemMap::iterator i = mAitems.find(id);
     if (i == mAitems.end())
         return false;
@@ -561,7 +556,6 @@ void AuctionHouseMgr::QueryAuctionItems(uint32 auctioneerFaction, Player* player
         context->sortOrder = sortOrder;
 
         {
-            TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, player->m_activeAuctionQueriesLock);
             player->m_activeAuctionQueries.insert(context);
         }
         searchQueries.enqueue(context);
@@ -610,23 +604,14 @@ AuctionHouseEntry const* AuctionHouseMgr::GetAuctionHouseEntry(uint32 factionTem
 
 void AuctionHouseObject::AddAuction(AuctionEntry* auction, bool skipLock)
 {
-    if (!skipLock)
-        AuctionsMapLock.acquire_write();
-
     ASSERT(auction);
 
     AuctionsMap[auction->Id] = auction;
     sScriptMgr->OnAuctionAdd(this, auction);
-
-    if (!skipLock)
-        AuctionsMapLock.release();
 }
 
 bool AuctionHouseObject::RemoveAuction(AuctionEntry* auction, bool skipLock)
 {
-    if (!skipLock)
-        AuctionsMapLock.acquire_write();
-
     bool wasInMap = AuctionsMap.erase(auction->Id) ? true : false;
 
     sScriptMgr->OnAuctionRemove(this, auction);
@@ -635,16 +620,11 @@ bool AuctionHouseObject::RemoveAuction(AuctionEntry* auction, bool skipLock)
     delete auction;
     auction = NULL;
 
-    if (!skipLock)
-        AuctionsMapLock.release();
-
     return wasInMap;
 }
 
 void AuctionHouseObject::Update()
 {
-    TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, AuctionsMapLock);
-
     time_t curTime = sWorld->GetGameTime();
     ///- Handle expired auctions
 
@@ -700,7 +680,6 @@ void AuctionHouseObject::Update()
 
 void AuctionHouseObject::BuildListBidderItems(WorldPacket& data, Player* player, uint32& count, uint32& totalcount)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, AuctionsMapLock);
 
     for (AuctionEntryMap::const_iterator itr = AuctionsMap.begin(); itr != AuctionsMap.end(); ++itr)
     {
@@ -717,7 +696,6 @@ void AuctionHouseObject::BuildListBidderItems(WorldPacket& data, Player* player,
 
 void AuctionHouseObject::BuildListOwnerItems(WorldPacket& data, Player* player, uint32& count, uint32& totalcount)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, AuctionsMapLock);
 
     for (AuctionEntryMap::const_iterator itr = AuctionsMap.begin(); itr != AuctionsMap.end(); ++itr)
     {
@@ -738,7 +716,6 @@ bool AuctionHouseObject::BuildListAuctionItems(WorldPacket& data, Player* player
     bool getAll, std::vector<int8> const& sortOrder,
     uint32& count, uint32& totalcount, uint32& throttle)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, AuctionsMapLock);
 
     uint32 now = getMSTime();
     bool isExecutedInMainThread = usable || sWorld->getBoolConfig(CONFIG_AUCTIONHOUSE_FORCE_MAIN_THREAD);
@@ -765,10 +742,6 @@ bool AuctionHouseObject::BuildListAuctionItems(WorldPacket& data, Player* player
 
     AuctionHouseMgr* aucMgr = sAuctionMgr;
     ObjectMgr* objMgr = sObjectMgr;
-
-    int cacheLock = -1;
-    if (hasNameSortOrder || !wsearchedname.empty())
-        cacheLock = ItemNameCacheLock.acquire_read();
 
     for (auto&& entry : AuctionsMap)
     {
@@ -845,17 +818,7 @@ bool AuctionHouseObject::BuildListAuctionItems(WorldPacket& data, Player* player
                     }
                 }
 
-                // Switch to write lock
-                if (cacheLock != -1)
-                    ItemNameCacheLock.release();
-                cacheLock = ItemNameCacheLock.acquire_write();
-
                 wname = &ItemNameCache[loc_idx][cacheEntry];
-
-                // Switch back to read lock
-                if (cacheLock != -1)
-                    ItemNameCacheLock.release();
-                cacheLock = ItemNameCacheLock.acquire_read();
 
                 if (!Utf8toWStr(name, *wname))
                     ASSERT(false);
@@ -877,9 +840,6 @@ bool AuctionHouseObject::BuildListAuctionItems(WorldPacket& data, Player* player
 
         matched.push_back(new AuctionEntryForSorting(entry.second, proto, wname, owner));
     }
-
-    if (cacheLock != -1)
-        ItemNameCacheLock.release();
 
     totalcount = matched.size();
 

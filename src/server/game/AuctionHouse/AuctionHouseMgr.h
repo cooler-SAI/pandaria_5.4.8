@@ -131,7 +131,6 @@ class AuctionHouseObject
   public:
     ~AuctionHouseObject()
     {
-        TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, AuctionsMapLock);
         for (AuctionEntryMap::iterator itr = AuctionsMap.begin(); itr != AuctionsMap.end(); ++itr)
             delete itr->second;
     }
@@ -145,15 +144,8 @@ class AuctionHouseObject
 
     AuctionEntry* GetAuction(uint32 id, bool skipLock = false)
     {
-        if (!skipLock)
-            AuctionsMapLock.acquire_read();
-
         AuctionEntryMap::const_iterator itr = AuctionsMap.find(id);
-        AuctionEntry* result = itr != AuctionsMap.end() ? itr->second : NULL;
-
-        if (!skipLock)
-            AuctionsMapLock.release();
-
+        AuctionEntry* result = itr != AuctionsMap.end() ? itr->second : nullptr;
         return result;
     }
 
@@ -173,9 +165,8 @@ class AuctionHouseObject
 
   private:
     AuctionEntryMap AuctionsMap;
-    ACE_RW_Thread_Mutex AuctionsMapLock;
     std::map<uint64, std::wstring> ItemNameCache[TOTAL_LOCALES];
-    ACE_RW_Thread_Mutex ItemNameCacheLock;
+
 };
 
 class AuctionHouseMgr
@@ -197,13 +188,11 @@ class AuctionHouseMgr
 
         Item* GetAItem(uint32 id)
         {
-            TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, mAitemsLock);
-
             ItemMap::const_iterator itr = mAitems.find(id);
             if (itr != mAitems.end())
                 return itr->second;
 
-            return NULL;
+            return nullptr;
         }
 
         //auction messages
@@ -245,7 +234,6 @@ class AuctionHouseMgr
         AuctionHouseObject mNeutralAuctions;
 
         ItemMap mAitems;
-        ACE_RW_Thread_Mutex mAitemsLock;
         std::thread searchThread;
         ACE_Activation_Queue searchQueries;
         std::unique_ptr<LogFile> logger;

@@ -1502,7 +1502,6 @@ class World
         uint32 m_MaxPlayerCount;
 
         std::map<uint32, projectMemberInfo> m_projectMemberInfos;
-        ACE_RW_Thread_Mutex m_projectMemberInfosLock;
         void UpdateprojectMemberInfos();
 
         std::string m_newCharString;

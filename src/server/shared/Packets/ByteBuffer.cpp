@@ -54,6 +54,36 @@ ByteBufferInvalidValueException::ByteBufferInvalidValueException(char const* typ
     message().assign(Trinity::StringFormat("Invalid %s value (%s) found in ByteBuffer", type, value));
 }
 
+void ByteBuffer::clear()
+{
+    _storage.clear();
+    _rpos = _wpos = 0;
+}
+
+// template <typename T> 
+// void ByteBuffer::append(T value)
+// {
+//     FlushBits();
+//     EndianConvert(value);
+//     append((uint8 *)&value, sizeof(value));
+// }
+
+void ByteBuffer::FlushBits()
+{
+    if (_bitpos == 8)
+        return;
+
+    append((uint8 *)&_curbitval, sizeof(uint8));
+    _curbitval = 0;
+    _bitpos = 8;    
+}
+
+void ByteBuffer::WriteBitInOrder(ObjectGuid guid, uint8 order[8])
+{
+    for (uint8 i = 0; i < 8; ++i)
+        WriteBit(guid[order[i]]);    
+}
+
 std::string ByteBuffer::ReadCString(bool requireValidUtf8 /*= true*/)
 {
     std::string value;

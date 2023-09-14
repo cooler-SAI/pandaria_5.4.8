@@ -148,11 +148,7 @@ public:
         _storage.reserve(reserve);
     }
 
-    void clear()
-    {
-        _storage.clear();
-        _rpos = _wpos = 0;
-    }
+    void clear();
 
     template <typename T> void append(T value)
     {
@@ -161,21 +157,9 @@ public:
         append((uint8 *)&value, sizeof(value));
     }
 
-    void FlushBits()
-    {
-        if (_bitpos == 8)
-            return;
+    void FlushBits();
 
-        append((uint8 *)&_curbitval, sizeof(uint8));
-        _curbitval = 0;
-        _bitpos = 8;
-    }
-
-    void WriteBitInOrder(ObjectGuid guid, uint8 order[8])
-    {
-        for (uint8 i = 0; i < 8; ++i)
-            WriteBit(guid[order[i]]);
-    }
+    void WriteBitInOrder(ObjectGuid guid, uint8 order[8]);
 
     bool WriteBit(uint32 bit)
     {

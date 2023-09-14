@@ -514,7 +514,6 @@ void WorldSession::LogoutPlayer(bool save)
     // Wait until all async auction queries are processed.
     while (_player)
     {
-        TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, _player->m_activeAuctionQueriesLock);
         if (_player->m_activeAuctionQueries.empty())
             break;
     }
