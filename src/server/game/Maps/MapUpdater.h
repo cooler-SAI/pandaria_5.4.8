@@ -51,7 +51,6 @@ class MapUpdater
     private:
         void WorkerThread();
 
-        //DelayExecutor m_executor;
         std::vector<std::thread> _workerThreads;
         std::atomic<bool> _cancelationToken;        
         ProducerConsumerQueue<UpdateRequest*> _queue;
