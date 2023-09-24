@@ -23,7 +23,6 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "ByteBuffer.h"
-#include <openssl/md5.h>
 #include "Database/DatabaseEnv.h"
 #include "World.h"
 #include "Player.h"
@@ -48,8 +47,8 @@ void WardenWin::Init(WorldSession* session, BigNumber* k)
     WK.Generate(_outputKey, 16);
 
     // Initial encryption is done with session key
-    uint8 inputKey[MD5_DIGEST_LENGTH];
-    uint8 outputKey[MD5_DIGEST_LENGTH];
+    uint8 inputKey[16]; // MD5_DIGEST_LENGTH
+    uint8 outputKey[16];
 
     auto const inputKeySize = sizeof(inputKey);
     auto const outputKeySize = sizeof(outputKey);

@@ -970,11 +970,7 @@ class ObjectMgr
         void GetTaxiPath(uint32 source, uint32 destination, uint32 &path, uint32 &cost);
         uint32 GetTaxiMountDisplayId(uint32 id, uint32 team, bool allowed_alt_team = false);
 
-        Quest const* GetQuestTemplate(uint32 quest_id) const
-        {
-            QuestMap::const_iterator itr = _questTemplates.find(quest_id);
-            return itr != _questTemplates.end() ? itr->second : NULL;
-        }
+        Quest const* GetQuestTemplate(uint32 quest_id) const;
 
         QuestMap const& GetQuestTemplates() const { return _questTemplates; }
 
@@ -1013,21 +1009,9 @@ class ObjectMgr
         void LoadGraveyardZones();
         GraveYardData const* FindGraveYardData(uint32 id, uint32 zone);
 
-        AreaTriggerStruct const* GetAreaTrigger(uint32 trigger) const
-        {
-            AreaTriggerContainer::const_iterator itr = _areaTriggerStore.find(trigger);
-            if (itr != _areaTriggerStore.end())
-                return &itr->second;
-            return NULL;
-        }
+        AreaTriggerStruct const* GetAreaTrigger(uint32 trigger) const;
 
-        AccessRequirement const* GetAccessRequirement(uint32 mapid, Difficulty difficulty) const
-        {
-            AccessRequirementContainer::const_iterator itr = _accessRequirementStore.find(MAKE_PAIR32(mapid, difficulty));
-            if (itr != _accessRequirementStore.end())
-                return itr->second;
-            return NULL;
-        }
+        AccessRequirement const* GetAccessRequirement(uint32 mapid, Difficulty difficulty) const;
 
         AreaTriggerStruct const* GetGoBackTrigger(uint32 Map) const;
         AreaTriggerStruct const* GetMapEntranceTrigger(uint32 Map) const;
@@ -1041,7 +1025,7 @@ class ObjectMgr
             if (itr != _repRewardRateStore.end())
                 return &itr->second;
 
-            return NULL;
+            return nullptr;
         }
 
         ReputationOnKillEntry const* GetReputationOnKilEntry(uint32 id) const
@@ -1049,7 +1033,7 @@ class ObjectMgr
             RepOnKillContainer::const_iterator itr = _repOnKillStore.find(id);
             if (itr != _repOnKillStore.end())
                 return &itr->second;
-            return NULL;
+            return nullptr;
         }
 
         int32 GetBaseReputationOf(FactionEntry const* factionEntry, uint8 race, uint8 playerClass);
@@ -1092,17 +1076,7 @@ class ObjectMgr
         void LoadQuests();
         void LoadQuestObjectives();
         void LoadQuestObjectiveVisualEffects();
-        void LoadQuestStartersAndEnders()
-        {
-            TC_LOG_INFO("server.loading", "Loading GO Start Quest Data...");
-            LoadGameobjectQuestStarters();
-            TC_LOG_INFO("server.loading", "Loading GO End Quest Data...");
-            LoadGameobjectQuestEnders();
-            TC_LOG_INFO("server.loading", "Loading Creature Start Quest Data...");
-            LoadCreatureQuestStarters();
-            TC_LOG_INFO("server.loading", "Loading Creature End Quest Data...");
-            LoadCreatureQuestEnders();
-        }
+        void LoadQuestStartersAndEnders();
         void LoadGameobjectQuestStarters();
         void LoadGameobjectQuestEnders();
         void LoadCreatureQuestStarters();
@@ -1616,16 +1590,7 @@ class ObjectMgr
 
         void LoadHotfixData();
         HotfixData const& GetHotfixData() const { return _hotfixData; }
-        time_t GetHotfixDate(uint32 entry, uint32 type) const
-        {
-            time_t ret = 0;
-            for (HotfixData::const_iterator itr = _hotfixData.begin(); itr != _hotfixData.end(); ++itr)
-                if (itr->Entry == entry && itr->Type == type)
-                    if (itr->Timestamp > ret)
-                        ret = itr->Timestamp;
-
-            return ret ? ret : time(NULL);
-        }
+        time_t GetHotfixDate(uint32 entry, uint32 type) const;
 
         void LoadMissingKeyChains();
 
@@ -1637,65 +1602,15 @@ class ObjectMgr
         void LoadArchaeologyFindInfo();
         void LoadResearchProjectRequirements();
 
-        ResearchDigsiteInfo const* GetResearchDigsiteInfo(uint32 digsiteId) const
-        {
-            for (ResearchDigsiteContainer::const_iterator itr = _researchDigsiteStore.begin(); itr != _researchDigsiteStore.end(); ++itr)
-                for (ResearchDigsiteList::const_iterator digsite = itr->second.begin(); digsite != itr->second.end(); ++digsite)
-                    if (digsite->digsiteId == digsiteId)
-                        return &(*digsite);
+        ResearchDigsiteInfo const* GetResearchDigsiteInfo(uint32 digsiteId) const;
+        ResearchDigsiteList const* GetResearchDigsitesForContinent(uint32 mapId) const;
 
-            return NULL;
-        }
+        ArchaeologyFindInfo const* GetArchaeologyFindInfo(uint32 findGUID, uint32 digsiteId);
+        ArchaeologyFindInfo const* GetRandomArchaeologyFindForDigsite(uint32 digsiteId);
+        ArchaeologyFindList const* GetArcheologyFindListForDigsite(uint32 digsiteId);
 
-        ResearchDigsiteList const* GetResearchDigsitesForContinent(uint32 mapId) const
-        {
-            ResearchDigsiteContainer::const_iterator iter = _researchDigsiteStore.find(mapId);
-            if (iter != _researchDigsiteStore.end())
-                return &iter->second;
-
-            return NULL;
-        }
-
-        ArchaeologyFindInfo const* GetArchaeologyFindInfo(uint32 findGUID, uint32 digsiteId)
-        {
-            ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
-            if (itr == _archaeologyFindStore.end())
-                return NULL;
-
-            for (ArchaeologyFindList::const_iterator find = itr->second.begin(); find != itr->second.end(); ++find)
-                if (find->guid == findGUID)
-                    return &(*find);
-
-            return NULL;
-        }
-
-        ArchaeologyFindInfo const* GetRandomArchaeologyFindForDigsite(uint32 digsiteId)
-        {
-            ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
-            if (itr == _archaeologyFindStore.end())
-                return NULL;
-
-            if (itr->second.empty())
-                return NULL;
-
-            return &Trinity::Containers::SelectRandomContainerElement(itr->second);
-        }
-
-        ArchaeologyFindList const* GetArcheologyFindListForDigsite(uint32 digsiteId)
-        {
-            ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
-            return itr != _archaeologyFindStore.end() ? &itr->second : nullptr;
-        }
-
-        ResearchProjectRequirements const* GetResearchProjectRequirements(uint32 projectId) const
-        {
-            ResearchProjectRequirementContainer::const_iterator iter = _researchProjectRequirementStore.find(projectId);
-            if (iter != _researchProjectRequirementStore.end())
-                return &iter->second;
-
-            return NULL;
-        }
-
+        ResearchProjectRequirements const* GetResearchProjectRequirements(uint32 projectId) const;
+        
         CreatureDifficultyInfo const* GetCreatureDifficultyInfo(Difficulty difficulty, uint32 id) const;
         CreatureDifficultyInfo const* SelectDifficultyInfo(Map const* map, uint32 entry) const;
 

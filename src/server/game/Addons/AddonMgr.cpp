@@ -20,7 +20,7 @@
 #include "DBCStores.h"
 #include "Log.h"
 #include "Timer.h"
-#include <openssl/md5.h>
+#include "MD5Util.h"
 
 namespace AddonMgr
 {
@@ -82,8 +82,8 @@ void LoadFromDB()
             std::string name = fields[1].GetString();
             std::string version = fields[2].GetString();
 
-            MD5(reinterpret_cast<uint8 const*>(name.c_str()), name.length(), addon.NameMD5);
-            MD5(reinterpret_cast<uint8 const*>(version.c_str()), version.length(), addon.VersionMD5);
+            MD5Util::MD5(reinterpret_cast<uint8 const*>(name.c_str()), name.length(), addon.NameMD5);
+            MD5Util::MD5(reinterpret_cast<uint8 const*>(version.c_str()), version.length(), addon.VersionMD5);
 
             m_bannedAddons.push_back(addon);
 

@@ -65,3 +65,7 @@ void SHA1Hash::Finalize(void)
     SHA1_Final(mDigest, &mC);
 }
 
+ unsigned char * SHA1Hash::SHA1(const unsigned char *d, size_t n, unsigned char *md)
+ {
+    return SHA1(d,n,md);
+ }

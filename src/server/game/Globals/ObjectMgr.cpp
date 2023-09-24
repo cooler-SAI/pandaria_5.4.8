@@ -5836,6 +5836,12 @@ uint32 ObjectMgr::GetTaxiMountDisplayId(uint32 id, uint32 team, bool allowed_alt
     return mount_id;
 }
 
+Quest const* ObjectMgr::GetQuestTemplate(uint32 quest_id) const
+{
+    QuestMap::const_iterator itr = _questTemplates.find(quest_id);
+    return itr != _questTemplates.end() ? itr->second : NULL;
+}
+
 void ObjectMgr::LoadGraveyardZones()
 {
     uint32 oldMSTime = getMSTime();
@@ -6052,7 +6058,23 @@ GraveYardData const* ObjectMgr::FindGraveYardData(uint32 id, uint32 zoneId)
         if (data.safeLocId == id)
             return &data;
     }
-    return NULL;
+    return nullptr;
+}
+
+AreaTriggerStruct const* ObjectMgr::GetAreaTrigger(uint32 trigger) const
+{
+    AreaTriggerContainer::const_iterator itr = _areaTriggerStore.find(trigger);
+    if (itr != _areaTriggerStore.end())
+        return &itr->second;
+    return nullptr;
+}
+
+AccessRequirement const* ObjectMgr::GetAccessRequirement(uint32 mapid, Difficulty difficulty) const
+{
+    AccessRequirementContainer::const_iterator itr = _accessRequirementStore.find(MAKE_PAIR32(mapid, difficulty));
+    if (itr != _accessRequirementStore.end())
+        return itr->second;
+    return nullptr;    
 }
 
 bool ObjectMgr::AddGraveYardLink(uint32 id, uint32 zoneId, uint32 team, bool persist /*= true*/)
@@ -9594,6 +9616,17 @@ void ObjectMgr::LoadHotfixData()
     TC_LOG_INFO("server.loading", ">> Loaded %u hotfix info entries in %u ms", count, GetMSTimeDiffToNow(oldMSTime));
 }
 
+time_t ObjectMgr::GetHotfixDate(uint32 entry, uint32 type) const
+{
+    time_t ret = 0;
+    for (HotfixData::const_iterator itr = _hotfixData.begin(); itr != _hotfixData.end(); ++itr)
+        if (itr->Entry == entry && itr->Type == type)
+            if (itr->Timestamp > ret)
+                ret = itr->Timestamp;
+
+    return ret ? ret : time(NULL);
+}
+
 void ObjectMgr::LoadMissingKeyChains()
 {
     uint32 oldMSTime = getMSTime();
@@ -9982,6 +10015,65 @@ void ObjectMgr::LoadResearchProjectRequirements()
     }
     while (result->NextRow());
     TC_LOG_INFO("server.loading", ">> Loaded %u research project requirements in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+ResearchDigsiteInfo const* ObjectMgr::GetResearchDigsiteInfo(uint32 digsiteId) const
+{
+    for (ResearchDigsiteContainer::const_iterator itr = _researchDigsiteStore.begin(); itr != _researchDigsiteStore.end(); ++itr)
+        for (ResearchDigsiteList::const_iterator digsite = itr->second.begin(); digsite != itr->second.end(); ++digsite)
+            if (digsite->digsiteId == digsiteId)
+                return &(*digsite);
+
+    return nullptr;
+}
+
+ResearchDigsiteList const* ObjectMgr::GetResearchDigsitesForContinent(uint32 mapId) const
+{
+    ResearchDigsiteContainer::const_iterator iter = _researchDigsiteStore.find(mapId);
+    if (iter != _researchDigsiteStore.end())
+        return &iter->second;
+
+    return nullptr;    
+}
+
+ArchaeologyFindInfo const* ObjectMgr::GetArchaeologyFindInfo(uint32 findGUID, uint32 digsiteId)
+{
+    ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
+    if (itr == _archaeologyFindStore.end())
+        return NULL;
+
+    for (ArchaeologyFindList::const_iterator find = itr->second.begin(); find != itr->second.end(); ++find)
+        if (find->guid == findGUID)
+            return &(*find);
+
+    return nullptr;    
+}
+
+ArchaeologyFindInfo const* ObjectMgr::GetRandomArchaeologyFindForDigsite(uint32 digsiteId)
+{
+    ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
+    if (itr == _archaeologyFindStore.end())
+        return nullptr;
+
+    if (itr->second.empty())
+        return nullptr;
+
+    return &Trinity::Containers::SelectRandomContainerElement(itr->second);    
+}
+
+ArchaeologyFindList const* ObjectMgr::GetArcheologyFindListForDigsite(uint32 digsiteId)
+{
+    ArchaeologyFindContainer::const_iterator itr = _archaeologyFindStore.find(digsiteId);
+    return itr != _archaeologyFindStore.end() ? &itr->second : nullptr;    
+}
+
+ResearchProjectRequirements const* ObjectMgr::GetResearchProjectRequirements(uint32 projectId) const
+{
+    ResearchProjectRequirementContainer::const_iterator iter = _researchProjectRequirementStore.find(projectId);
+    if (iter != _researchProjectRequirementStore.end())
+        return &iter->second;
+
+    return nullptr;    
 }
 
 void ObjectMgr::LoadBattlePetBreedData()
@@ -10431,6 +10523,18 @@ void ObjectMgr::LoadQuestObjectiveVisualEffects()
     while (result->NextRow());
 
     TC_LOG_INFO("server.loading", ">> Loaded %u Quest Objective visual effects in %u ms.", count, GetMSTimeDiffToNow(oldMSTime));
+}
+
+void ObjectMgr::LoadQuestStartersAndEnders()
+{
+    TC_LOG_INFO("server.loading", "Loading GO Start Quest Data...");
+    LoadGameobjectQuestStarters();
+    TC_LOG_INFO("server.loading", "Loading GO End Quest Data...");
+    LoadGameobjectQuestEnders();
+    TC_LOG_INFO("server.loading", "Loading Creature Start Quest Data...");
+    LoadCreatureQuestStarters();
+    TC_LOG_INFO("server.loading", "Loading Creature End Quest Data...");
+    LoadCreatureQuestEnders();    
 }
 
 void ObjectMgr::LoadQuestTemplateLocale()

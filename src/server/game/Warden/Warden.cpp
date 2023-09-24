@@ -21,13 +21,12 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "ByteBuffer.h"
-#include <openssl/md5.h>
-#include <openssl/sha.h>
 #include "World.h"
 #include "Player.h"
 #include "Util.h"
 #include "Warden.h"
 #include "AccountMgr.h"
+#include "Cryptography/SHA1.h"
 
 Warden::Warden() : _inputCrypto(16), _outputCrypto(16), _checkTimer(10000/*10 sec*/), _clientResponseTimer(0), _dataSent(false), _initialized(false) { }
 
@@ -164,7 +163,7 @@ uint32 Warden::BuildChecksum(const uint8* data, uint32 length)
     };
 
     KeyData hash;
-    SHA1(data, length, hash.bytes);
+    SHA1Hash::SHA1(data, length, hash.bytes);
     uint32 checkSum = 0;
     for (uint8 i = 0; i < 5; ++i)
         checkSum = checkSum ^ hash.ints[i];
