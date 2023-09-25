@@ -45,7 +45,7 @@ bool DatabaseWorkerPool<T>::Open(const std::string& infoString, uint8 async_thre
     }
 
     if (res)
-        TC_LOG_INFO("sql.driver", "DatabasePool '%s' opened successfully. %u total connections running.", GetDatabaseName(),
+        TC_LOG_INFO("sql.driver", "DatabasePool '%s' opened successfully. %lu total connections running.", GetDatabaseName(),
             (_connections.size() + _workers.size()));
     else
         TC_LOG_ERROR("sql.driver", "DatabasePool %s NOT opened. There were errors opening the MySQL connections. Check your SQLDriverLogFile "

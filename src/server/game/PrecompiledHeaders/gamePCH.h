@@ -29,3 +29,4 @@
 #include "SharedDefines.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "Define.h"

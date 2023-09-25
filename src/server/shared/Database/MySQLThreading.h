@@ -33,8 +33,6 @@ class MySQL
         static void Thread_Init()
         {
             mysql_thread_init();
-            TC_LOG_WARN("sql.sql", "Core thread with ID [" UI64FMTD "] initializing MySQL thread.",
-                    MopCore::Thread::currentId());
         }
 
         /*! Shuts down MySQL thread and frees resources, should only be called
@@ -44,8 +42,6 @@ class MySQL
         static void Thread_End()
         {
             mysql_thread_end();
-            TC_LOG_WARN("sql.sql", "Core thread with ID [" UI64FMTD "] shutting down MySQL thread.",
-                MopCore::Thread::currentId());
         }
 
         static void Library_Init()

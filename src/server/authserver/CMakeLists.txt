@@ -51,6 +51,7 @@ endif()
 include_directories(
   PUBLIC
     ${CMAKE_BINARY_DIR}
+    ${OPENSSL_INCLUDE_DIR}
   PRIVATE
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/src/server/shared/Database
@@ -67,7 +68,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Server
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 add_executable(authserver

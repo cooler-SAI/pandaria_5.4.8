@@ -26,10 +26,11 @@
 #include <string>
 #include <vector>
 #include <list>
-#include <ace/INET_Addr.h>
 #include <ctime>
 #include <array>
 #include <limits>
+
+class ACE_INET_Addr;
 
 // Searcher for map of structs
 template<typename T, class S> struct Finder
@@ -563,8 +564,8 @@ public:
 
     flag96(uint64 p1, uint32 p2)
     {
-        part[0] = (uint32)(p1 & UI64LIT(0x00000000FFFFFFFF));
-        part[1] = (uint32)((p1 >> 32) & UI64LIT(0x00000000FFFFFFFF));
+        part[0] = (uint32)(p1 & uint64_t(0x00000000FFFFFFFF));
+        part[1] = (uint32)((p1 >> 32) & uint64_t(0x00000000FFFFFFFF));
         part[2] = p2;
     }
 

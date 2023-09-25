@@ -85,7 +85,7 @@ add_library(collision STATIC
 )
 
 target_link_libraries(collision
-  PRIVATE
+  PUBLIC
     shared
 )
 

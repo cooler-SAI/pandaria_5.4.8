@@ -383,7 +383,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
     {
         buff.rpos(buff.wpos());
         std::string penalty = Penalty();
-        TC_LOG_WARN("warden", "%s failed checksum. Action: %s, map: %d", _session->GetPlayerInfo().c_str(), Penalty().c_str(), _session->GetPlayer() ? _session->GetPlayer()->GetMapId() : -1, penalty.c_str());
+        TC_LOG_WARN("warden", "%s failed checksum. Action: %s, map: %d", _session->GetPlayerInfo().c_str(), Penalty().c_str(), _session->GetPlayer() ? _session->GetPlayer()->GetMapId() : -1); // , penalty.c_str()
 
         if (receiver)
             ChatHandler(receiver->GetSession()).PSendSysMessage("Failed checksum. Action: %s", penalty.c_str());

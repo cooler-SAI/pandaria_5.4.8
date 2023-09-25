@@ -35,11 +35,7 @@ public:
 
     //! Not singleton.
     //! Just global accessor for main thread scheduler.
-    static TaskMgr* Default()
-    {
-        static TaskMgr _default;
-        return &_default;
-    }
+    static TaskMgr* Default();
 
     //! Set time (in milliseconds) for executing task cycle.
     //! No garantees that it will be max time of Update() call.

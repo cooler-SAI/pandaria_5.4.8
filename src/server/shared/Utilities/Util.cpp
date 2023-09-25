@@ -25,6 +25,9 @@
 #include <memory>
 #include <random>
 
+#include <ace/Guard_T.h>
+#include <ace/INET_Addr.h>
+
 static thread_local std::unique_ptr<SFMTRand> sfmtRand;
 static SFMTEngine engine;
 

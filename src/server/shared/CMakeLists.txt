@@ -66,7 +66,8 @@ set(shared_STAT_SRCS
 include_directories(
   PUBLIC
     ${CMAKE_BINARY_DIR}
-    ${ACE_INCLUDE_DIR}    
+    ${ACE_INCLUDE_DIR} 
+    ${OPENSSL_INCLUDE_DIR}   
   PRIVATE
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
@@ -88,7 +89,6 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Threading
     ${CMAKE_CURRENT_SOURCE_DIR}/Utilities  
     ${MYSQL_INCLUDE_DIR}
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 if(CMAKE_SYSTEM_NAME MATCHES "Windows")
@@ -115,8 +115,6 @@ target_link_libraries(shared
     fmt
     ${ACE_LIBRARY}
     ${MYSQL_LIBRARY}
-    ${OPENSSL_LIBRARIES}
-    ${Boost_LIBRARIES}        
 )
 
 

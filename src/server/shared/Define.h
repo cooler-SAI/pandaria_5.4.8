@@ -20,7 +20,6 @@
 
 #include "CompilerDefs.h"
 
-//#include <ace/ACE_export.h>
 #include <cinttypes>
 #include <cstddef>
 
@@ -68,19 +67,13 @@
 #  define ATTR_DEPRECATED
 #endif //COMPILER == COMPILER_GNU
 
-#define UI64FMTD ACE_UINT64_FORMAT_SPECIFIER
-#define UI64LIT(N) ACE_UINT64_LITERAL(N)
+#define UI64FMTD "%" PRIu64
+#define UI64LIT(N) UINT64_C(N)
 
-#define SI64FMTD ACE_INT64_FORMAT_SPECIFIER
-#define SI64LIT(N) ACE_INT64_LITERAL(N)
+#define SI64FMTD "%" PRId64
+#define SI64LIT(N) INT64_C(N)
 
-#define SIZEFMTD ACE_SIZE_T_FORMAT_SPECIFIER
-
-#if COMPILER == COMPILER_MICROSOFT
-#  define SZFMTD "%Iu"
-#else
-#  define SZFMTD "%zu"
-#endif
+#define SZFMTD "%" PRIuPTR
 
 typedef std::int64_t  int64;
 typedef std::int32_t  int32;

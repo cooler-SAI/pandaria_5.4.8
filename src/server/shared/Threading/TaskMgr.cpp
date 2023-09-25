@@ -64,6 +64,12 @@ TaskMgr::~TaskMgr()
 {
 }
 
+TaskMgr* TaskMgr::Default()
+{
+    static TaskMgr _default;
+    return &_default;
+}
+
 void TaskMgr::Update()
 {
     TaskObject task;
