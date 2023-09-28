@@ -22,6 +22,7 @@
 #include "SharedDefines.h"
 #include "Unit.h"
 #include "Object.h"
+#include "GridObject.h"
 #include "LootMgr.h"
 #include "DBCStores.h"
 

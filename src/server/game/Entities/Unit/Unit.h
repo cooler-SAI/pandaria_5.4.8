@@ -31,6 +31,7 @@
 #include "SpellMgr.h"
 #include "TimeValue.h"
 #include "SpellInfo.h"
+#include "UnitDefines.h"
 #include <array>
 #include <memory>
 
@@ -125,24 +126,8 @@ enum SpellFacingFlags
     SPELL_FACING_FLAG_INFRONT = 0x0001
 };
 
-#define BASE_MINDAMAGE 1.0f
-#define BASE_MAXDAMAGE 2.0f
-#define BASE_ATTACK_TIME 2000
 
-// byte value (UNIT_FIELD_ANIM_TIER, 0)
-enum UnitStandStateType
-{
-    UNIT_STAND_STATE_STAND = 0,
-    UNIT_STAND_STATE_SIT = 1,
-    UNIT_STAND_STATE_SIT_CHAIR = 2,
-    UNIT_STAND_STATE_SLEEP = 3,
-    UNIT_STAND_STATE_SIT_LOW_CHAIR = 4,
-    UNIT_STAND_STATE_SIT_MEDIUM_CHAIR = 5,
-    UNIT_STAND_STATE_SIT_HIGH_CHAIR = 6,
-    UNIT_STAND_STATE_DEAD = 7,
-    UNIT_STAND_STATE_KNEEL = 8,
-    UNIT_STAND_STATE_SUBMERGED = 9
-};
+
 
 // byte flag value (UNIT_FIELD_ANIM_TIER, 2)
 enum UnitStandFlags
@@ -211,28 +196,7 @@ enum ShapeshiftForm
     FORM_SPIRITOFREDEMPTION = 0x20
 };
 
-// low byte (0 from 0..3) of UNIT_FIELD_SHAPESHIFT_FORM
-enum SheathState
-{
-    SHEATH_STATE_UNARMED = 0,                              // non prepared weapon
-    SHEATH_STATE_MELEE = 1,                              // prepared melee weapon
-    SHEATH_STATE_RANGED = 2                               // prepared ranged weapon
-};
 
-#define MAX_SHEATH_STATE    3
-
-// byte (1 from 0..3) of UNIT_FIELD_SHAPESHIFT_FORM
-enum UnitPVPStateFlags
-{
-    UNIT_BYTE2_FLAG_PVP = 0x01,
-    UNIT_BYTE2_FLAG_UNK1 = 0x02,
-    UNIT_BYTE2_FLAG_FFA_PVP = 0x04,
-    UNIT_BYTE2_FLAG_SANCTUARY = 0x08,
-    UNIT_BYTE2_FLAG_UNK4 = 0x10,
-    UNIT_BYTE2_FLAG_UNK5 = 0x20,
-    UNIT_BYTE2_FLAG_UNK6 = 0x40,
-    UNIT_BYTE2_FLAG_UNK7 = 0x80
-};
 
 // byte (2 from 0..3) of UNIT_FIELD_SHAPESHIFT_FORM
 enum UnitRename
@@ -1494,7 +1458,7 @@ public:
     float GetSpellMaxRangeForTarget(Unit const* target, SpellInfo const* spellInfo) const;
     float GetSpellMinRangeForTarget(Unit const* target, SpellInfo const* spellInfo) const;
 
-    virtual void Update(uint32 time);
+    virtual void Update(uint32 time) override;
 
     void UpdateAttackTimer(WeaponAttackType type, uint32 diff);
     void setAttackTimer(WeaponAttackType type, uint32 time)
@@ -2965,7 +2929,7 @@ public:
     void JumpWithDelay(uint32 delay, float x, float y, float z, float speedXY, float speedZ, uint32 id);
 
 protected:
-    explicit Unit(bool isWorldObject);
+    explicit Unit (bool isWorldObject);
 
     void BuildValuesUpdate(uint8 updatetype, ByteBuffer* data, Player* target) const;
 

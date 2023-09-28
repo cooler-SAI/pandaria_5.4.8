@@ -1200,10 +1200,11 @@ struct npc_minion_of_hogger : public ScriptedAI
 
 void AddSC_elwynn_forest()
 {
-    new creature_script<npc_stormwind_infantry>("npc_stormwind_infantry");
+
+    RegisterCreatureAI(npc_stormwind_infantry);
     new creature_script<npc_blackrock_battle_worg>("npc_blackrock_battle_worg");
-    new creature_script<npc_brother_paxton>("npc_brother_paxton");
-    new creature_script<npc_blackrock_spy>("npc_blackrock_spy");
+    RegisterCreatureAI(npc_brother_paxton);
+    RegisterCreatureAI(npc_blackrock_spy);
     new creature_script<npc_goblin_assassin>("npc_goblin_assassin");
     new creature_script<npc_blackrock_invader>("npc_blackrock_invader");
     new npc_king_varian_wrynn();

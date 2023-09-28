@@ -24,6 +24,7 @@
 #include "ItemPrototype.h"
 #include "LootMgr.h"
 #include "Cell.h"
+#include "GridObject.h"
 
 #include <list>
 
@@ -577,7 +578,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         // override WorldObject function for proper name localization
         std::string const& GetNameForLocaleIdx(LocaleConstant locale_idx) const;
 
-        void setDeathState(DeathState s);                   // override virtual Unit::setDeathState
+        void setDeathState(DeathState s) override;                   // override virtual Unit::setDeathState
 
         bool LoadFromDB(uint32 guid, Map* map) { return LoadCreatureFromDB(guid, map, false); }
         bool LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap = true);
@@ -679,8 +680,8 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void SetInCombatWithZone();
         void SetCombatDistance(float dist) { m_CombatDistance = dist < 5.0f ? 5.0f : dist; }
 
-        bool hasQuest(uint32 quest_id) const;
-        bool hasInvolvedQuest(uint32 quest_id)  const;
+        bool hasQuest(uint32 quest_id) const override;
+        bool hasInvolvedQuest(uint32 quest_id)  const override;
 
         bool isRegeneratingHealth() { return m_regenHealth; }
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }

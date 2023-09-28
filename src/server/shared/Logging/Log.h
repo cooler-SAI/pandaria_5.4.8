@@ -26,11 +26,13 @@
 
 #define LOGGER_ROOT "root"
 
-typedef std::unordered_map<std::string, Logger> LoggerMap;
+
 
 class Log
 {
 
+    typedef std::unordered_map<std::string, Logger> LoggerMap;
+    
     private:
         Log();
         ~Log();
@@ -51,11 +53,12 @@ class Log
 
         void outCommand(uint32 account, const char * str, ...) ATTR_PRINTF(3, 4);
         void outCharDump(char const* str, uint32 account_id, uint32 guid, char const* name);
-        static std::string GetTimestampStr();
-
+        
         void SetRealmId(uint32 id);
 
     private:
+        static std::string GetTimestampStr();
+
         void vlog(std::string const& f, LogLevel level, char const* str, va_list argptr);
         void write(std::string const& f, LogLevel level, char const* str, char const* param) const;
 

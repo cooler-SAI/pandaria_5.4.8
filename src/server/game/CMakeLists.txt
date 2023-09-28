@@ -318,9 +318,10 @@ add_library(game STATIC
 
 target_link_libraries(game
   PRIVATE
-    shared
     Detour
     zlib
+    shared
+    ${ACE_LIBRARY}
 )
 
 if (ELUNA)

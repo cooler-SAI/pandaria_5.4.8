@@ -115,6 +115,7 @@ target_link_libraries(shared
     fmt
     ${ACE_LIBRARY}
     ${MYSQL_LIBRARY}
+    ${OPENSSL_LIBRARIES}
 )
 
 
