@@ -13,7 +13,6 @@ if( USE_COREPCH )
 endif()
 
 file(GLOB_RECURSE sources_Configuration Configuration/*.cpp Configuration/*.h)
-file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h Cryptography/Authentication/*.cpp Cryptography/Authentication/*.h)
 file(GLOB_RECURSE sources_Database Database/*.cpp Database/*.h)
 file(GLOB_RECURSE sources_DataStores DataStores/*.cpp DataStores/*.h)
 file(GLOB_RECURSE sources_Dynamic Dynamic/*.cpp Dynamic/*.h)
@@ -24,8 +23,6 @@ file(GLOB_RECURSE sources_Utilities Utilities/*.cpp Utilities/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
 source_group(CMake FILES CMakeLists.txt)
-source_group(Configuration FILES ${sources_Configuration})
-source_group(Cryptography FILES ${sources_Cryptography})
 source_group(Database FILES ${sources_Database})
 source_group(DataStores FILES ${sources_DataStores})
 source_group(Dynamic FILES ${sources_Dynamic})
@@ -51,7 +48,6 @@ endif()
 set(shared_STAT_SRCS
   ${shared_STAT_SRCS}
   ${sources_Configuration}
-  ${sources_Cryptography}
   ${sources_Database}
   ${sources_DataStores}
   ${sources_Debugging}
@@ -76,10 +72,10 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/fmt/include
     ${CMAKE_SOURCE_DIR}/dep/utf8cpp
     ${CMAKE_SOURCE_DIR}/src/server
+    ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Configuration
-    ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography
-    ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography/Authentication
     ${CMAKE_CURRENT_SOURCE_DIR}/Database
     ${CMAKE_CURRENT_SOURCE_DIR}/DataStores
     ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
@@ -113,6 +109,7 @@ target_link_libraries(shared
   PRIVATE
     sfmt
     fmt
+    common
     ${ACE_LIBRARY}
     ${MYSQL_LIBRARY}
     ${OPENSSL_LIBRARIES}

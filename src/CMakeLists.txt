@@ -11,6 +11,7 @@
 
 add_subdirectory(genrev)
 add_subdirectory(server)
+add_subdirectory(common)
 
 if(TOOLS)
   if( MSVC )

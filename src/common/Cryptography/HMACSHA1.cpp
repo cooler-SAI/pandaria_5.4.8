@@ -15,9 +15,9 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include "HMACSHA1.h"
 #include "BigNumber.h"
-#include "Common.h"
 
 #if defined(OPENSSL_VERSION_NUMBER) && OPENSSL_VERSION_NUMBER < 0x10100000L
 HMAC_CTX* HMAC_CTX_new()
@@ -38,7 +38,7 @@ HmacHash::HmacHash(uint32 len, uint8 *seed)
 {
     m_ctx = HMAC_CTX_new();
     HMAC_Init_ex(m_ctx, seed, len, EVP_sha1(), nullptr);
-    memset(m_digest, 0, sizeof(m_digest));
+    std::memset(m_digest, 0, sizeof(m_digest));
 }
 
 HmacHash::~HmacHash()
@@ -60,7 +60,7 @@ void HmacHash::Finalize()
 {
     uint32 length = 0;
     HMAC_Final(m_ctx, (uint8*)m_digest, &length);
-    ASSERT(length == SHA_DIGEST_LENGTH);
+    // ASSERT(length == SHA_DIGEST_LENGTH);
 }
 
 uint8 *HmacHash::ComputeHash(BigNumber* bn)

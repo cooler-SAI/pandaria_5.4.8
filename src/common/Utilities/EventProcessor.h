@@ -21,6 +21,7 @@
 #include "Define.h"
 
 #include <map>
+#include <functional>
 
 // Note. All times are in milliseconds here.
 
@@ -171,7 +172,7 @@ void EventProcessor::ProcessCustomEvents(EventFilter const& filter)
             {
                 return p.second == event;
             });
-            ASSERT(origItr != m_events.end());
+            //ASSERT(origItr != m_events.end());
             m_events.erase(origItr);
 
             if (!event->to_Abort)

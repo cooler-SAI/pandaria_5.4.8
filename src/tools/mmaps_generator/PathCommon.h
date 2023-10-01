@@ -24,7 +24,6 @@
 #include <vector>
 #include <ace/OS_NS_sys_time.h>
 
-#include "Define.h"
 
 #ifndef _WIN32
     #include <stddef.h>

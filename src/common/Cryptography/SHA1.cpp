@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include "SHA1.h"
 #include "BigNumber.h"
 #include <stdarg.h>
@@ -22,7 +23,7 @@
 SHA1Hash::SHA1Hash()
 {
     SHA1_Init(&mC);
-    memset(mDigest, 0, SHA_DIGEST_LENGTH * sizeof(uint8));
+    std::memset(mDigest, 0, SHA_DIGEST_LENGTH * sizeof(uint8));
 }
 
 SHA1Hash::~SHA1Hash()

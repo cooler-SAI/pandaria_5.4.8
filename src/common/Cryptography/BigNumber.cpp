@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include "Cryptography/BigNumber.h"
 #include <openssl/bn.h>
 #include <openssl/crypto.h>
@@ -175,7 +176,7 @@ uint8* BigNumber::AsByteArray(int32 minSize, bool littleEndian)
 
     // If we need more bytes than length of BigNumber set the rest to 0
     if (length > GetNumBytes())
-        memset((void*)array, 0, length);
+        std::memset((void*)array, 0, length);
 
     int paddingOffset = length - GetNumBytes();
 

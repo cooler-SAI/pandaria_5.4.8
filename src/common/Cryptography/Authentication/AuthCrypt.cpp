@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cstring>
 #include "AuthCrypt.h"
 #include "Cryptography/HMACSHA1.h"
 #include "Cryptography/BigNumber.h"
@@ -41,12 +42,12 @@ void AuthCrypt::Init(BigNumber* K)
 
     // Drop first 1024 bytes, as WoW uses ARC4-drop1024.
     uint8 syncBuf[1024];
-    memset(syncBuf, 0, 1024);
+    std::memset(syncBuf, 0, 1024);
 
     _serverEncrypt.UpdateData(1024, syncBuf);
     //_clientEncrypt.UpdateData(1024, syncBuf);
 
-    memset(syncBuf, 0, 1024);
+    std::memset(syncBuf, 0, 1024);
 
     //_serverDecrypt.UpdateData(1024, syncBuf);
     _clientDecrypt.UpdateData(1024, syncBuf);

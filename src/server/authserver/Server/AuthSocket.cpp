@@ -18,6 +18,7 @@
 #include <algorithm>
 #include <openssl/md5.h>
 
+#include "BigNumber.h"
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
 #include "ByteBuffer.h"

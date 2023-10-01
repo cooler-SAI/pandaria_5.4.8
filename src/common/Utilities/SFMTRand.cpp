@@ -15,6 +15,7 @@
  * with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "SFMT.h"
 #include "SFMTRand.h"
 #include <algorithm>
 #include <array>

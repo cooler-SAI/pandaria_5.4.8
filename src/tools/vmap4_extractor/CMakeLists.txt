@@ -22,6 +22,7 @@ if( NOT MSVC )
 endif()
 
 include_directories(
+  ${CMAKE_SOURCE_DIR}/src/common
   ${CMAKE_SOURCE_DIR}/dep/StormLib/src
 )
 

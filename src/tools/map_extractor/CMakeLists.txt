@@ -13,6 +13,7 @@ file(GLOB_RECURSE sources *.cpp *.h)
 
 include_directories (
   PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/server/common
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/dep/StormLib/src
     ${CMAKE_CURRENT_SOURCE_DIR}

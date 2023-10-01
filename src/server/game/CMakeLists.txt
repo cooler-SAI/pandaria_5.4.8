@@ -178,6 +178,7 @@ set(game_STAT_SRCS
 include_directories(
   PUBLIC
     ${CMAKE_BINARY_DIR}
+    ${CMAKE_SOURCE_DIR}/src/common/Utilities    
   PRIVATE
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Recast/Include
@@ -186,14 +187,15 @@ include_directories(
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
     ${OPENSSL_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
     ${CMAKE_SOURCE_DIR}/src/server/collision
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management
     ${CMAKE_SOURCE_DIR}/src/server/collision/Models
     ${CMAKE_SOURCE_DIR}/src/server/collision/Maps
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Cryptography
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Cryptography/Authentication
     ${CMAKE_SOURCE_DIR}/src/server/shared/Database
     ${CMAKE_SOURCE_DIR}/src/server/shared/DataStores
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
@@ -320,6 +322,7 @@ target_link_libraries(game
   PRIVATE
     Detour
     zlib
+    common
     shared
     ${ACE_LIBRARY}
 )

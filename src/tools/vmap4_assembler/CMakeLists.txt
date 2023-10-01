@@ -10,20 +10,23 @@
 # implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 include_directories(
-  ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
-  ${CMAKE_SOURCE_DIR}/src/server/shared
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
-  ${CMAKE_SOURCE_DIR}/src/server/collision
-  ${CMAKE_SOURCE_DIR}/src/server/collision/Maps
-  ${CMAKE_SOURCE_DIR}/src/server/collision/Models
-  ${ACE_INCLUDE_DIR}
-  ${ZLIB_INCLUDE_DIR}
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
+    ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/server/shared
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
+    ${CMAKE_SOURCE_DIR}/src/server/collision
+    ${CMAKE_SOURCE_DIR}/src/server/collision/Maps
+    ${CMAKE_SOURCE_DIR}/src/server/collision/Models
+    ${ACE_INCLUDE_DIR}
+    ${ZLIB_INCLUDE_DIR}
 )
 
 add_executable(vmap4assembler VMapAssembler.cpp)
 add_dependencies(vmap4assembler storm)
 
 target_link_libraries(vmap4assembler
+  common
   collision
   g3dlib
   ${ZLIB_LIBRARIES}

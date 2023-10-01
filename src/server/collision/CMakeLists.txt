@@ -34,6 +34,8 @@ include_directories(
     ${CMAKE_BINARY_DIR}
     ${ACE_INCLUDE_DIR}    
   PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
     ${CMAKE_SOURCE_DIR}/src/server/shared
@@ -86,6 +88,7 @@ add_library(collision STATIC
 
 target_link_libraries(collision
   PUBLIC
+    common
     shared
 )
 
