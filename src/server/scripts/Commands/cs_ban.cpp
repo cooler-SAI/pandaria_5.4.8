@@ -31,6 +31,7 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "ServiceMgr.h"
 #include "Util.h"
+#include "UtilACE.h"
 
 class ban_commandscript : public CommandScript
 {

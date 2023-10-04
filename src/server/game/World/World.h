@@ -28,6 +28,7 @@
 #include "Timer.h"
 #include "SharedDefines.h"
 #include "ByteBuffer.h"
+#include "LockedQueue.h"
 
 #include <thread>
 #include <map>

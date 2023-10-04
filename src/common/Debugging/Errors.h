@@ -23,20 +23,20 @@
 
 namespace Trinity
 {
-    DECLSPEC_NORETURN void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message);
-    DECLSPEC_NORETURN void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message, char const* format, ...) ATTR_PRINTF(6, 7);
-    DECLSPEC_NORETURN void Fatal(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
+    DECLSPEC_NORETURN TC_COMMON_API void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message);
+    DECLSPEC_NORETURN TC_COMMON_API void Assert(char const* file, int line, char const* function, std::string debugInfo, char const* message, char const* format, ...) ATTR_PRINTF(6, 7);
+    DECLSPEC_NORETURN TC_COMMON_API void Fatal(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
 
-    DECLSPEC_NORETURN void Error(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
+    DECLSPEC_NORETURN TC_COMMON_API void Error(char const* file, int line, char const* function, char const* message) ATTR_NORETURN;
 
-    DECLSPEC_NORETURN void Abort(char const* file, int line, char const* function) ATTR_NORETURN;
-    DECLSPEC_NORETURN void Abort(char const* file, int line, char const* function, char const* message, ...) ATTR_NORETURN;
+    DECLSPEC_NORETURN TC_COMMON_API void Abort(char const* file, int line, char const* function) ATTR_NORETURN;
+    DECLSPEC_NORETURN TC_COMMON_API void Abort(char const* file, int line, char const* function, char const* message, ...) ATTR_NORETURN;
 
-    void Warning(char const* file, int line, char const* function, char const* message);
+    TC_COMMON_API void Warning(char const* file, int line, char const* function, char const* message);
 
 } // namespace Trinity
 
-std::string GetDebugInfo();
+TC_COMMON_API std::string GetDebugInfo();
 
 #ifdef _WIN32
 #define EXCEPTION_ASSERTION_FAILURE 0xC0000420L

@@ -55,7 +55,9 @@ include_directories(
   PRIVATE
     ${CMAKE_SOURCE_DIR}/src/common
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography
-    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication    
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication 
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging 
+    ${CMAKE_SOURCE_DIR}/src/common/Utilities  
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/src/server/shared/Database
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging

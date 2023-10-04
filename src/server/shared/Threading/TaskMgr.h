@@ -20,6 +20,7 @@
 
 #include "Common.h"
 #include "Timer.h"
+#include "LockedQueue.h"
 #include <memory>
 
 class ThreadPool;

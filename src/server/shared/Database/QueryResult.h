@@ -19,6 +19,7 @@
 #define QUERYRESULT_H
 
 #include <memory>
+#include <vector>
 #include "Field.h"
 
 #ifdef _WIN32

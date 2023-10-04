@@ -21,6 +21,11 @@ source_group(Configuration FILES ${sources_Configuration})
 source_group(Cryptography FILES ${sources_Cryptography})
 source_group(Utilities FILES ${sources_Utilities})
 
+# Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in shared project
+# It needs to be included both in authserver and worldserver for the static global variable to be properly initialized
+# and to handle crash logs on windows
+set(sources_Debugging Debugging/Errors.cpp Debugging/Errors.h)
+
 if (USE_COREPCH)
   set(common_STAT_PCH_HDR PrecompiledHeaders/commonPCH.h)
 endif()
@@ -28,6 +33,7 @@ endif()
 set(common_STAT_SRCS
   ${common_STAT_SRCS}
   ${sources_Cryptography}
+  ${sources_Debugging}
   ${sources_Utilities}
   ${sources_localdir}
 )
@@ -37,6 +43,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography/Authentication  
+    ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
+    ${CMAKE_CURRENT_SOURCE_DIR}/Utilities
     ${CMAKE_BINARY_DIR}
     ${OPENSSL_INCLUDE_DIR}   
   PRIVATE

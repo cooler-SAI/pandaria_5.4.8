@@ -59,6 +59,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/sockets/include
     ${CMAKE_SOURCE_DIR}/dep/SFMT
     ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging
     ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_SOURCE_DIR}/src/server/collision
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management

@@ -18,6 +18,7 @@
 #ifndef _CALLBACK_H
 #define _CALLBACK_H
 
+#include <ace/Guard_T.h>
 #include <ace/Future.h>
 #include <ace/Future_Set.h>
 #include "QueryResult.h"

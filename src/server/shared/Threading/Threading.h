@@ -18,7 +18,6 @@
 #ifndef THREADING_H
 #define THREADING_H
 
-#include <assert.h>
 #include <atomic>
 #include <thread>
 

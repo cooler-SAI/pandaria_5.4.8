@@ -18,10 +18,11 @@
 #ifndef APPENDER_H
 #define APPENDER_H
 
-#include "Define.h"
+#include <unordered_map>
 #include <time.h>
-
 #include <string>
+
+#include "Define.h"
 
 // Values assigned have their equivalent in enum ACE_Log_Priority
 enum LogLevel

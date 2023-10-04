@@ -15,6 +15,8 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <map>
+#include <vector>
 #include "DatabaseWorkerPool.h"
 #include "Transaction.h"
 #include "Util.h"

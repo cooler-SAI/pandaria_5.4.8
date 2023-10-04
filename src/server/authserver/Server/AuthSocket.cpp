@@ -30,6 +30,8 @@
 #include "TOTP.h"
 #include "SHA1.h"
 #include "openssl/crypto.h"
+#include "UtilACE.h"
+#include "Threading/Threading.h"
 
 #define ChunkSize 2048
 

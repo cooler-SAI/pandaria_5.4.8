@@ -22,6 +22,8 @@
 #ifndef __CLIRUNNABLE_H
 #define __CLIRUNNABLE_H
 
+#include "Threading/Threading.h"
+
 /// Command Line Interface handling thread
 class CliRunnable : public MopCore::Runnable
 {

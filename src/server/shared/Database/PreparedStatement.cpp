@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sstream>
 #include "PreparedStatement.h"
 #include "MySQLConnection.h"
 #include "Log.h"

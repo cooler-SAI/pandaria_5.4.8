@@ -17,7 +17,6 @@
 
 #include "Errors.h"
 #include "StringFormat.h"
-#include "Log.h"
 #include <cstdio>
 #include <cstdlib>
 #include <thread>
@@ -137,7 +136,7 @@ void Abort(char const* file, int line, char const* function, char const* message
 
 void LogNotImplementedCall(char const* func)
 {
-    sLog->outError("server", "Call of not implemented function: %s", func);
+    fprintf(stderr, "Call of not implemented function: %s", func);
 }
 
 std::string GetDebugInfo()

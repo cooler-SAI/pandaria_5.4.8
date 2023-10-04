@@ -17,6 +17,7 @@
 
 #include "TaskMgr.h"
 #include "Task.h"
+#include "LockedQueue.h"
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>
 #include "Optional.h"

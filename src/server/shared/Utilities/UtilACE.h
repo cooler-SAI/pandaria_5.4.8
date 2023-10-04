@@ -15,22 +15,30 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-/// \addtogroup Trinityd
-/// @{
-/// \file
+#ifndef _UTILACE_H
+#define _UTILACE_H
 
-#ifndef __WORLDRUNNABLE_H
-#define __WORLDRUNNABLE_H
+#include "Common.h"
+#include "Duration.h"
+#include "Errors.h"
 
-#include "Threading/Threading.h"
+#include <algorithm>
+#include <string>
+#include <vector>
+#include <list>
+#include <ctime>
+#include <array>
+#include <limits>
 
-/// Heartbeat thread for the World
-class WorldRunnable : public MopCore::Runnable
-{
-    public:
-        void run() override;
-};
+class ACE_INET_Addr;
+
+bool IsIPAddress(char const* ipaddress);
+
+/// Checks if address belongs to the a network with specified submask
+bool IsIPAddrInNetwork(ACE_INET_Addr const& net, ACE_INET_Addr const& addr, ACE_INET_Addr const& subnetMask);
+
+/// Transforms ACE_INET_Addr address into string format "dotted_ip:port"
+std::string GetAddressString(ACE_INET_Addr const& addr);
+
 
 #endif
-
-/// @}
