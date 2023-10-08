@@ -93,7 +93,7 @@ jobs:
           #data is in Release folder
           cd ${{github.workspace}}/build/bin
           dir
-          copy c:/mysql/lib/libmysql.dll ${{github.workspace}}/build/bin/RelWithDebInfo/libmysql.dll
+          copy "C:/Program Files/MySQL/MySQL Server 5.7/lib/libmysql.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libmysql.dll
           copy "C:/Program Files/OpenSSL/bin/libssl-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libssl-3-x64.dll
           copy "c:/Program Files/OpenSSL/bin/libcrypto-3-x64.dll" ${{github.workspace}}/build/bin/RelWithDebInfo/libcrypto-3-x64.dll
           move ${{github.workspace}}/contrib/lua_scripts ${{github.workspace}}/build/bin/RelWithDebInfo/lua_scripts
