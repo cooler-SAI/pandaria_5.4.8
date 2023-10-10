@@ -126,24 +126,9 @@ class ScriptRegistry
             else
             {
 
-                if (script->GetName().find("commandscript") != std::string::npos || script->GetName().find("solocraft") != std::string::npos) // hack
-                {
-                    ScriptPointerList[_scriptIdCounter++] = script;
-                    sScriptMgr->IncreaseScriptCount(); 
-                }
-                else
-                {
-                    // The script uses a script name from database, but isn't assigned to anything.
-                    if (script->GetName().find("example") == std::string::npos && script->GetName().find("Smart") == std::string::npos) 
-                        TC_LOG_ERROR("sql.sql", "Script named '%s' does not have a script name assigned in database.",
-                            script->GetName().c_str());
-
-                    // These scripts don't get stored anywhere so throw them into this to avoid leaking memory
-                    ExampleScripts.insert(script);
-
-                    UnusedScripts.push_back(script);                    
-                }
-
+                // We're dealing with a code-only script; just add it.
+                ScriptPointerList[_scriptIdCounter++] = script;
+                sScriptMgr->IncreaseScriptCount(); 
 
             }
 
