@@ -20,10 +20,7 @@
 #include "Common.h"
 #include "Errors.h"
 #include "Log.h"
-#include "DatabaseWorker.h"
-#include "SQLOperation.h"
 #include "TypeList.h"
-#include "TaskScheduler.h"
 #include "Util.h"
 #include <memory>
 #include <string>

@@ -54,20 +54,15 @@ struct Position
         return !(operator==(a));
     }
 
-    void Relocate(float x, float y)
-        { m_positionX = x; m_positionY = y;}
-    void Relocate(float x, float y, float z)
-        { m_positionX = x; m_positionY = y; m_positionZ = z; }
-    void Relocate(float x, float y, float z, float orientation)
-        { m_positionX = x; m_positionY = y; m_positionZ = z; SetOrientation(orientation); }
-    void Relocate(Position const &pos)
-        { m_positionX = pos.m_positionX; m_positionY = pos.m_positionY; m_positionZ = pos.m_positionZ; SetOrientation(pos.m_orientation); }
-    void Relocate(Position const* pos)
-        { m_positionX = pos->m_positionX; m_positionY = pos->m_positionY; m_positionZ = pos->m_positionZ; SetOrientation(pos->m_orientation); }
+    void Relocate(float x, float y) { m_positionX = x; m_positionY = y;}
+    void Relocate(float x, float y, float z) { m_positionX = x; m_positionY = y; m_positionZ = z; }
+    void Relocate(float x, float y, float z, float orientation) { m_positionX = x; m_positionY = y; m_positionZ = z; SetOrientation(orientation); }
+    void Relocate(Position const &pos) { m_positionX = pos.m_positionX; m_positionY = pos.m_positionY; m_positionZ = pos.m_positionZ; SetOrientation(pos.m_orientation); }
+    void Relocate(Position const* pos) { m_positionX = pos->m_positionX; m_positionY = pos->m_positionY; m_positionZ = pos->m_positionZ; SetOrientation(pos->m_orientation); }
+    
     void RelocateOffset(Position const &offset);
     void RelocateOffset(float angle, float distance, float offsetZ = 0.0f);
-    void SetOrientation(float orientation)
-    { m_orientation = NormalizeOrientation(orientation); }
+    void SetOrientation(float orientation) { m_orientation = NormalizeOrientation(orientation); }
 
     float GetPositionX() const { return m_positionX; }
     float GetPositionY() const { return m_positionY; }

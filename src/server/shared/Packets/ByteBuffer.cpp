@@ -124,6 +124,19 @@ void ByteBuffer::append(uint8 const* src, size_t cnt)
 
     ASSERT(size() < 10000000);
 
+    size_t const newSize = _wpos + cnt;
+    if (_storage.capacity() < newSize) // custom memory allocation rules
+    {
+        if (newSize < 100)
+            _storage.reserve(300);
+        else if (newSize < 750)
+            _storage.reserve(2500);
+        else if (newSize < 6000)
+            _storage.reserve(10000);
+        else
+            _storage.reserve(400000);
+    }
+
     if (_storage.size() < _wpos + cnt)
         _storage.resize(_wpos + cnt);
     std::memcpy(&_storage[_wpos], src, cnt);
@@ -155,6 +168,17 @@ void ByteBuffer::append(uint8 const* src, size_t cnt)
 //     _wpos = newSize;
 // }
 
+void ByteBuffer::put(size_t pos, const uint8 *src, size_t cnt)
+{
+    if (pos + cnt > size())
+        throw ByteBufferPositionException(true, pos, cnt, size());
+
+    if (!src)
+        throw ByteBufferSourceException(_wpos, size(), cnt);
+
+    std::memcpy(&_storage[pos], src, cnt);
+}
+
 void ByteBuffer::print_storage() const
 {
     if (!sLog->ShouldLog("network", LOG_LEVEL_TRACE)) // optimize disabled trace output
@@ -178,8 +202,8 @@ void ByteBuffer::textlike() const
     o << "STORAGE_SIZE: " << size();
     for (uint32 i = 0; i < size(); ++i)
     {
-        char buf[1];
-        snprintf(buf, 1, "%c", read<uint8>(i));
+        char buf[2];
+        snprintf(buf, 2, "%c", read<uint8>(i));
         o << buf;
     }
     o << " ";
@@ -198,8 +222,8 @@ void ByteBuffer::hexlike() const
 
     for (uint32 i = 0; i < size(); ++i)
     {
-        char buf[3];
-        snprintf(buf, 1, "%2X ", read<uint8>(i));
+        char buf[4];
+        snprintf(buf, 4, "%2X ", read<uint8>(i));
         if ((i == (j * 8)) && ((i != (k * 16))))
         {
             o << "| ";

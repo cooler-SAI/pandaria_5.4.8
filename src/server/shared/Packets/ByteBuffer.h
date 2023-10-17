@@ -135,7 +135,7 @@ private:
 class ByteBuffer
 {
 public:
-    const static size_t DEFAULT_SIZE = 0x1000;
+    constexpr static size_t DEFAULT_SIZE = 0x1000;
 
     // constructor
     ByteBuffer() : _rpos(0), _wpos(0), _bitpos(8), _curbitval(0)
@@ -146,6 +146,42 @@ public:
     ByteBuffer(size_t reserve) : _rpos(0), _wpos(0), _bitpos(8), _curbitval(0)
     {
         _storage.reserve(reserve);
+    }
+
+    ByteBuffer(ByteBuffer&& buf) noexcept : _rpos(buf._rpos), _wpos(buf._wpos), _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(std::move(buf._storage))
+    {
+        buf._rpos = 0;
+        buf._wpos = 0;
+        buf._bitpos = 8;
+        buf._curbitval = 0;
+    }
+
+    ByteBuffer(ByteBuffer const& right) = default;
+
+    ByteBuffer& operator=(ByteBuffer const& right)
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            _wpos = right._wpos;
+            _storage = right._storage;
+        }
+
+        return *this;
+    }
+
+    ByteBuffer& operator=(ByteBuffer&& right) noexcept
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            right._rpos = 0;
+            _wpos = right._wpos;
+            right._wpos = 0;
+            _storage = std::move(right._storage);
+        }
+
+        return *this;
     }
 
     void clear();
@@ -720,16 +756,7 @@ public:
 
     void AppendPackedTime(time_t time);
 
-    void put(size_t pos, const uint8 *src, size_t cnt)
-    {
-        if (pos + cnt > size())
-            throw ByteBufferPositionException(true, pos, cnt, size());
-
-        if (!src)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        std::memcpy(&_storage[pos], src, cnt);
-    }
+    void put(size_t pos, const uint8 *src, size_t cnt);
 
     void print_storage() const;
 

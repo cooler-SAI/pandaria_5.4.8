@@ -4345,6 +4345,7 @@ DungeonFinder.DPSNeeded = 3
 DungeonFinder.ShortageCheckInterval = 5
 DungeonFinder.ShortagePercent = 50
 DungeonFinder.MaxLfrQueues = 3
+DungeonFinder.ScenarioDebug = 0
 
 GM.LogTrade = 0
 GM.AllowFriend = 0
