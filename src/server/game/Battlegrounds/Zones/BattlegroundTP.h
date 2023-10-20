@@ -189,7 +189,7 @@ class BattlegroundTP : public Battleground
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         void EndBattleground(uint32 winner);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 

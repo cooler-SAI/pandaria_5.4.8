@@ -352,7 +352,7 @@ class BattlegroundEY : public Battleground
         void HandleKillPlayer(Player* player, Player* killer);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         void UpdateTeamScore(uint32 Team);
         void EndBattleground(uint32 winner);
         void UpdatePlayerScore(Player* Source, uint32 type, uint32 value, bool doAddHonor = true);

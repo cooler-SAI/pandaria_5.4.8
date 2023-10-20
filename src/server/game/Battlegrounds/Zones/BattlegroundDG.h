@@ -296,7 +296,7 @@ class BattlegroundDG : public Battleground
         BattlegroundDG();
         ~BattlegroundDG();
 
-        void Reset();
+        void Reset() override;
         bool SetupBattleground() override;
         void StartingEventOpenDoors();
         void StartingEventCloseDoors();

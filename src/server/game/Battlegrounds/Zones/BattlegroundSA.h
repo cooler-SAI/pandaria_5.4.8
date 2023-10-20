@@ -478,7 +478,7 @@ class BattlegroundSA : public Battleground
         void StartingEventOpenDoors();
         /// Called for ini battleground, after that the first player be entered
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         /// Called for generate packet contain worldstate data
         void FillInitialWorldStates(WorldStateBuilder& builder);
         /// Called when a player deal damage to building (door)

@@ -204,11 +204,11 @@ void CreatureTextMgr::LoadCreatureTextLocales()
         std::string localeName   = fields[3].GetString();
         std::string text         = fields[4].GetString();
 
-        CreatureTextLocale& data = mLocaleTextMap[CreatureTextId(creatureId, groupId, id)];
         LocaleConstant locale    = GetLocaleByName(localeName);
         if (locale == LOCALE_enUS)
             continue;
-
+        
+        CreatureTextLocale& data = mLocaleTextMap[CreatureTextId(creatureId, groupId, id)];
         ObjectMgr::AddLocaleString(text, locale, data.Text);
     } while (result->NextRow());
 

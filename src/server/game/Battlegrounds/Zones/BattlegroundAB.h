@@ -254,7 +254,7 @@ class BattlegroundAB : public Battleground
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         void EndBattleground(uint32 winner);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
 

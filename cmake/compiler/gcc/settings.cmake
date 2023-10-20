@@ -13,9 +13,6 @@
 add_definitions(-D_BUILD_DIRECTIVE='"${CMAKE_BUILD_TYPE}"')
 add_definitions(-fno-delete-null-pointer-checks)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -s -w" CACHE INTERNAL "EXE_LINKER_FLAGS" FORCE)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ffunction-sections -fdata-sections" CACHE INTERNAL "C_FLAGS" FORCE)
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 set(COMPILER_FLAGS "")
@@ -25,7 +22,8 @@ if (WITH_SANITIZER)
 endif()
 
 if (BUILD_DEPLOY)
-  set(COMPILER_FLAGS "${COMPILER_FLAGS} -march=native -fno-strict-aliasing -g3")
+  set(COMPILER_FLAGS "${COMPILER_FLAGS} -march=native -fno-strict-aliasing -g3 -ffunction-sections -fdata-sections")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -s -w" CACHE INTERNAL "EXE_LINKER_FLAGS" FORCE)
   if (NOT INSTALL_PREFIX)
     set(INSTALL_PREFIX "/server/wow/horizon")
   endif()
@@ -43,6 +41,7 @@ else()
 endif()
 
 if( WITH_COREDEBUG )
-  add_definitions(-ggdb3)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g3")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g3")
   message(STATUS "GCC: Debug-flags set (-g3)")
 endif()

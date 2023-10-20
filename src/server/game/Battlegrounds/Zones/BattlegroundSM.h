@@ -240,7 +240,7 @@ class BattlegroundSM : public Battleground
 
         void HandleKillPlayer(Player* player, Player* killer);
         bool SetupBattleground() override;
-        void Reset();
+        void Reset() override;
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
         void PostUpdateImpl(uint32 diff);
         void UpdateTeamScore(uint32 team);

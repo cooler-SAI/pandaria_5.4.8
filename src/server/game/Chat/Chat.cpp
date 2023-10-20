@@ -632,6 +632,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
                                   std::string const& addonPrefix /*= ""*/)
 {
     bool hasAchievementId = (chatType == CHAT_MSG_ACHIEVEMENT || chatType == CHAT_MSG_GUILD_ACHIEVEMENT) && achievementId;
+    bool hasLanguage = (language > Language::LANG_UNIVERSAL);
     bool hasSenderName = false;
     bool hasReceiverName = false;
     bool hasChannelName = false;
@@ -693,7 +694,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     ObjectGuid groupGUID = hasGroupGUID && sender && sender->GetGroup() ? sender->GetGroup()->GetGUID() : 0;
 
     uint32 realmId1 = realmID;
-    uint32 realmId2 = realmID;
+    // uint32 realmId2 = realmID;
 
     data.Initialize(SMSG_MESSAGECHAT);
     data.WriteBit(!hasSenderName);
@@ -733,7 +734,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteBit(receiverGUID[5]);
 
     data.WriteBit(0); // Fake Bit
-    data.WriteBit(!language);
+    data.WriteBit(!hasLanguage);
     data.WriteBit(!hasPrefix);
 
     data.WriteBit(senderGUID[0]);
@@ -759,7 +760,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     if (hasPrefix)
         data.WriteBits(addonPrefix.length(), 5);
 
-    data.WriteBit(!realmId2); // RealmID ?
+    data.WriteBit(1); // RealmID ?
 
     if (hasReceiverName)
         data.WriteBits(receiverName.length(), 11);
@@ -827,11 +828,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteByteSeq(receiverGUID[1]);
     data.WriteByteSeq(receiverGUID[0]);
 
-    if (language)
+    if (hasLanguage)
         data << uint8(language);
-
-    if (realmId2)
-        data << uint32(realmId2);
 
     if (message.length())
         data.WriteString(message);
@@ -841,9 +839,6 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
 
     if (hasSenderName)
         data.WriteString(senderName);
-
-    if (realmId1)
-        data << uint32(realmId1);
 
     return data.wpos();
 }

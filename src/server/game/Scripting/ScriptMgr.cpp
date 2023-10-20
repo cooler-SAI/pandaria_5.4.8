@@ -2184,7 +2184,7 @@ GlobalScript::GlobalScript(const char* name)
 
 // Instantiate static members of ScriptRegistry.
 template<class TScript> std::map<uint32, TScript*> ScriptRegistry<TScript>::ScriptPointerList;
-template<class TScript> uint32 ScriptRegistry<TScript>::_scriptIdCounter = 0;
+template<class TScript> uint32 ScriptRegistry<TScript>::_scriptIdCounter = 100000000;
 
 // Specialize for each script type class like so:
 template class ScriptRegistry<SpellScriptLoader>;

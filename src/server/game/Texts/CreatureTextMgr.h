@@ -90,9 +90,6 @@ typedef std::unordered_map<uint32, CreatureTextHolder> CreatureTextMap;     // a
 
 typedef std::map<CreatureTextId, CreatureTextLocale> LocaleCreatureTextMap;
 
-// used for handling non-repeatable random texts
-typedef std::vector<uint8> CreatureTextRepeatIds;
-typedef std::unordered_map<uint8, CreatureTextRepeatIds> CreatureTextRepeatGroup;
 typedef std::unordered_map<uint64, CreatureTextRepeatGroup> CreatureTextRepeatMap; // guid based
 
 class CreatureTextMgr
@@ -133,7 +130,7 @@ class CreatureTextLocalizer
     public:
         CreatureTextLocalizer(Builder const& builder, ChatMsg msgType) : _builder(builder), _msgType(msgType)
         {
-            _packetCache.resize(TOTAL_LOCALES, nullptr);
+            _packetCache.resize(TOTAL_LOCALES);
         }
 
         ~CreatureTextLocalizer()
