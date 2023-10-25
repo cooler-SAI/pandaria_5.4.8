@@ -37,12 +37,8 @@ class WorldPacket : public ByteBuffer
         {
         }
 
-        WorldPacket(WorldPacket&& packet) : ByteBuffer(std::move(packet)), m_opcode(packet.m_opcode), m_rcvdOpcodeNumber(0) 
-        {
-        }
-
                                                             // copy constructor
-        WorldPacket(WorldPacket const& right) : ByteBuffer(right), m_opcode(right.m_opcode), m_rcvdOpcodeNumber(0)
+        WorldPacket(WorldPacket const& packet) : ByteBuffer(packet), m_opcode(packet.m_opcode), m_rcvdOpcodeNumber(0), _compressionStream(NULL)
         {
         }
 
@@ -59,37 +55,6 @@ class WorldPacket : public ByteBuffer
         void Compress(z_stream_s* compressionStream, WorldPacket const* source);
         void SetReceivedOpcode(uint16 opcode) { m_rcvdOpcodeNumber = opcode; }
         uint16 GetReceivedOpcode() { return m_rcvdOpcodeNumber; }
-
-        WorldPacket& operator=(WorldPacket const& right)
-        {
-            if (this != &right)
-            {            
-                // m_opcode = right.m_opcode;
-                // _storage = right._storage;
-                // _rpos = right._rpos;
-                // _wpos = right._wpos;
-                // _bitpos = right._bitpos;
-                // _curbitval = right._curbitval;
-                m_opcode = right.m_opcode;
-                ByteBuffer::operator=(right);                
-                m_rcvdOpcodeNumber = 0;
-                _compressionStream = nullptr;
-            }
-            return *this;
-        }
-        
-        WorldPacket& operator=(WorldPacket&& right)
-        {
-            if (this != &right)
-            {
-                m_opcode = right.m_opcode;
-                ByteBuffer::operator=(std::move(right));
-                m_rcvdOpcodeNumber = 0;
-                _compressionStream = nullptr;                
-            }
-
-            return *this;
-        }
 
     protected:
         Opcodes m_opcode;

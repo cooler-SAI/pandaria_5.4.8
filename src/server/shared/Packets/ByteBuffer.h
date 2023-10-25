@@ -148,15 +148,11 @@ public:
         _storage.reserve(reserve);
     }
 
-    ByteBuffer(ByteBuffer&& buf) noexcept : _rpos(buf._rpos), _wpos(buf._wpos), _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(std::move(buf._storage))
+    // copy constructor
+    ByteBuffer(const ByteBuffer &buf) : _rpos(buf._rpos), _wpos(buf._wpos),
+        _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(buf._storage)
     {
-        buf._rpos = 0;
-        buf._wpos = 0;
-        buf._bitpos = 8;
-        buf._curbitval = 0;
     }
-
-    ByteBuffer(ByteBuffer const& right) = default;
 
     ByteBuffer& operator=(ByteBuffer const& right)
     {

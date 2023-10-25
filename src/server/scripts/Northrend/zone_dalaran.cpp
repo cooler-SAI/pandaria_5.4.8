@@ -371,9 +371,44 @@ private:
     uint64 _summonGUID;
 };
 
+
+/*######
+# npc_zidormi_dalaran  31848
+######*/
+
+enum ZidormiDalaranText
+{
+    ZIDORMI_DALARAN_GOSSIP_MENUID  =  10131,  
+    ZIDORMI_DALARAN_GOSSIP_OPID_0  =  0,     // Take me to the Caverns of Time.
+};
+
+struct npc_zidormi_dalaran : public ScriptedAI
+{
+    npc_zidormi_dalaran(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
+    {
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
+        if (action == GOSSIP_ACTION_INFO_DEF+1)
+            player->CastSpell(player, 46343, false);
+        CloseGossipMenuFor(player);
+        return true;
+    }
+
+    bool OnGossipHello(Player* player) override
+    {
+        InitGossipMenuFor(player, ZIDORMI_DALARAN_GOSSIP_MENUID);
+        AddGossipItemFor(player, ZIDORMI_DALARAN_GOSSIP_MENUID, ZIDORMI_DALARAN_GOSSIP_OPID_0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        SendGossipMenuFor(player, 14065, me->GetGUID());
+        return true;
+    }
+}; 
+
 void AddSC_dalaran()
 {
     RegisterCreatureAI(npc_mageguard_dalaran);
     new creature_script<npc_minigob_manabonk>("npc_minigob_manabonk");
     new creature_script<npc_archmage_landalock>("npc_archmage_landalock");
+    RegisterCreatureAI(npc_zidormi_dalaran);
 }
