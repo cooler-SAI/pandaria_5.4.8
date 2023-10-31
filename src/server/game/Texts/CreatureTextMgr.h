@@ -196,7 +196,8 @@ class CreatureTextLocalizer
             {
                 case CHAT_MSG_MONSTER_WHISPER:
                 case CHAT_MSG_RAID_BOSS_WHISPER:
-                    data.put<uint64>(whisperGUIDpos, player->GetGUID()); //.GetRawValue()
+                    // data.put<uint64>(whisperGUIDpos, player->GetGUID()); //.GetRawValue()
+                    // data.put<uint64>(whisperGUIDpos + (8 + 3 +8 + 2 + 12 + 1+ 1 + 1 + 8 + 8 + 1 + 8), player->GetGUID());
                     break;
                 default:
                     break;

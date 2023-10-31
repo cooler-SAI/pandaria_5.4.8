@@ -154,32 +154,6 @@ public:
     {
     }
 
-    ByteBuffer& operator=(ByteBuffer const& right)
-    {
-        if (this != &right)
-        {
-            _rpos = right._rpos;
-            _wpos = right._wpos;
-            _storage = right._storage;
-        }
-
-        return *this;
-    }
-
-    ByteBuffer& operator=(ByteBuffer&& right) noexcept
-    {
-        if (this != &right)
-        {
-            _rpos = right._rpos;
-            right._rpos = 0;
-            _wpos = right._wpos;
-            right._wpos = 0;
-            _storage = std::move(right._storage);
-        }
-
-        return *this;
-    }
-
     void clear();
 
     template <typename T> void append(T value)

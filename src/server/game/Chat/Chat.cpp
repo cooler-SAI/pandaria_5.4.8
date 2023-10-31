@@ -631,6 +631,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
                                   uint32 achievementId /*= 0*/, bool gmMessage /*= false*/, std::string const& channelName /*= ""*/,
                                   std::string const& addonPrefix /*= ""*/)
 {
+    size_t receiverGUIDPos = 0;
     bool hasAchievementId = (chatType == CHAT_MSG_ACHIEVEMENT || chatType == CHAT_MSG_GUILD_ACHIEVEMENT) && achievementId;
     bool hasLanguage = (language > Language::LANG_UNIVERSAL);
     bool hasSenderName = false;
@@ -723,6 +724,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
         data.WriteBits(chatTag, 9);
 
     data.WriteBit(0); // Fake Bit
+
+    // receiverGUIDPos = data.wpos();
 
     data.WriteBit(receiverGUID[7]);
     data.WriteBit(receiverGUID[6]);
@@ -819,6 +822,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteByteSeq(groupGUID[5]);
     data.WriteByteSeq(groupGUID[7]);
 
+    receiverGUIDPos = data.wpos();
+
     data.WriteByteSeq(receiverGUID[2]);
     data.WriteByteSeq(receiverGUID[5]);
     data.WriteByteSeq(receiverGUID[3]);
@@ -840,7 +845,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     if (hasSenderName)
         data.WriteString(senderName);
 
-    return data.wpos();
+    return receiverGUIDPos;
 }
 
 size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Language language, WorldObject const* sender, WorldObject const* receiver, std::string const& message,
