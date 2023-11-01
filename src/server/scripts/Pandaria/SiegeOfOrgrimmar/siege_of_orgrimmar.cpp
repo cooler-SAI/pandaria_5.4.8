@@ -1535,7 +1535,7 @@ struct npc_siege_of_orgrimmar_tyrande : public customCreatureAI
 
     void DoAction(int32 actionId) override
     {
-        if (actionId = ACTION_START_INTRO)
+        if (actionId == ACTION_START_INTRO)
         {
             Talk(TALK_INTRO);
 

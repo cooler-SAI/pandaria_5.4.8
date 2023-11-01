@@ -907,7 +907,7 @@ class npc_lei_shi_corrupted_protector : public CreatureScript
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    if (eventId = EVENT_DISPERSE)
+                    if (eventId == EVENT_DISPERSE)
                     {
                         me->RemoveAurasDueToSpell(SPELL_DISPERSE);
                         DoCast(me, SPELL_DISPERSE);

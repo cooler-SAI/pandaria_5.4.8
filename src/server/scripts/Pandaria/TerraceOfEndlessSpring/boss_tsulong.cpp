@@ -1510,7 +1510,7 @@ struct npc_enchanted_plant : public ScriptedAI
 
     void UpdateAI(uint32 diff) override { }
 
-    void JustDied(Unit*)
+    void JustDied(Unit*) override
     {
         me->GetMap()->SetWorldState(WORLD_STATE_WHOS_GOT_TWO_GREEN_THUMBS, 0);
     }

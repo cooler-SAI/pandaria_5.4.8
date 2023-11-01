@@ -2038,14 +2038,19 @@ class npc_spirit_kings_story : public CreatureScript
                 nonCombatEvents.Update(diff);
 
                 if (uint32 eventId = nonCombatEvents.ExecuteEvent())
+                {
                     if (eventId == EVENT_ACTIVATED)
+                    {
                         if (!MyMinionsHasAlive(me->GetEntry()))
                         {
                             if (Creature* LoreWalkerCho = GetClosestCreatureWithEntry(me, NPC_LOREWALKER_CHO, 150.0f, true))
                                 LoreWalkerCho->AI()->DoAction(ACTION_SPIRIT_KINGS_INTRO);
                             me->DespawnOrUnsummon();
                         }
-                        else nonCombatEvents.ScheduleEvent(EVENT_ACTIVATED, urand(100, 200));
+                        else nonCombatEvents.ScheduleEvent(EVENT_ACTIVATED, urand(100, 200));                       
+                    }
+
+                }
             }
 
         private:

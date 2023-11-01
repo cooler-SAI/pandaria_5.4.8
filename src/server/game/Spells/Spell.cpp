@@ -1129,10 +1129,12 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
     float coneOffset = 0;
     if (SpellTargetRestrictionsEntry const* restrictions = m_spellInfo->GetSpellTargetRestrictions())
         if (restrictions->ConeAngle != 0)
+        {
             if (targetType.GetTarget() == TARGET_UNIT_CONE_ENEMY_WITH_OFFSET)
                 coneOffset = M_PI * restrictions->ConeAngle / 180;
             else
-                coneAngle = M_PI * restrictions->ConeAngle / 180;
+                coneAngle = M_PI * restrictions->ConeAngle / 180;            
+        }
 
     float radius = m_spellInfo->Effects[effIndex].CalcRadius(m_caster) * m_spellValue->RadiusMod;
 
