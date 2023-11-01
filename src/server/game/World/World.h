@@ -1170,16 +1170,11 @@ private:
 /// The World
 class World
 {
-        World();
-        ~World();
+
     public:
         static uint32 m_worldLoopCounter;
 
-        static World* instance()
-        {
-            static World _instance;
-            return &_instance;
-        }
+        static World* instance();
 
         WorldSession* FindSession(uint32 id) const;
         void AddSession(WorldSession* s);
@@ -1477,6 +1472,9 @@ class World
         void DBCleanup();
 
     private:
+        World();
+        ~World();
+
         static std::atomic_long m_stopEvent;
         static uint8 m_ExitCode;
         uint32 m_ShutdownTimer;
@@ -1570,7 +1568,6 @@ class World
         void LoadAccountCacheData();
 
         std::map<uint32, AccountCacheData> _accountCacheData;
-        ACE_RW_Thread_Mutex _accountCacheDataLock;
 
         void ProcessQueryCallbacks();
         ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;

@@ -74,8 +74,6 @@ class WardenCheckMgr
 
         void LoadWardenChecks(bool reload = false);
 
-        ACE_RW_Mutex _checkStoreLock;
-
     private:
         CheckContainer CheckStore;
         CheckResultContainer CheckResultStore;

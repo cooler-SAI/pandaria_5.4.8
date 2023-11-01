@@ -203,8 +203,6 @@ void WardenWin::RequestData(WardenRequestContext* context)
     buff << uint8(exename.size());
     buff.append(exename.c_str(), exename.size());
 
-    ACE_READ_GUARD(ACE_RW_Mutex, g, sWardenCheckMgr->_checkStoreLock);
-
     if (context && context->CustomOtherCheck)
     {
         _currentChecks.push_back(std::make_pair(*context->CustomOtherCheck, context->CustomOtherResult ? *context->CustomOtherResult : WardenCheckResult()));
@@ -431,8 +429,6 @@ void WardenWin::HandleData(ByteBuffer &buff)
     uint8 type;
     uint16 checkFailed = 0;
     std::vector<std::tuple<WardenCheck*, bool, std::string>> checksFailed;
-
-    ACE_READ_GUARD(ACE_RW_Mutex, g, sWardenCheckMgr->_checkStoreLock);
 
     for (auto&& check : _currentChecks)
     {

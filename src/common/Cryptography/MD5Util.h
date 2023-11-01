@@ -16,7 +16,7 @@
 */
 
 #ifndef _MD5_UTIL_H
-#define _MD5_UTIL__H
+#define _MD5_UTIL_H
 
 class MD5Util
 {

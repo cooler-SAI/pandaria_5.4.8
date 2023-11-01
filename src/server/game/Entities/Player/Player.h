@@ -3548,7 +3548,6 @@ public:
     uint32 m_lastFallAbsoluteTime = 0;
 
     std::unordered_set<AuctionQueryContext*> m_activeAuctionQueries;
-    ACE_RW_Thread_Mutex m_activeAuctionQueriesLock;
 
     void LeaveFromSoloQueueIfNeed();
     void UpdateKnockbackTime() { m_lastKnockbackTime = TimeValue::Now(); }
