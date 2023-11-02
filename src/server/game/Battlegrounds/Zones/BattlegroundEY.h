@@ -334,7 +334,7 @@ class BattlegroundEY : public Battleground
         ~BattlegroundEY();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
 

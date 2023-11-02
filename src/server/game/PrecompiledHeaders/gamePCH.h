@@ -20,7 +20,7 @@
 //#include "WorldSocket.h"        // must be first to make ACE happy with ACE includes in it
 
 //#include "Common.h"
-
+#include <ace/Guard_T.h>  
 #include "MapManager.h"
 #include "Log.h"
 #include "ObjectAccessor.h"

@@ -36,6 +36,8 @@
 #include "Master.h"
 #include "World.h"
 
+#include "IoContext.h"
+
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
 #endif
@@ -140,6 +142,10 @@ extern int main(int argc, char** argv)
         printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
+    
+    std::shared_ptr<Trinity::Asio::IoContext> ioContext = std::make_shared<Trinity::Asio::IoContext>();
+
+    sLog->Initialize(sConfigMgr->GetBoolDefault("Log.Async.Enable", false) ? ioContext.get() : nullptr);
 
     TC_LOG_INFO("server.worldserver", "Using configuration file %s.", cfg_file);
 

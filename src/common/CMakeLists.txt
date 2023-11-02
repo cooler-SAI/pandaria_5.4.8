@@ -12,13 +12,18 @@ if( USE_COREPCH )
   include_directories(${CMAKE_CURRENT_BINARY_DIR})
 endif()
 
+file(GLOB_RECURSE sources_Asio Asio/*.cpp Asio/*.h)
+file(GLOB_RECURSE sources_Configuration Configuration/*.cpp Configuration/*.h)
 file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h Cryptography/Authentication/*.cpp Cryptography/Authentication/*.h)
+file(GLOB_RECURSE sources_Logging Logging/*.cpp Logging/*.h)
 file(GLOB_RECURSE sources_Utilities Utilities/*.cpp Utilities/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
 source_group(CMake FILES CMakeLists.txt)
+source_group(Asio FILES ${sources_Asio})
 source_group(Configuration FILES ${sources_Configuration})
 source_group(Cryptography FILES ${sources_Cryptography})
+source_group(Logging FILES ${sources_Logging})
 source_group(Utilities FILES ${sources_Utilities})
 
 # Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in shared project
@@ -32,8 +37,11 @@ endif()
 
 set(common_STAT_SRCS
   ${common_STAT_SRCS}
+  ${sources_Asio}
+  ${sources_Configuration}
   ${sources_Cryptography}
   ${sources_Debugging}
+  ${sources_Logging}
   ${sources_Utilities}
   ${sources_localdir}
 )
@@ -41,24 +49,21 @@ set(common_STAT_SRCS
 include_directories(
   PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Asio
+    ${CMAKE_CURRENT_SOURCE_DIR}/Configuration
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography/Authentication  
     ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
+    ${CMAKE_CURRENT_SOURCE_DIR}/Logging
     ${CMAKE_CURRENT_SOURCE_DIR}/Utilities
     ${CMAKE_BINARY_DIR}
-    ${OPENSSL_INCLUDE_DIR}   
+    ${OPENSSL_INCLUDE_DIR} 
+    ${Boost_INCLUDE_DIRS} 
+    ${CMAKE_SOURCE_DIR}/dep/fmt/include 
   PRIVATE
     ${CMAKE_SOURCE_DIR}/dep/SFMT
-    ${CMAKE_SOURCE_DIR}/dep/fmt/include
     ${CMAKE_SOURCE_DIR}/dep/utf8cpp
 )
-
-if (Boost_FOUND)
-  include_directories(
-    PRIVATE
-      ${Boost_INCLUDE_DIRS}
-  )
-endif()
 
 add_library(common STATIC
   ${common_STAT_SRCS}
@@ -69,6 +74,7 @@ target_link_libraries(common
     sfmt
     fmt
     ${OPENSSL_LIBRARIES}
+    ${Boost_LIBRARIES}
 )
 
 

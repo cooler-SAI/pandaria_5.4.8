@@ -920,7 +920,7 @@ class BattlegroundIC : public Battleground
         ~BattlegroundIC();
 
         /* inherited from BattlegroundClass */
-        virtual void AddPlayer(Player *plr);
+        void AddPlayer(Player *plr) override;
         virtual void StartingEventCloseDoors();
         virtual void StartingEventOpenDoors();
         virtual void PostUpdateImpl(uint32 diff);

@@ -200,9 +200,9 @@ bool MoveSplineInitArgs::Validate(Unit* unit) const
     if (!(exp))\
     {\
         if (unit)\
-            sLog->outError("MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUIDLow() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
+            TC_LOG_ERROR("MoveSplineInitArgs::Validate: expression '%s' failed for GUID: %u Entry: %u", #exp, unit->GetTypeId() == TYPEID_PLAYER ? unit->GetGUIDLow() : unit->ToCreature()->GetDBTableGUIDLow(), unit->GetEntry());\
         else\
-            sLog->outError("MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
+            TC_LOG_ERROR("MoveSplineInitArgs::Validate: expression '%s' failed for cyclic spline continuation", #exp);\
         return false;\
     }
     CHECK(path.size() > 1);

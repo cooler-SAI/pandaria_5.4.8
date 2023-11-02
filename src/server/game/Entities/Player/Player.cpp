@@ -21341,6 +21341,8 @@ void Player::SaveToDB(bool create /*=false*/)
     PreparedStatement* stmt = NULL;
     uint8 index = 0;
 
+    auto finiteAlways = [](float f) { return std::isfinite(f) ? f : 0.0f; };
+
     if (create)
     {
         //! Insert query

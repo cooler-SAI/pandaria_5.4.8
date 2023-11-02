@@ -12,6 +12,8 @@
 # Set build-directive (used in core to tell which buildtype we used)
 add_definitions(-D_BUILD_DIRECTIVE='"$(CONFIGURATION)"')
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17") # clang issue
+
 if(WITH_WARNINGS)
   set(WARNING_FLAGS "-W -Wall -Wextra -Winit-self -Wfatal-errors")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${WARNING_FLAGS}")

@@ -15,26 +15,21 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef LOGOPERATION_H
-#define LOGOPERATION_H
+#ifndef DeadlineTimer_h__
+#define DeadlineTimer_h__
 
-class Logger;
-struct LogMessage;
+#include <boost/asio/deadline_timer.hpp>
 
-class LogOperation
+namespace Trinity
 {
-    public:
-        LogOperation(Logger const* _logger, LogMessage* _msg)
-            : logger(_logger), msg(_msg)
-        { }
+    namespace Asio
+    {
+        class DeadlineTimer : public boost::asio::basic_deadline_timer<boost::posix_time::ptime, boost::asio::time_traits<boost::posix_time::ptime>, boost::asio::io_context::executor_type>
+        {
+        public:
+            using basic_deadline_timer::basic_deadline_timer;
+        };
+    }
+}
 
-        ~LogOperation();
-
-        int call();
-
-    protected:
-        Logger const* logger;
-        LogMessage* msg;
-};
-
-#endif
+#endif // DeadlineTimer_h__

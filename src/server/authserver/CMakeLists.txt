@@ -54,15 +54,17 @@ include_directories(
     ${OPENSSL_INCLUDE_DIR}
   PRIVATE
     ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Asio
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication 
     ${CMAKE_SOURCE_DIR}/src/common/Debugging 
+    ${CMAKE_SOURCE_DIR}/src/common/Logging
     ${CMAKE_SOURCE_DIR}/src/common/Utilities  
     ${CMAKE_SOURCE_DIR}/src/server/shared
     ${CMAKE_SOURCE_DIR}/src/server/shared/Database
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
+    #${CMAKE_SOURCE_DIR}/src/server/shared/Logging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -71,6 +73,8 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Server
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/dep/fmt/include
 )
 
 add_executable(authserver

@@ -15,36 +15,20 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "LogWorker.h"
+#ifndef IpAddress_h__
+#define IpAddress_h__
 
-LogWorker::LogWorker()
-    : m_queue(HIGH_WATERMARK, LOW_WATERMARK)
-{
-    ACE_Task_Base::activate(THR_NEW_LWP | THR_JOINABLE | THR_INHERIT_SCHED, 1);
-}
+#include "Define.h"
+#include <boost/asio/ip/address.hpp>
 
-LogWorker::~LogWorker()
+namespace Trinity
 {
-    m_queue.deactivate();
-    wait();
-}
-
-int LogWorker::enqueue(LogOperation* op)
-{
-    return m_queue.enqueue(op);
-}
-
-int LogWorker::svc()
-{
-    while (1)
+    namespace Net
     {
-        LogOperation* request;
-        if (m_queue.dequeue(request) == -1)
-            break;
-
-        request->call();
-        delete request;
+        using boost::asio::ip::make_address;
+        using boost::asio::ip::make_address_v4;
+        inline uint32 address_to_uint(boost::asio::ip::address_v4 const& address) { return address.to_uint(); }
     }
-
-    return 0;
 }
+
+#endif // IpAddress_h__

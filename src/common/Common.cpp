@@ -15,17 +15,30 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "LogOperation.h"
-#include "Logger.h"
+#include "Common.h"
 
-LogOperation::~LogOperation()
+char const* localeNames[TOTAL_LOCALES] = 
 {
-    delete msg;
+  "enUS",
+  "koKR",
+  "frFR",
+  "deDE",
+  "zhCN",
+  "zhTW",
+  "esES",
+  "esMX",
+  "ruRU",
+  "itIT",
+  "ptBR",
+  "ptPT",
+};
+
+LocaleConstant GetLocaleByName(const std::string& name)
+{
+    for (uint32 i = 0; i < TOTAL_LOCALES; ++i)
+        if (name==localeNames[i])
+            return LocaleConstant(i);
+
+    return LOCALE_enUS;                                     // including enGB case
 }
 
-int LogOperation::call()
-{
-    if (logger && msg)
-        logger->write(*msg);
-    return 0;
-}

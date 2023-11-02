@@ -16,25 +16,13 @@
 */
 
 #include "Appender.h"
-#include "Common.h"
-#include "Util.h"
+#include "LogMessage.h"
+#include "StringFormat.h"
 
-std::string LogMessage::getTimeStr(time_t time)
-{
-    tm aTm;
-    localtime_r(&time, &aTm);
-    char buf[20];
-    snprintf(buf, 20, "%04d-%02d-%02d_%02d:%02d:%02d", aTm.tm_year+1900, aTm.tm_mon+1, aTm.tm_mday, aTm.tm_hour, aTm.tm_min, aTm.tm_sec);
-    return std::string(buf);
-}
+#include <sstream>
 
-std::string LogMessage::getTimeStr()
-{
-    return getTimeStr(mtime);
-}
-
-Appender::Appender(uint8 _id, std::string const& _name, AppenderType _type /* = APPENDER_NONE*/, LogLevel _level /* = LOG_LEVEL_DISABLED */, AppenderFlags _flags /* = APPENDER_FLAGS_NONE */):
-id(_id), name(_name), type(_type), level(_level), flags(_flags) { }
+Appender::Appender(uint8 _id, std::string const& _name, LogLevel _level /* = LOG_LEVEL_DISABLED */, AppenderFlags _flags /* = APPENDER_FLAGS_NONE */):
+id(_id), name(_name), level(_level), flags(_flags) { }
 
 Appender::~Appender() { }
 
@@ -46,11 +34,6 @@ uint8 Appender::getId() const
 std::string const& Appender::getName() const
 {
     return name;
-}
-
-AppenderType Appender::getType() const
-{
-    return type;
 }
 
 LogLevel Appender::getLogLevel() const
@@ -68,42 +51,27 @@ void Appender::setLogLevel(LogLevel _level)
     level = _level;
 }
 
-void Appender::write(LogMessage& message)
+void Appender::write(LogMessage* message)
 {
-    if (!level || level > message.level)
+    if (!level || level > message->level)
         return;
 
-    message.prefix.clear();
+    std::ostringstream ss;
+
     if (flags & APPENDER_FLAGS_PREFIX_TIMESTAMP)
-        message.prefix.append(message.getTimeStr());
+        ss << message->getTimeStr() << ' ';
 
     if (flags & APPENDER_FLAGS_PREFIX_LOGLEVEL)
-    {
-        if (!message.prefix.empty())
-            message.prefix.push_back(' ');
-
-        char text[MAX_QUERY_LEN];
-        snprintf(text, MAX_QUERY_LEN, "%-5s", Appender::getLogLevelString(message.level));
-        message.prefix.append(text);
-    }
+        ss << Trinity::StringFormat("%-5s ", Appender::getLogLevelString(message->level));
 
     if (flags & APPENDER_FLAGS_PREFIX_LOGFILTERTYPE)
-    {
-        if (!message.prefix.empty())
-            message.prefix.push_back(' ');
+        ss << '[' << message->type << "] ";
 
-        message.prefix.push_back('[');
-        message.prefix.append(message.type);
-        message.prefix.push_back(']');
-    }
-
-    if (!message.prefix.empty())
-        message.prefix.push_back(' ');
-
+    message->prefix = ss.str();
     _write(message);
 }
 
-const char* Appender::getLogLevelString(LogLevel level)
+char const* Appender::getLogLevelString(LogLevel level)
 {
     switch (level)
     {

@@ -22,6 +22,7 @@
 
 #include <cinttypes>
 #include <cstddef>
+#include <climits>
 
 #define TRINITY_LITTLEENDIAN 0
 #define TRINITY_BIGENDIAN    1
@@ -35,7 +36,7 @@
 #endif //TRINITY_ENDIAN
 
 #if PLATFORM == PLATFORM_WINDOWS
-#  define TRINITY_PATH_MAX MAX_PATH
+#  define TRINITY_PATH_MAX 260
 #  ifndef DECLSPEC_NORETURN
 #    define DECLSPEC_NORETURN __declspec(noreturn)
 #  endif //DECLSPEC_NORETURN
@@ -113,6 +114,9 @@
 #define SI64LIT(N) INT64_C(N)
 
 #define SZFMTD "%" PRIuPTR
+
+#define STRING_VIEW_FMT "%.*s"
+#define STRING_VIEW_FMT_ARG(str) static_cast<int>((str).length()), (str).data()
 
 typedef std::int64_t  int64;
 typedef std::int32_t  int32;

@@ -67,6 +67,18 @@ private:
     StorageType m_storage;
 };
 
+namespace Trinity
+{
+    TC_COMMON_API std::vector<std::string_view> Tokenize(std::string_view str, char sep, bool keepEmpty);
+
+    /* this would return string_view into temporary otherwise */
+    std::vector<std::string_view> Tokenize(std::string&&, char, bool) = delete;
+    std::vector<std::string_view> Tokenize(std::string const&&, char, bool) = delete;
+
+    /* the delete overload means we need to make this explicit */
+    inline std::vector<std::string_view> Tokenize(char const* str, char sep, bool keepEmpty) { return Tokenize(std::string_view(str ? str : ""), sep, keepEmpty); }
+}
+
 void stripLineInvisibleChars(std::string &src);
 
 int64 MoneyStringToMoney(const std::string& moneyString);
@@ -179,6 +191,19 @@ bool WStrToUtf8(wchar_t* wstr, size_t size, std::string& utf8str);
 
 size_t utf8length(std::string& utf8str);                    // set string to "" if invalid utf8 sequence
 void utf8truncate(std::string& utf8str, size_t len);
+
+// UTF8 handling
+TC_COMMON_API bool Utf8toWStr(std::string_view utf8str, std::wstring& wstr);
+
+// in wsize==max size of buffer, out wsize==real string size
+TC_COMMON_API bool Utf8toWStr(char const* utf8str, size_t csize, wchar_t* wstr, size_t& wsize);
+
+inline bool Utf8toWStr(std::string_view utf8str, wchar_t* wstr, size_t& wsize)
+{
+    return Utf8toWStr(utf8str.data(), utf8str.size(), wstr, wsize);
+}
+
+TC_COMMON_API bool WStrToUtf8(std::wstring_view wstr, std::string& utf8str);
 
 inline bool isBasicLatinCharacter(wchar_t wchar)
 {
@@ -365,10 +390,16 @@ bool Utf8FitTo(const std::string& str, std::wstring search);
 void utf8printf(FILE* out, const char *str, ...);
 void vutf8printf(FILE* out, const char *str, va_list* ap);
 
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+TC_COMMON_API bool ReadWinConsole(std::string& str, size_t size = 256);
+TC_COMMON_API bool WriteWinConsole(std::string_view str, bool error = false);
+#endif
+
 uint32 CreatePIDFile(const std::string& filename);
 
 std::string ByteArrayToHexStr(uint8 const* bytes, uint32 length, bool reverse = false);
 bool StringToBool(std::string const& str);
+TC_COMMON_API bool StringEqualI(std::string_view str1, std::string_view str2);
 #endif
 
 //handler for operations on large flags

@@ -714,7 +714,7 @@ class Game
                 {
                     Player* player = lastPlayer;
 
-                    sLog->outError("AFD Royale Winner: %s (GUID: %u)", player->GetName().c_str(), player->GetGUIDLow());
+                    TC_LOG_ERROR("AFD Royale Winner: %s (GUID: %u)", player->GetName().c_str(), player->GetGUIDLow());
 
                     player->SetFullHealth();
                     player->AddAura(SPELL_WINNER_VISUAL, player);

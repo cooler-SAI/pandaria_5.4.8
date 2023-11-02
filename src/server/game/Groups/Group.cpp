@@ -3685,7 +3685,7 @@ bool Group::StartLog()
     std::error_code c;
     if (!std::filesystem::create_directories(p, c) && c.value() != 0)
     {
-        TC_LOG_ERROR("server", "Group::StartLog - Couldn't create directory %s, errno %u", p.c_str(), c.value());
+        TC_LOG_ERROR("server", "Group::StartLog - Couldn't create directory %s, errno %u", p.string(), c.value());
         return false;
     }
     m_logger.reset(new LogFile());

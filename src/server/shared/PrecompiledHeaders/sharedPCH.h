@@ -17,6 +17,7 @@
  
 //add here most rarely modified headers to speed up debug build compilation
 
+#include <ace/Guard_T.h>
 #include "Common.h"
 #include "Errors.h"
 #include "Log.h"

@@ -307,7 +307,7 @@ class BattlegroundDG : public Battleground
         void EventPlayerClickedOnFlag(Player* source, GameObject* target_obj) override;
         void EventPlayerClickedOnFlag(Player* source, Unit* target) override;
         void UpdatePlayerScore(Player* source, uint32 type, uint32 value, bool doAddHonor = true);
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         WorldSafeLocsEntry const* GetClosestGraveYard(Player* player);
         void HandleKillPlayer(Player* player, Player* killer);

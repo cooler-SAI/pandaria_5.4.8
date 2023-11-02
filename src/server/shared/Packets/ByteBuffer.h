@@ -29,6 +29,7 @@
 #include <vector>
 #include <cstring>
 #include <time.h>
+#include <cstdarg>
 
 // Root of ByteBuffer exception hierarchy
 class ByteBufferException : public std::exception

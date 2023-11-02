@@ -29,6 +29,7 @@
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
 
+#include "AppenderDB.h"
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
 #include "Configuration/Config.h"
@@ -111,6 +112,9 @@ int main(int argc, char** argv)
         printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
+
+    sLog->RegisterAppender<AppenderDB>();
+    sLog->Initialize(nullptr);
 
     TC_LOG_INFO("server.authserver", "%s (authserver)", _FULLVERSION);
     TC_LOG_INFO("server.authserver", "<Ctrl-C> to stop.\n");

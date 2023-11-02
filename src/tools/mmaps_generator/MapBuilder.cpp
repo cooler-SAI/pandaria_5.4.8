@@ -28,7 +28,7 @@
 #include "DetourCommon.h"
 
 #include "DisableMgr.h"
-#include "Logging/AppenderDB.h"
+#include "AppenderDB.h"
 #include <ace/OS_NS_unistd.h>
 
 #include "SharedDefines.h"

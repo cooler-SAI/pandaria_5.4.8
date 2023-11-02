@@ -15,23 +15,28 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef APPENDERDB_H
-#define APPENDERDB_H
+#ifndef Strand_h__
+#define Strand_h__
 
-#include "Appender.h"
+#include "IoContext.h"
+#include <boost/asio/bind_executor.hpp>
+#include <boost/asio/strand.hpp>
 
-class AppenderDB: public Appender
+namespace Trinity
 {
-    public:
-        AppenderDB(uint8 _id, std::string const& _name, LogLevel level);
-        ~AppenderDB();
+    namespace Asio
+    {
+        /**
+          Hack to make it possible to forward declare strand (which is a inner class)
+        */
+        class Strand : public boost::asio::io_context::strand
+        {
+        public:
+            Strand(IoContext& ioContext) : boost::asio::io_context::strand(ioContext) { }
+        };
 
-        void setRealmId(uint32 realmId);
+        using boost::asio::bind_executor;
+    }
+}
 
-    private:
-        uint32 realmId;
-        bool enabled;
-        void _write(LogMessage const& message);
-};
-
-#endif
+#endif // Strand_h__

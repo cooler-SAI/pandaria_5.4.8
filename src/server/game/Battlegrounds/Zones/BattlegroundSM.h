@@ -234,7 +234,7 @@ class BattlegroundSM : public Battleground
         ~BattlegroundSM();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
 

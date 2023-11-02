@@ -365,9 +365,6 @@ public:
 
         std::wstring namePart;
 
-        if (!Utf8toWStr(args, namePart))
-            return false;
-
         // converting string that we try to find to lower case
         wstrToLower(namePart);
 

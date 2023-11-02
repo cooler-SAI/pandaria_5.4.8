@@ -59,13 +59,16 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/dep/sockets/include
     ${CMAKE_SOURCE_DIR}/dep/SFMT
     ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Asio
+    ${CMAKE_SOURCE_DIR}/src/common/Configuration
     ${CMAKE_SOURCE_DIR}/src/common/Debugging
+    ${CMAKE_SOURCE_DIR}/src/common/Logging
     ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_SOURCE_DIR}/src/server/collision
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management
     ${CMAKE_SOURCE_DIR}/src/server/collision/Models
     ${CMAKE_SOURCE_DIR}/src/server/shared
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
+    #${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
     ${CMAKE_SOURCE_DIR}/src/server/shared/Database
@@ -73,7 +76,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic/LinkedReference
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
+    #${CMAKE_SOURCE_DIR}/src/server/shared/Logging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
@@ -159,6 +162,7 @@ include_directories(
     ${ACE_INCLUDE_DIR}
     ${MYSQL_INCLUDE_DIR}
     ${OPENSSL_INCLUDE_DIR}
+    ${CMAKE_SOURCE_DIR}/dep/fmt/include
 )
 
 if (Boost_FOUND)
@@ -196,7 +200,7 @@ target_link_libraries(worldserver
     collision
     g3dlib
     gsoap
-    Detour
+    #Detour
     ${JEMALLOC_LIBRARY}
     ${READLINE_LIBRARY}
     ${TERMCAP_LIBRARY}

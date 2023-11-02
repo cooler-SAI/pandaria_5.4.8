@@ -18,46 +18,6 @@
 #ifndef TRINITYCORE_COMMON_H
 #define TRINITYCORE_COMMON_H
 
-// config.h needs to be included 1st
-/// @todo this thingy looks like hack, but its not, need to
-// make separate header however, because It makes mess here.
-#ifdef HAVE_CONFIG_H
-// Remove Some things that we will define
-// This is in case including another config.h
-// before trinity config.h
-#ifdef PACKAGE
-#undef PACKAGE
-#endif //PACKAGE
-#ifdef PACKAGE_BUGREPORT
-#undef PACKAGE_BUGREPORT
-#endif //PACKAGE_BUGREPORT
-#ifdef PACKAGE_NAME
-#undef PACKAGE_NAME
-#endif //PACKAGE_NAME
-#ifdef PACKAGE_STRING
-#undef PACKAGE_STRING
-#endif //PACKAGE_STRING
-#ifdef PACKAGE_TARNAME
-#undef PACKAGE_TARNAME
-#endif //PACKAGE_TARNAME
-#ifdef PACKAGE_VERSION
-#undef PACKAGE_VERSION
-#endif //PACKAGE_VERSION
-#ifdef VERSION
-#undef VERSION
-#endif //VERSION
-
-# include "Config.h"
-
-#undef PACKAGE
-#undef PACKAGE_BUGREPORT
-#undef PACKAGE_NAME
-#undef PACKAGE_STRING
-#undef PACKAGE_TARNAME
-#undef PACKAGE_VERSION
-#undef VERSION
-#endif //HAVE_CONFIG_H
-
 #include "Define.h"
 
 #include <stdio.h>
@@ -65,7 +25,6 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
-//#include <signal.h>
 #include <assert.h>
 #include <cmath>
 #include <ctgmath>
@@ -85,12 +44,6 @@
 #include <algorithm>
 #include <unordered_map>
 #include <unordered_set>
-#include <functional>
-
-// #include "Threading/LockedQueue.h"
-// #include "Threading/Threading.h"
-
-#include <ace/Guard_T.h>
 
 #if PLATFORM == PLATFORM_WINDOWS
 // #  include <ace/config-all.h>
@@ -110,25 +63,16 @@
 
 #if COMPILER == COMPILER_MICROSOFT
 
-#include <float.h>
-
-#define I32FMT "%08I32X"
-#define I64FMT "%016I64X"
 #define atoll _atoi64
 #define vsnprintf _vsnprintf
-#define finite(X) _finite(X)
 #define llabs _abs64
 
 #else
 
 #define stricmp strcasecmp
 #define strnicmp strncasecmp
-#define I32FMT "%08X"
-#define I64FMT "%016llX"
 
 #endif
-
-inline float finiteAlways(float f) { return finite(f) ? f : 0.0f; }
 
 #define atol(a) strtoul( a, NULL, 10)
 
@@ -154,7 +98,7 @@ enum AccountTypes
     SEC_CONSOLE         = 4,    // must be always last in list, accounts must have less security level always also
 };
 
-enum LocaleConstant
+enum LocaleConstant : uint8
 {
     LOCALE_enUS = 0,
     LOCALE_koKR = 1,
@@ -168,17 +112,17 @@ enum LocaleConstant
     LOCALE_itIT = 9,
     LOCALE_ptBR = 10,
     LOCALE_ptPT = 11,
-    TOTAL_LOCALES = 12,
-    DEFAULT_LOCALE = LOCALE_enUS,
-    LOCALE_none = 99, // hack
+    TOTAL_LOCALES
 };
+
+#define DEFAULT_LOCALE LOCALE_enUS
 
 #define MAX_LOCALES 11
 #define MAX_ACCOUNT_TUTORIAL_VALUES 8
 
-extern char const* localeNames[TOTAL_LOCALES];
+TC_COMMON_API extern char const* localeNames[TOTAL_LOCALES];
 
-LocaleConstant GetLocaleByName(const std::string& name);
+TC_COMMON_API LocaleConstant GetLocaleByName(const std::string& name);
 
 typedef std::vector<std::string> StringVector;
 
@@ -199,11 +143,6 @@ struct DbcStr
 
     char const* m_impl[TOTAL_LOCALES];
 };
-
-constexpr inline bool IsValidLocale(LocaleConstant locale)
-{
-    return locale < TOTAL_LOCALES && locale != LOCALE_none;
-}
 
 #if defined(__GNUC__)
 #pragma pack()

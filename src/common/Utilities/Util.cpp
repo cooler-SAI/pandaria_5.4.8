@@ -26,6 +26,7 @@
 #include <random>
 #include <cstring>
 #include <sstream>
+#include <cstdarg>
 
 static thread_local std::unique_ptr<SFMTRand> sfmtRand;
 static SFMTEngine engine;
@@ -36,6 +37,24 @@ static SFMTRand* GetRng()
         sfmtRand = std::make_unique<SFMTRand>();
 
     return sfmtRand.get();
+}
+
+std::vector<std::string_view> Trinity::Tokenize(std::string_view str, char sep, bool keepEmpty)
+{
+    std::vector<std::string_view> tokens;
+
+    size_t start = 0;
+    for (size_t end = str.find(sep); end != std::string_view::npos; end = str.find(sep, start))
+    {
+        if (keepEmpty || (start < end))
+            tokens.push_back(str.substr(start, end - start));
+        start = end+1;
+    }
+
+    if (keepEmpty || (start < str.length()))
+        tokens.push_back(str.substr(start));
+
+    return tokens;
 }
 
 #if (defined(WIN32) || defined(_WIN32) || defined(__WIN32__))
@@ -410,6 +429,62 @@ bool WStrToUtf8(std::wstring wstr, std::string& utf8str)
     return true;
 }
 
+bool WStrToUtf8(std::wstring_view wstr, std::string& utf8str)
+{
+    try
+    {
+        std::string utf8str2;
+        utf8str2.resize(wstr.size()*4);                     // allocate for most long case
+
+        if (!wstr.empty())
+        {
+            char* oend = utf8::utf16to8(wstr.begin(), wstr.end(), &utf8str2[0]);
+            utf8str2.resize(oend-(&utf8str2[0]));                // remove unused tail
+        }
+        utf8str = utf8str2;
+    }
+    catch(std::exception const&)
+    {
+        utf8str.clear();
+        return false;
+    }
+
+    return true;
+}
+
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+bool ReadWinConsole(std::string& str, size_t size /*= 256*/)
+{
+    wchar_t* commandbuf = new wchar_t[size + 1];
+    HANDLE hConsole = GetStdHandle(STD_INPUT_HANDLE);
+    DWORD read = 0;
+
+    if (!ReadConsoleW(hConsole, commandbuf, size, &read, nullptr) || read == 0)
+    {
+        delete[] commandbuf;
+        return false;
+    }
+
+    commandbuf[read] = 0;
+
+    bool ok = WStrToUtf8(commandbuf, wcslen(commandbuf), str);
+    delete[] commandbuf;
+    return ok;
+}
+
+bool WriteWinConsole(std::string_view str, bool error /*= false*/)
+{
+    std::wstring wstr;
+    if (!Utf8toWStr(str, wstr))
+        return false;
+
+    HANDLE hConsole = GetStdHandle(error ? STD_ERROR_HANDLE : STD_OUTPUT_HANDLE);
+    DWORD write = 0;
+
+    return WriteConsoleW(hConsole, wstr.c_str(), wstr.size(), &write, nullptr);
+}
+#endif
+
 typedef wchar_t const* const* wstrlist;
 
 std::wstring GetMainPartOfName(std::wstring const& wname, uint32 declension)
@@ -475,6 +550,22 @@ bool utf8ToConsole(const std::string& utf8str, std::string& conStr)
     // not implemented yet
     conStr = utf8str;
 #endif
+
+    return true;
+}
+
+bool Utf8toWStr(std::string_view utf8str, std::wstring& wstr)
+{
+    wstr.clear();
+    try
+    {
+        utf8::utf8to16(utf8str.begin(), utf8str.end(), std::back_inserter(wstr));
+    }
+    catch(std::exception const&)
+    {
+        wstr.clear();
+        return false;
+    }
 
     return true;
 }
@@ -558,6 +649,11 @@ std::string ByteArrayToHexStr(uint8 const* bytes, uint32 arrayLen, bool reverse 
     }
 
     return ss.str();
+}
+
+bool StringEqualI(std::string_view a, std::string_view b)
+{
+    return std::equal(a.begin(), a.end(), b.begin(), b.end(), [](char c1, char c2) { return std::tolower(c1) == std::tolower(c2); });
 }
 
 bool StringToBool(std::string const& str)

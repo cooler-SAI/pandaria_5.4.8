@@ -15,33 +15,26 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef LOGWORKER_H
-#define LOGWORKER_H
+#ifndef APPENDERDB_H
+#define APPENDERDB_H
 
-#include "LogOperation.h"
+#include "Appender.h"
 
-#include <ace/Task.h>
-#include <ace/Activation_Queue.h>
-
-class LogWorker: protected ACE_Task_Base
+class TC_DATABASE_API AppenderDB: public Appender
 {
     public:
-        LogWorker();
-        ~LogWorker();
+        static constexpr AppenderType type = APPENDER_DB;
 
-        typedef ACE_Message_Queue_Ex<LogOperation, ACE_MT_SYNCH> LogMessageQueueType;
+        AppenderDB(uint8 id, std::string const& name, LogLevel level, AppenderFlags flags, std::vector<std::string_view> const& args);
+        ~AppenderDB();
 
-        enum
-        {
-            HIGH_WATERMARK = 8 * 1024 * 1024,
-            LOW_WATERMARK  = 8 * 1024 * 1024
-        };
-
-        int enqueue(LogOperation *op);
+        void setRealmId(uint32 realmId) override;
+        AppenderType getType() const override { return type; }
 
     private:
-        virtual int svc();
-        LogMessageQueueType m_queue;
+        uint32 realmId;
+        bool enabled;
+        void _write(LogMessage const* message) override;
 };
 
 #endif

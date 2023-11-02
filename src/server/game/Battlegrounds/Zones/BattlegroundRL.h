@@ -44,7 +44,7 @@ class BattlegroundRL : public Battleground
         ~BattlegroundRL();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void OnInvite(Player* player, GroupQueueInfo const* ginfo) override;
         void Reset() override;
         void FillInitialWorldStates(WorldStateBuilder& builder);

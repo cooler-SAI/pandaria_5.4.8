@@ -472,7 +472,7 @@ class BattlegroundSA : public Battleground
 
         /* inherited from BattlegroundClass */
         /// Called when a player join battle
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         /// Called when battle start
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();

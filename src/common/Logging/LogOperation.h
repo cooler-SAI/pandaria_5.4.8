@@ -15,30 +15,27 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef LOGGER_H
-#define LOGGER_H
+#ifndef LOGOPERATION_H
+#define LOGOPERATION_H
 
-#include "Appender.h"
+#include "Define.h"
+#include <memory>
 
-class Logger
+class Logger;
+struct LogMessage;
+
+class TC_COMMON_API LogOperation
 {
     public:
-        Logger();
-        ~Logger();
+        LogOperation(Logger const* _logger, std::unique_ptr<LogMessage>&& _msg);
 
-        void Create(std::string const& name, LogLevel level);
-        void addAppender(uint8 type, Appender *);
-        void delAppender(uint8 type);
+        ~LogOperation();
 
-        std::string const& getName() const;
-        LogLevel getLogLevel() const;
-        void setLogLevel(LogLevel level);
-        void write(LogMessage& message) const;
+        int call();
 
-    private:
-        std::string name;
-        LogLevel level;
-        AppenderMap appenders;
+    protected:
+        Logger const* logger;
+        std::unique_ptr<LogMessage> msg;
 };
 
 #endif
