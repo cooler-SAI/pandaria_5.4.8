@@ -41,7 +41,6 @@
 #include "RealmList.h"
 #include "RealmAcceptor.h"
 #include "AppenderDB.h"
-#include <boost/program_options.hpp>
 
 #ifdef __linux__
 #include <sched.h>
