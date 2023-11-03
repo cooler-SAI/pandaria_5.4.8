@@ -29,6 +29,7 @@
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
 
+#include "Banner.h"
 #include "AppenderDB.h"
 #include "Common.h"
 #include "Database/DatabaseEnv.h"
@@ -40,6 +41,7 @@
 #include "RealmList.h"
 #include "RealmAcceptor.h"
 #include "AppenderDB.h"
+#include <boost/program_options.hpp>
 
 #ifdef __linux__
 #include <sched.h>
@@ -116,31 +118,18 @@ int main(int argc, char** argv)
     sLog->RegisterAppender<AppenderDB>();
     sLog->Initialize(nullptr);
 
-    TC_LOG_INFO("server.authserver", "%s (authserver)", _FULLVERSION);
-    TC_LOG_INFO("server.authserver", "<Ctrl-C> to stop.\n");
-
-    TC_LOG_INFO("server.authserver", "    ─╔═══╗╔═══╗╔═╗─╔╗╔═══╗╔═══╗╔═══╗╔══╗╔═══╗─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╔═╗║║╔═╗║║║╚╗║║╚╗╔╗║║╔═╗║║╔═╗║╚╣─╝║╔═╗║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╚═╝║║║─║║║╔╗╚╝║─║║║║║║─║║║╚═╝║─║║─║║─║║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╔══╝║╚═╝║║║╚╗║║─║║║║║╚═╝║║╔╗╔╝─║║─║╚═╝║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║║───║╔═╗║║║─║║║╔╝╚╝║║╔═╗║║║║╚╗╔╣─╗║╔═╗║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─╚╝───╚╝─╚╝╚╝─╚═╝╚═══╝╚╝─╚╝╚╝╚═╝╚══╝╚╝─╚╝─                          ");
-    TC_LOG_INFO("server.authserver", "                                                                        ");
-    TC_LOG_INFO("server.authserver", "             ─╔═══╗───╔╗─╔╗────╔═══╗─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─║╔══╝───║║─║║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─║╚══╗───║╚═╝║────║╚═╝║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╚══╗║───╚══╗║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╔══╝║──╔╗──║║─╔╗─║╚═╝║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╚═══╝──╚╝──╚╝─╚╝─╚═══╝─                                   ");
-    TC_LOG_INFO("server.authserver", "                                                                        ");
-    TC_LOG_INFO("server.authserver", "                  PANDARIA 5.4.8                                        ");
-    TC_LOG_INFO("server.authserver", "                     Based on:                                          ");
-    TC_LOG_INFO("server.authserver", "                Project SkyFireEmu                                      ");
-    TC_LOG_INFO("server.authserver", "         <http://www.projectskyfire.org/> \n                            ");
-
-    TC_LOG_INFO("server.authserver", "Using configuration file %s.", configFile);
-
-    TC_LOG_INFO("server.authserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    Trinity::Banner::Show("authserver",
+        [](char const* text)
+        {
+            TC_LOG_INFO("server.authserver", "%s", text);
+        },
+        []()
+        {
+            TC_LOG_INFO("server.authserver", "Using configuration file %s.", sConfigMgr->GetFilename().c_str());
+            TC_LOG_INFO("server.authserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
+            TC_LOG_INFO("server.authserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
+        }
+    );
 
 #if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);

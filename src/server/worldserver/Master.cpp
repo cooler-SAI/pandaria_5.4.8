@@ -46,6 +46,8 @@
 #include "BigNumber.h"
 #include "OpenSSLCrypto.h"
 
+#include "Banner.h"
+
 #ifdef _WIN32
 #include <TlHelp32.h>
 #include "ServiceWin32.h"
@@ -172,27 +174,18 @@ int Master::Run()
     BigNumber seed1;
     seed1.SetRand(16 * 8);
 
-    TC_LOG_INFO("server.worldserver", "%s (worldserver-daemon)", _FULLVERSION);
-    TC_LOG_INFO("server.worldserver", "<Ctrl-C> to stop.\n");
-
-    TC_LOG_INFO("server.worldserver", "    ─╔═══╗╔═══╗╔═╗─╔╗╔═══╗╔═══╗╔═══╗╔══╗╔═══╗─                          ");
-    TC_LOG_INFO("server.worldserver", "    ─║╔═╗║║╔═╗║║║╚╗║║╚╗╔╗║║╔═╗║║╔═╗║╚╣─╝║╔═╗║─                          ");
-    TC_LOG_INFO("server.worldserver", "    ─║╚═╝║║║─║║║╔╗╚╝║─║║║║║║─║║║╚═╝║─║║─║║─║║─                          ");
-    TC_LOG_INFO("server.worldserver", "    ─║╔══╝║╚═╝║║║╚╗║║─║║║║║╚═╝║║╔╗╔╝─║║─║╚═╝║─                          ");
-    TC_LOG_INFO("server.worldserver", "    ─║║───║╔═╗║║║─║║║╔╝╚╝║║╔═╗║║║║╚╗╔╣─╗║╔═╗║─                          ");
-    TC_LOG_INFO("server.worldserver", "    ─╚╝───╚╝─╚╝╚╝─╚═╝╚═══╝╚╝─╚╝╚╝╚═╝╚══╝╚╝─╚╝─                          ");
-    TC_LOG_INFO("server.worldserver", "                                                                        ");
-    TC_LOG_INFO("server.worldserver", "             ─╔═══╗───╔╗─╔╗────╔═══╗─                                   ");
-    TC_LOG_INFO("server.worldserver", "             ─║╔══╝───║║─║║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.worldserver", "             ─║╚══╗───║╚═╝║────║╚═╝║─                                   ");
-    TC_LOG_INFO("server.worldserver", "             ─╚══╗║───╚══╗║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.worldserver", "             ─╔══╝║──╔╗──║║─╔╗─║╚═╝║─                                   ");
-    TC_LOG_INFO("server.worldserver", "             ─╚═══╝──╚╝──╚╝─╚╝─╚═══╝─                                   ");
-    TC_LOG_INFO("server.worldserver", "                                                                        ");
-    TC_LOG_INFO("server.worldserver", "                  PANDARIA 5.4.8                                        ");
-    TC_LOG_INFO("server.worldserver", "                     Based on:                                          ");
-    TC_LOG_INFO("server.worldserver", "                Project SkyFireEmu                                      ");
-    TC_LOG_INFO("server.worldserver", "         <http://www.projectskyfire.org/> \n                            ");
+    Trinity::Banner::Show("worldserver-daemon",
+        [](char const* text)
+        {
+            TC_LOG_INFO("server.worldserver", "%s", text);
+        },
+        []()
+        {
+            TC_LOG_INFO("server.worldserver", "Using configuration file %s.", sConfigMgr->GetFilename().c_str());
+            TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
+            TC_LOG_INFO("server.worldserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
+        }
+    );
 
     /// worldserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
