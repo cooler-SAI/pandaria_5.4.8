@@ -18,11 +18,11 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(COMPILER_FLAGS "")
 
 if (WITH_SANITIZER)
-  set(COMPILER_FLAGS "${COMPILER_FLAGS} -fsanitize=address -fsanitize-recover=address")
+  set(COMPILER_FLAGS "${COMPILER_FLAGS} -fno-omit-frame-pointer -fsanitize=address -fsanitize-recover=address -fsanitize-address-use-after-scope")
 endif()
 
 if (BUILD_DEPLOY)
-  set(COMPILER_FLAGS "${COMPILER_FLAGS} -march=native -fno-strict-aliasing -g3 -ffunction-sections -fdata-sections")
+  set(COMPILER_FLAGS "${COMPILER_FLAGS} -march=native -fno-strict-aliasing -ffunction-sections -fdata-sections")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,--gc-sections -s -w" CACHE INTERNAL "EXE_LINKER_FLAGS" FORCE)
   if (NOT INSTALL_PREFIX)
     set(INSTALL_PREFIX "/server/wow/horizon")
