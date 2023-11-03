@@ -30,6 +30,7 @@
 #include "AccountMgr.h"
 #include "CustomLogs.h"
 #include "Group.h"
+#include "TradeData.h"
 
 void WorldSession::SendTradeStatus(TradeStatus status)
 {

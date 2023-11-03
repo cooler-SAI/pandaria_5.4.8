@@ -25,6 +25,7 @@
 #include "Item.h"
 #include "PetDefines.h"
 #include "PhaseMgr.h"
+#include "PlayerTaxi.h"
 #include "QuestDef.h"
 #include "SpellMgr.h"
 #include "Unit.h"
@@ -64,6 +65,7 @@ class PhaseMgr;
 class BattlePetMgr;
 class PlayerAI;
 class SpellHistory;
+class TradeData;
 
 typedef std::deque<Mail*> PlayerMails;
 
@@ -819,14 +821,6 @@ struct ItemPosCount
 };
 typedef std::vector<ItemPosCount> ItemPosCountVec;
 
-enum TradeSlots
-{
-    TRADE_SLOT_COUNT = 7,
-    TRADE_SLOT_TRADED_COUNT = 6,
-    TRADE_SLOT_NONTRADED = 6,
-    TRADE_SLOT_INVALID = -1
-};
-
 enum TransferAbortReason
 {
     TRANSFER_ABORT_NOT_FOUND                     = 0x0,  // Transfer Aborted: instance not found
@@ -1084,79 +1078,7 @@ struct CompletedChallenge
 
 typedef std::map<uint32 /*MapId*/, CompletedChallenge> CompletedChallengesMap;
 
-class PlayerTaxi
-{
-public:
-    PlayerTaxi();
-    ~PlayerTaxi()
-    { }
-    // Nodes
-    void InitTaxiNodesForLevel(uint32 race, uint32 chrClass, uint8 level);
-    void LoadTaxiMask(std::string const& data);
 
-    bool IsTaximaskNodeKnown(uint32 nodeidx) const
-    {
-        uint8  field = uint8((nodeidx - 1) / 8);
-        uint32 submask = 1 << ((nodeidx - 1) % 8);
-        return (m_taximask [field] & submask) == submask;
-    }
-    bool SetTaximaskNode(uint32 nodeidx)
-    {
-        uint8  field = uint8((nodeidx - 1) / 8);
-        uint32 submask = 1 << ((nodeidx - 1) % 8);
-        if ((m_taximask [field] & submask) != submask)
-        {
-            m_taximask [field] |= submask;
-            return true;
-        }
-        else
-            return false;
-    }
-    void AppendTaximaskTo(ByteBuffer& data, bool all);
-
-    // Destinations
-    bool LoadTaxiDestinationsFromString(std::string const& values, uint32 team);
-    std::string SaveTaxiDestinationsToString();
-
-    void ClearTaxiDestinations()
-    {
-        m_taxiDestinations.clear();
-        m_lastNodeIndex = 0;
-    }
-    void AddTaxiDestination(uint32 dest)
-    {
-        m_taxiDestinations.push_back(dest);
-    }
-    uint32 GetTaxiSource() const
-    {
-        return m_taxiDestinations.empty() ? 0 : m_taxiDestinations.front();
-    }
-    uint32 GetTaxiDestination() const
-    {
-        return m_taxiDestinations.size() < 2 ? 0 : m_taxiDestinations [1];
-    }
-    uint32 GetCurrentTaxiPath() const;
-    uint32 NextTaxiDestination()
-    {
-        m_taxiDestinations.pop_front();
-        return GetTaxiDestination();
-    }
-    bool empty() const
-    {
-        return m_taxiDestinations.empty();
-    }
-
-    void SetLastNodeIndex(uint32 index) { m_lastNodeIndex = index; }
-    uint32 GetLastNodeIndex() const { return m_lastNodeIndex; }
-
-    friend std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
-private:
-    TaxiMask m_taximask;
-    std::deque<uint32> m_taxiDestinations;
-    uint32 m_lastNodeIndex = 0;
-};
-
-std::ostringstream& operator<< (std::ostringstream& ss, PlayerTaxi const& taxi);
 
 class Player;
 
@@ -1227,83 +1149,6 @@ struct VoidStorageItem
     uint32 ItemUpgradeId;
 };
 
-class TradeData
-{
-    public:                                                 // constructors
-    TradeData(Player* player, Player* trader, Player* initiator) :
-        m_player(player), m_trader(trader), m_initiator(initiator), m_accepted(false), m_acceptProccess(false),
-        m_money(0), m_spell(0), m_spellCastItem(0)
-    {
-        memset(m_items, 0, TRADE_SLOT_COUNT * sizeof(uint64));
-    }
-
-    Player* GetTrader() const
-    {
-        return m_trader;
-    }
-    TradeData* GetTraderData() const;
-
-    Item* GetItem(TradeSlots slot) const;
-    bool HasItem(uint64 itemGuid) const;
-    TradeSlots GetTradeSlotForItem(uint64 itemGuid) const;
-    void SetItem(TradeSlots slot, Item* item);
-
-    uint32 GetSpell() const
-    {
-        return m_spell;
-    }
-    void SetSpell(uint32 spell_id, Item* castItem = NULL);
-
-    Item*  GetSpellCastItem() const;
-    bool HasSpellCastItem() const
-    {
-        return m_spellCastItem != 0;
-    }
-
-    uint64 GetMoney() const
-    {
-        return m_money;
-    }
-    void SetMoney(uint64 money);
-
-    bool IsAccepted() const
-    {
-        return m_accepted;
-    }
-    void SetAccepted(bool state, bool crosssend = false);
-
-    bool IsInAcceptProcess() const
-    {
-        return m_acceptProccess;
-    }
-    void SetInAcceptProcess(bool state)
-    {
-        m_acceptProccess = state;
-    }
-
-    bool IsInitiator(Player const* player) const { return m_initiator == player; }
-
-private:                                                // internal functions
-
-    void Update(bool for_trader = true);
-
-    private:                                                // fields
-
-    Player*    m_player;                                // Player who own of this TradeData
-    Player*    m_trader;                                // Player who trade with m_player
-    Player*    m_initiator;                             // Player who first initiated this trade
-
-    bool       m_accepted;                              // m_player press accept for trade list
-    bool       m_acceptProccess;                        // one from player/trader press accept and this processed
-
-    uint64     m_money;                                 // m_player place money to trade
-
-    uint32     m_spell;                                 // m_player apply spell to non-traded slot item
-    uint64     m_spellCastItem;                         // applied spell casted by item use
-
-    uint64     m_items [TRADE_SLOT_COUNT];               // traded items from m_player side including non-traded slot
-};
-
 struct ResurrectionData
 {
     uint64 GUID;
@@ -1313,39 +1158,7 @@ struct ResurrectionData
     uint32 Aura;
 };
 
-class KillRewarder
-{
-public:
-    KillRewarder(Player* killer, Unit* victim, bool isBattleGround);
 
-    void Reward();
-
-private:
-    void InitXP(Player* player);
-    void InitGroupData();
-
-    void RewardHonor(Player* player);
-    void RewardXP(Player* player, float rate);
-    void RewardReputation(Player* player, float rate);
-    void RewardKillCredit(Player* player);
-    void RewardPlayer(Player* player, bool isDungeon);
-    void RewardGroup();
-
-    Player* _killer;
-    Unit* _victim;
-    Group* _group;
-    float _groupRate;
-    Player* _maxNotGrayMember;
-    uint32 _count;
-    uint32 _sumLevel;
-    uint32 _xp;
-    bool _isFullXP;
-    uint8 _maxLevel;
-    bool _isBattleGround;
-    bool _isPvP;
-
-    std::set<uint64> _rewardedGuilds;
-};
 
 struct PlayerTalentInfo
 {
@@ -1885,14 +1698,10 @@ class Player : public Unit, public GridObject<Player>
 
     float GetReputationPriceDiscount(Creature const* creature) const;
 
-    Player* GetTrader() const
-    {
-        return m_trade ? m_trade->GetTrader() : NULL;
-    }
-    TradeData* GetTradeData() const
-    {
-        return m_trade;
-    }
+    Player* GetTrader() const;
+
+    TradeData* GetTradeData() const { return m_trade; }
+    
     void TradeCancel(bool sendback);
 
     void UpdateEnchantTime(uint32 time);

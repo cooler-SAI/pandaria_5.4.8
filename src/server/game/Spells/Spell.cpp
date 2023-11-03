@@ -60,6 +60,7 @@
 #include "Guild.h"
 #include "LootLockoutMap.h"
 #include "BattlePetMgr.h"
+#include "TradeData.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
