@@ -999,7 +999,6 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
                 if (!purchase->GetSession()->IsPremium())
                 {
                     //purchase->GetSession()->SetPremium(true);
-                    //LoginDatabase.PExecute("INSERT IGNORE INTO account_premium_panda (id, pveMode) VALUES (%u, 0);", purchase->GetSession()->GetAccountId());
                 }
         }
         else if (product->Type == BATTLE_PAY_PRODUCT_TYPE_ITEM)

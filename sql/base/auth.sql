@@ -147,32 +147,6 @@ CREATE TABLE `account_muted` (
 
 /*Data for the table `account_muted` */
 
-/*Table structure for table `account_premium` */
-
-DROP TABLE IF EXISTS `account_premium`;
-
-CREATE TABLE `account_premium` (
-  `id` int(11) NOT NULL DEFAULT '0' COMMENT 'Account id',
-  `setdate` bigint(40) NOT NULL DEFAULT '0',
-  `unsetdate` bigint(40) NOT NULL DEFAULT '0',
-  `active` tinyint(4) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`,`setdate`),
-  KEY `id` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC COMMENT='Premium Accounts';
-
-/*Data for the table `account_premium` */
-
-/*Table structure for table `account_premium_panda` */
-
-DROP TABLE IF EXISTS `account_premium_panda`;
-
-CREATE TABLE `account_premium_panda` (
-  `id` int(11) NOT NULL DEFAULT '0',
-  `pveMode` tinyint(1) NOT NULL DEFAULT '0'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `account_premium_panda` */
-
 /*Table structure for table `arena_game_id` */
 
 DROP TABLE IF EXISTS `arena_game_id`;
@@ -545,33 +519,6 @@ CREATE TABLE `boost_promotion_executed` (
 
 /*Data for the table `boost_promotion_executed` */
 
-/*Table structure for table `broadcast_strings` */
-
-DROP TABLE IF EXISTS `broadcast_strings`;
-
-CREATE TABLE `broadcast_strings` (
-  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
-  `text` text NOT NULL,
-  `next` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `broadcast_strings` */
-
-/*Table structure for table `icore_stat` */
-
-DROP TABLE IF EXISTS `icore_stat`;
-
-CREATE TABLE `icore_stat` (
-  `online` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `diff` smallint(5) unsigned NOT NULL DEFAULT '0',
-  `uptime` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `revision` varchar(255) NOT NULL DEFAULT 'Skyfire',
-  PRIMARY KEY (`online`,`diff`,`uptime`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `icore_stat` */
-
 /*Table structure for table `ip_banned` */
 
 DROP TABLE IF EXISTS `ip_banned`;
@@ -632,24 +579,6 @@ CREATE TABLE `pay_history` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT COMMENT='not used, don''t know how to make payment work.';
 
 /*Data for the table `pay_history` */
-
-/*Table structure for table `project_betatesters` */
-
-DROP TABLE IF EXISTS `project_betatesters`;
-
-CREATE TABLE `project_betatesters` (
-  `id` int(11) NOT NULL,
-  `betatest_id` int(11) NOT NULL,
-  `member_id` mediumint(8) NOT NULL,
-  `account_id` int(11) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk__project_betatesters__members1_idx` (`member_id`) USING BTREE,
-  KEY `fk__project_betatesters__account1_idx` (`account_id`) USING BTREE,
-  KEY `fk__project_betatesters__project_betatests1_idx` (`betatest_id`) USING BTREE,
-  KEY `fk__project_betatesters__project_betatest_accounts1_idx` (`id`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT COMMENT='used for betatesting and allowing players with ids.';
-
-/*Data for the table `project_betatesters` */
 
 /*Table structure for table `project_member_premiums` */
 
@@ -881,20 +810,6 @@ CREATE TABLE `realmlist` (
 /*Data for the table `realmlist` */
 
 insert  into `realmlist`(`id`,`name`,`project_shortname`,`address`,`port`,`icon`,`color`,`timezone`,`allowedSecurityLevel`,`population`,`gamebuild`,`flag`,`project_hidden`,`project_enabled`,`project_dbname`,`project_dbworld`,`project_dbarchive`,`project_rates_min`,`project_rates_max`,`project_transfer_level_max`,`project_transfer_items`,`project_transfer_skills_spells`,`project_transfer_glyphs`,`project_transfer_achievements`,`project_server_same`,`project_server_settings`,`project_server_remote_path`,`project_accounts_detach`,`project_setskills_value_max`,`project_chat_enabled`,`project_statistics_enabled`) values (1,'MoP','MoP','25.81.18.30',8085,0,2,1,0,0,18414,32,0,1,'ofi_characters','ofi_world','ofi_archive',0,0,80,'IGNORE','IGNORE','IGNORE','IGNORE',0,'0','0',1,0,0,0),(2,'Desarrollo','MoP','25.81.18.30',8086,1,2,1,0,0,18414,0,0,1,'ofi_characters','ofi_world','ofi_archive',0,0,80,'IGNORE','IGNORE','IGNORE','IGNORE',0,'0','0',1,0,0,0);
-
-/*Table structure for table `realmlist_proxy` */
-
-DROP TABLE IF EXISTS `realmlist_proxy`;
-
-CREATE TABLE `realmlist_proxy` (
-  `id` int(11) unsigned NOT NULL,
-  `name` varchar(32) NOT NULL DEFAULT '' COMMENT 'Must be different from `realmlist`.`name`, otherwise will override original realm''s address and port',
-  `address` varchar(32) NOT NULL DEFAULT '127.0.0.1',
-  `port` int(11) NOT NULL DEFAULT '8085',
-  PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 ROW_FORMAT=COMPACT;
-
-/*Data for the table `realmlist_proxy` */
 
 /*Table structure for table `sql_update` */
 

@@ -1025,17 +1025,6 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
         security = fields[0].GetUInt8();
     }
 
-    bool betaTest = LoginDatabase.PQuery("SELECT 1 FROM project_betatesters WHERE account_id = %u", id) != nullptr;
-
-    if (security < SEC_GAMEMASTER && sWorld->getBoolConfig(CONFIG_BETA_TEST_MODE))
-    {
-        if (!betaTest)
-        {
-            SendAuthResponseError(AUTH_REJECT);
-            return -1;
-        }
-    }
-
     // Re-check account ban (same check as in realmd)
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BANS);
 
