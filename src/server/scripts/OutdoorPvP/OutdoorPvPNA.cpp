@@ -32,9 +32,6 @@ OutdoorPvPNA::OutdoorPvPNA()
 
 void OutdoorPvPNA::HandleKillImpl(Player* player, Unit* killed)
 {
-    if (sWorld->AreprojectDailyQuestsEnabled() && killed->GetTypeId() == TYPEID_PLAYER)
-        player->CreditprojectDailyQuest(180010); // project Daily Quest Credit - Outdoor PvP Honorable Kill
-
     if (killed->GetTypeId() == TYPEID_PLAYER && player->GetTeam() != killed->ToPlayer()->GetTeam())
     {
         player->KilledMonsterCredit(NA_CREDIT_MARKER, 0); // 0 guid, btw it isn't even used in killedmonster function :S

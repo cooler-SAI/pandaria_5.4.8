@@ -393,9 +393,6 @@ void BattlefieldWG::OnBattleEnd(bool endByTimer)
         for (GuidSet::const_iterator itr = m_PlayersInWar[team].begin(); itr != m_PlayersInWar[team].end(); ++itr)
             if (Player* player = sObjectAccessor->FindPlayer(*itr))
             {
-                if (sWorld->AreprojectDailyQuestsEnabled() && player->HasAura(SPELL_LIEUTENANT))
-                    player->CreditprojectDailyQuest(180014); // project Daily Quest Credit - Wintergrasp First Lieutenant Participation
-
                 RemoveAurasFromPlayer(player);
             }
 
@@ -648,7 +645,6 @@ void BattlefieldWG::HandleKill(Player* killer, Unit* victim)
                 if (player->GetDistance2d(killer) < 40)
                 {
                     PromotePlayer(player);
-                    player->CreditprojectDailyQuest(180010); // project Daily Quest Credit - Outdoor PvP Honorable Kill
                 }
         return;
     }

@@ -580,62 +580,6 @@ CREATE TABLE `pay_history` (
 
 /*Data for the table `pay_history` */
 
-/*Table structure for table `project_member_premiums` */
-
-DROP TABLE IF EXISTS `project_member_premiums`;
-
-CREATE TABLE `project_member_premiums` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `member_id` mediumint(8) NOT NULL,
-  `setdate` bigint(40) NOT NULL,
-  `unsetdate` bigint(40) NOT NULL,
-  `active` tinyint(1) NOT NULL DEFAULT '1',
-  `card_id` int(11) DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  KEY `fk__nighthold_member_premium__members1_idx` (`member_id`),
-  KEY `fk__nighthold_member_premiums__nighthold_member_items1_idx` (`card_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Premium Members';
-
-/*Data for the table `project_member_premiums` */
-
-/*Table structure for table `project_member_rewards` */
-
-DROP TABLE IF EXISTS `project_member_rewards`;
-
-CREATE TABLE `project_member_rewards` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `member_id` int(10) unsigned NOT NULL,
-  `character_guid` int(10) unsigned NOT NULL,
-  `account_id` int(10) unsigned NOT NULL,
-  `realmid` int(10) unsigned NOT NULL,
-  `source_type` tinyint(3) unsigned NOT NULL,
-  `source_id` int(10) unsigned NOT NULL,
-  `reward_amount` int(10) unsigned NOT NULL,
-  `reward_date` int(10) unsigned NOT NULL,
-  `reward_day` int(10) unsigned NOT NULL COMMENT 'Used only for indexing purposes',
-  `processed` tinyint(3) unsigned NOT NULL DEFAULT '0',
-  `process_date` int(10) unsigned NOT NULL DEFAULT '0',
-  PRIMARY KEY (`id`),
-  KEY `member_id_reward_day_source_type` (`member_id`,`reward_day`,`source_type`),
-  KEY `idx__member_id` (`member_id`),
-  KEY `idx__processed` (`processed`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Member Rewards';
-
-/*Data for the table `project_member_rewards` */
-
-/*Table structure for table `project_member_settings` */
-
-DROP TABLE IF EXISTS `project_member_settings`;
-
-CREATE TABLE `project_member_settings` (
-  `member_id` int(10) unsigned NOT NULL,
-  `setting` int(10) unsigned NOT NULL COMMENT 'nightholdMemberInfo::Setting in core',
-  `value` varchar(255) NOT NULL,
-  PRIMARY KEY (`member_id`,`setting`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Member Settings';
-
-/*Data for the table `project_member_settings` */
-
 /*Table structure for table `promocodes` */
 
 DROP TABLE IF EXISTS `promocodes`;

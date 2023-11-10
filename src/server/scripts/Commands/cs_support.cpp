@@ -74,8 +74,6 @@ public:
                     { "professions",    SEC_ADMINISTRATOR,  true,   &HandleSupportCheckProfCommand,      },
                     { "aura",           SEC_ADMINISTRATOR,  true,   &HandleSupportCheckAuraCommand,      },
                     { "auras",          SEC_ADMINISTRATOR,  true,   &HandleSupportCheckAurasCommand,     },
-                    { "premium",        SEC_ADMINISTRATOR,  true,   &HandleSupportCheckPremCommand,      },
-                    { "verified",       SEC_ADMINISTRATOR,  true,   &HandleSupportCheckVerifCommand,     },
                     { "boost",          SEC_ADMINISTRATOR,  true,   &HandleSupportCheckBoostCommand,     },
                     { "services",       SEC_ADMINISTRATOR,  false,
                     {
@@ -2434,79 +2432,6 @@ public:
         return true;
     }
     // quest support end
-
-    static bool HandleSupportCheckPremCommand(ChatHandler* handler, char const* args)
-    {
-        if (!args)
-            return false;
-
-        Tokenizer tok{ args, ' ' };
-        if (tok.size() != 1)
-            return false;
-
-        Player* player;
-        uint64 guid;
-        std::string name;
-        if (!handler->extractPlayerTarget((char*)tok[0], &player, &guid, &name))
-            return false;
-
-        if (player)
-        {
-            if (player->GetSession()->IsPremium())
-            {
-                auto member = player->GetSession()->GetprojectMemberInfo();
-                time_t until = member->GetPremiumUnsetDate();
-                handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) has premium until %s.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), member->MemberID, TimeToTimestampStr(until).c_str());
-            }
-        }
-        else
-        {
-            if (QueryResult charResult = CharacterDatabase.PQuery("SELECT account FROM characters WHERE guid = %u", GUID_LOPART(guid)))
-            {
-                if (QueryResult memberResult = LoginDatabase.PQuery("SELECT member_id, unsetdate, active FROM project_member_premiums WHERE id = %u", (*charResult)[0].GetUInt32()))
-                {
-                    if ((*memberResult)[2].GetUInt32())
-                    {
-                        uint32 memberId = (*memberResult)[0].GetUInt32();
-                        time_t until = (*memberResult)[1].GetUInt32();
-                        handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) has premium until %s.", name.c_str(), GUID_LOPART(guid), memberId, TimeToTimestampStr(until).c_str());
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    static bool HandleSupportCheckVerifCommand(ChatHandler* handler, char const* args)
-    {
-        if (!args)
-            return false;
-
-        Tokenizer tok{ args, ' ' };
-        if (tok.size() != 1)
-            return false;
-
-        Player* player;
-        uint64 guid;
-        std::string name;
-        if (!handler->extractPlayerTarget((char*)tok[0], &player, &guid, &name))
-            return false;
-
-        if (player)
-        {
-            if (auto member = player->GetSession()->GetprojectMemberInfo())
-                if (member->IsVerified)
-                    handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) is verified.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), member->MemberID);
-        }
-        else
-        {
-            if (QueryResult charResult = CharacterDatabase.PQuery("SELECT account FROM characters WHERE guid = %u", GUID_LOPART(guid)))
-                if (QueryResult accountResult = LoginDatabase.PQuery("SELECT project_member_id FROM account WHERE id = %u", (*charResult)[0].GetUInt32()))
-                    if (uint32 memberId = (*accountResult)[0].GetUInt32())
-                        handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) is verified.", name.c_str(), GUID_LOPART(guid), memberId);
-        }
-        return true;
-    }
 
     static bool HandleSupportCheckBoostCommand(ChatHandler* handler, char const* args)
     {

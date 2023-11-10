@@ -452,8 +452,6 @@ void OutdoorPvP::HandleKill(Player* killer, Unit* killed)
             {
                 HandleKillImpl(groupGuy, killed);
 
-                if (sWorld->AreprojectDailyQuestsEnabled() && killed->GetTypeId() == TYPEID_PLAYER)
-                    groupGuy->CreditprojectDailyQuest(180010); // project Daily Quest Credit - Outdoor PvP Honorable Kill
             }
         }
     }
@@ -464,8 +462,6 @@ void OutdoorPvP::HandleKill(Player* killer, Unit* killed)
         {
             HandleKillImpl(killer, killed);
 
-            if (sWorld->AreprojectDailyQuestsEnabled() && killed->GetTypeId() == TYPEID_PLAYER)
-                killer->CreditprojectDailyQuest(180010); // project Daily Quest Credit - Outdoor PvP Honorable Kill
         }
     }
 }

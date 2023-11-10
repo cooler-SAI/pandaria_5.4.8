@@ -113,13 +113,6 @@ public:
         {
             { "skill",          SEC_ADMINISTRATOR, true, HandleReplaceCommand                },
         };
-        static std::vector<ChatCommand> inotifyCommandTable =
-        {
-            { "memberchange",   SEC_CONSOLE,       true,  &HandleINotifyMemberChangeCommand  },
-            { "premium",        SEC_CONSOLE,       true,  &HandleINotifyPremiumCommand       },
-            { "verified",       SEC_CONSOLE,       true,  &HandleINotifyVerifiedCommand      },
-            { "voting",         SEC_CONSOLE,       true,  &HandleINotifyVotingCommand        },
-        };
         static std::vector<ChatCommand> commandTable =
         {
             { "additem",        SEC_GAMEMASTER, false,  &HandleAddItemCommand,      },
@@ -196,7 +189,6 @@ public:
             { "removeitem",     SEC_GAMEMASTER, false,  &HandleRemoveItemCommand    },
             { "visibility",     SEC_ADMINISTRATOR,  true,   visibilityCommandTable      },
             { "replace",        SEC_ADMINISTRATOR, true, replaceCommandTable        },
-            { "inotify",        SEC_CONSOLE,    true,   inotifyCommandTable         },
             { "checkladder",    SEC_ADMINISTRATOR,  true,   &HandleCheckLadderCommand   },
             { "wordfilter",         SEC_ADMINISTRATOR,      false, wordFilterCommandTable },
             { "deleteditem",    SEC_ADMINISTRATOR,  true,
@@ -3597,24 +3589,13 @@ public:
         }
         else
         {
-            //uint32 id = sWorld->GetprojectMemberID(acc);
             if (on)
             {
-                /*
-                if (id)
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE project_member_id = %u", ACC_FLAG_ITEM_LOG, id);
-                else
-                */
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
+                LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
             }
             else
             {
-                /*
-                if (id)
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE project_member_id = %u", ACC_FLAG_ITEM_LOG, id);
-                else
-                */
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
+                LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
             }
         }
 
@@ -4341,135 +4322,6 @@ public:
             return true;
         }
 
-        return true;
-    }
-
-    static bool HandleINotifyMemberChangeCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* accountStr = strtok(nullptr, " ");
-
-        if (!memberStr || !accountStr)
-            return false;
-
-        uint32 accountId = (uint32)atol(accountStr);
-        uint32 oldMemberId = sWorld->GetprojectMemberID(accountId);
-        uint32 newMemberId = (uint32)atol(memberStr);
-
-        sWorld->UpdateAccountCacheDataMemberID(accountId, newMemberId);
-
-        if (oldMemberId)
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(oldMemberId, false))
-                info->GameAccountIDs.erase(accountId);
-
-        if (newMemberId)
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(newMemberId, false))
-                info->GameAccountIDs.insert(accountId);
-
-        handler->PSendSysMessage("Changed member ID from %u to %u for account %u", oldMemberId, newMemberId, accountId);
-        return true;
-    }
-
-    static bool HandleINotifyPremiumCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* unsetDateStr = strtok(nullptr, " ");
-
-        if (!memberStr || !unsetDateStr)
-            return false;
-
-        uint32 memberId = (uint32)atol(memberStr);
-        uint32 unsetDate = (uint32)atol(unsetDateStr);
-
-        if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-        {
-            info->PremiumActive = true;
-            info->PremiumUnsetDate = unsetDate;
-            info->SyncWithCross();
-        }
-
-        handler->PSendSysMessage("Activated premium status for member %u until %u", memberId, unsetDate);
-        return true;
-    }
-
-    static bool HandleINotifyVerifiedCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* enabledStr = strtok(nullptr, " ");
-
-        if (!memberStr || !enabledStr)
-            return false;
-
-        uint32 memberId = (uint32)atol(memberStr);
-        bool enabled = (bool)atoi(enabledStr);
-
-        if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-        {
-            info->IsVerified = enabled;
-            info->SyncWithCross();
-        }
-
-        handler->PSendSysMessage("%s verified status for member %u", enabled ? "Activated" : "Deactivated", memberId);
-        return true;
-    }
-
-    static bool HandleINotifyVotingCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        time_t votingBonusEnd = time(nullptr) + 24 * HOUR;
-
-        // Gather up changes for offline members to prevent generating useless DB queries, as there can be multiple votes from the same member present
-        std::map<uint32, std::set<uint32>> delayed;
-
-        SQLTransaction trans = LoginDatabase.BeginTransaction();
-        uint32 count = 0;
-        for (auto&& vote : Tokenizer(args, ' '))
-        {
-            if (*vote == '\0')
-                continue;
-
-            Tokenizer data{ vote, ':', 4 };
-            ASSERT(data.size() == 4);
-            uint32 memberId = atol(data[0]);
-            //uint32 voteId   = atol(data[1]); // unused
-            uint32 sourceId = atol(data[2]);
-            //uint32 time     = atol(data[3]); // unused
-
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-                info->SetSetting(info->GetVotingSetting(sourceId), { (uint32)votingBonusEnd }, std::move(trans));
-            else
-                delayed[(uint32)info->GetVotingSetting(sourceId)].insert(memberId);
-
-            ++count;
-        }
-
-        // Generate queries for offline members
-        std::string const value = std::to_string((uint32)votingBonusEnd);
-        for (auto&& setting : delayed)
-        {
-            for (auto&& memberId : setting.second)
-            {
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_project_MEMBER_SETTING);
-                stmt->setUInt32(0, memberId);
-                stmt->setUInt32(1, setting.first);
-                stmt->setString(2, value);
-                trans->Append(stmt);
-            }
-        }
-        LoginDatabase.CommitTransaction(trans);
-
-        handler->PSendSysMessage("Handled %u votes", count);
         return true;
     }
 

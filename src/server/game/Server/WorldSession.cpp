@@ -138,7 +138,6 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8
     InitializeQueryCallbackParameters();
 
     // At current time it will never be removed from container, so pointer must be valid all of the session life time.
-    UpdateprojectMemberInfo();
 
     _compressionStream = new z_stream();
     _compressionStream->zalloc = (alloc_func)NULL;
@@ -778,29 +777,13 @@ const char *WorldSession::GetTrinityString(int32 entry) const
 void WorldSession::AddFlag(AccountFlags flag)
 {
     m_flags |= flag;
-    if (_projectMemberInfo)
-    {
-        LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE project_member_id = %u", flag, _projectMemberInfo->MemberID);
-        for (auto&& it : _projectMemberInfo->GameAccountIDs)
-            if (WorldSession* sess = sWorld->FindSession(it))
-                sess->m_flags |= flag;
-    }
-    else
-        LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
+    LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
 }
 
 void WorldSession::RemoveFlag(AccountFlags flag)
 {
     m_flags &= ~flag;
-    if (_projectMemberInfo)
-    {
-        LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE project_member_id = %u", flag, _projectMemberInfo->MemberID);
-        for (auto&& it : _projectMemberInfo->GameAccountIDs)
-            if (WorldSession* sess = sWorld->FindSession(it))
-                sess->m_flags &= ~flag;
-    }
-    else
-        LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
+    LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
 }
 
 void WorldSession::Handle_NULL(WorldPacket& recvPacket)
@@ -1371,11 +1354,6 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
     }
 }
 
-void WorldSession::UpdateprojectMemberInfo()
-{
-    uint32 memberId = sWorld->GetprojectMemberID(GetAccountId());
-    _projectMemberInfo = memberId ? sWorld->GetprojectMemberInfo(memberId) : nullptr;
-}
 
 void WorldSession::HandlePingUpdate(uint32 latency)
 {

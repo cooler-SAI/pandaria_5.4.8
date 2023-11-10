@@ -1094,21 +1094,6 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     LoginDatabase.Execute(stmt);
 
-    // Before session construction.
-    sWorld->LoadprojectMemberInfoIfNeeded(id);
-
-    if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION) && !hasBoost)
-    {
-        uint32 memberId = sWorld->GetprojectMemberID(id);
-        auto promoted = LoginDatabase.PQuery("SELECT member_id FROM boost_promotion_executed WHERE member_id = '%d'", memberId);
-
-        projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false);
-        bool verified = info && info->IsVerified;
-
-        if (!promoted && verified)
-            hasBoost = true;
-    }
-
     // NOTE ATM the socket is single-threaded, have this in mind ...
     ACE_NEW_RETURN(m_Session, WorldSession(id, this, AccountTypes(security), expansion, mutetime, locale, recruiter, flags, isRecruiter, hasBoost), -1);
     m_Session->SetMute({ onlineMuteTimer, mutedBy, muteReason, mutedInPublicChannelsOnly });

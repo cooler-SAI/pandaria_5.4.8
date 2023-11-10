@@ -806,24 +806,6 @@ void InstanceScript::UpdateEncounterState(EncounterCreditType type, uint32 credi
         }
     }
 
-    if (dungeonId)
-    {
-        Map::PlayerList const& players = instance->GetPlayers();
-
-        for (auto&& ref : players)
-        {
-            if (Player* player = ref.GetSource())
-            {
-                if (sWorld->AreprojectDailyQuestsEnabled())
-                {
-                    if (dungeonId)
-                        player->CreditprojectDailyQuest(181000 + dungeonId);
-                    if (instance->IsRaid())
-                        player->CreditprojectDailyQuest(180011); // project Daily Quest Credit - Raid Boss Kill
-                }
-            }
-        }
-    }
 
     // Raid challenge is be rewarded for any raid boss, unlike dungeon/scenario
     if (dungeonId || instance->IsRaid())
@@ -1173,9 +1155,6 @@ void InstanceScript::SendChallengeModeComplete(uint32 money, uint32 valor)
 
     instance->SendToPlayers(&data);
 
-    for (auto&& itr : instance->GetPlayers())
-        if (Player* player = itr.GetSource())
-            player->CreditprojectDailyQuest(180022); // project Daily Quest Credit - Challenge
 }
 
 void InstanceScript::SaveChallengeDatasIfNeeded()

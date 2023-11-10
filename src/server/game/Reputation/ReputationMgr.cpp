@@ -428,10 +428,6 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, fl
         _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_REVERED_REPUTATION, factionEntry->ID);
         _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_HONORED_REPUTATION, factionEntry->ID);
 
-        if (new_rank == REP_EXALTED && old_rank != REP_EXALTED)
-            if (projectMemberInfo* info = _player->GetSession()->GetprojectMemberInfo())
-                info->Notify(_player, projectMemberInfo::Notification::ReputationRank);
-
         return true;
     }
     return false;

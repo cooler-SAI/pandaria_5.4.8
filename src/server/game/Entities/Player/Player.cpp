@@ -3022,9 +3022,6 @@ void Player::GiveLevel(uint8 level)
 
     SetSaveTimer(1);
 
-    if (!(level % 10) && oldLevel < level)
-        if (projectMemberInfo* info = GetSession()->GetprojectMemberInfo())
-            info->Notify(this, projectMemberInfo::Notification::LevelUp);
 }
 
 void Player::InitTalentForLevel()
@@ -16228,19 +16225,6 @@ bool Player::CanRewardQuest(Quest const* quest, uint32 reward, bool msg)
         }
     }
 
-    if (quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-    {
-        if (!sWorld->AreprojectDailyQuestsEnabled())
-            return false;
-
-        projectMemberInfo* info = GetSession()->GetprojectMemberInfo();
-        if (!info || !info->CanCompleteMoreDailyQuests())
-            return false;
-
-        if (info->CompletedDailyQuestExclusiveGroups.find(quest->GetExclusiveGroup()) != info->CompletedDailyQuestExclusiveGroups.end())
-            return false;
-    }
-
     uint32 count = 0;
     if (quest->GetRewardPackageItemId())
     {
@@ -16588,11 +16572,6 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
             {
                 uint32 count = quest->RewardItemIdCount[i];
 
-                // Increase reward for premium players
-                if (i == 0 && quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-                    if (projectMemberInfo* info = GetSession()->GetprojectMemberInfo())
-                        count += info->GetPremiumQuestRewardBonus(quest) + info->GetVotingQuestRewardBonus(quest);
-
                 ItemPosCountVec dest;
                 if (CanStoreNewItem(NULL_BAG, NULL_SLOT, dest, itemId, count) == EQUIP_ERR_OK)
                 {
@@ -16690,7 +16669,7 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
         CharacterDatabase.CommitTransaction(trans);
     }
 
-    if (quest->IsDaily() && !quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST) || quest->IsDFQuest())
+    if (quest->IsDaily() || quest->IsDFQuest())
     {
         SetDailyQuestStatus(quest_id);
         if (quest->IsDaily())
@@ -16729,15 +16708,12 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     else if (quest->GetRewSpell() > 0)
         CastSpell(this, quest->GetRewSpell(), true);
 
-    if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-    {
-        if (quest->GetZoneOrSort() > 0)
-            UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE, quest->GetZoneOrSort());
-        UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT);
-        UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, quest->GetQuestId());
-        if (Guild* guild = GetGuild())
-            guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_GUILD, 0, 0, 0, this, this);
-    }
+    if (quest->GetZoneOrSort() > 0)
+        UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_IN_ZONE, quest->GetZoneOrSort());
+    UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST_COUNT);
+    UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUEST, quest->GetQuestId());
+    if (Guild* guild = GetGuild())
+        guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_COMPLETE_QUESTS_GUILD, 0, 0, 0, this, this);
 
     if (uint32 questBit = GetQuestUniqueBitFlag(quest_id))
     {
@@ -16765,13 +16741,6 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
 
     SetSaveTimer(1);
 
-    if (sWorld->AreprojectDailyQuestsEnabled())
-    {
-        if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-            CreditprojectDailyQuest(180018); // project Daily Quest Credit - Quest Completed
-        else if (projectMemberInfo* info = GetSession()->GetprojectMemberInfo())
-            info->Notify(this, projectMemberInfo::Notification::QuestComplete);
-    }
 }
 
 void Player::FailQuest(uint32 questId)
@@ -17196,22 +17165,6 @@ bool Player::SatisfyQuestDay(Quest const* qInfo, bool msg)
 {
     if (!qInfo->IsDaily() && !qInfo->IsDFQuest())
         return true;
-
-    if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-    {
-        if (!sWorld->AreprojectDailyQuestsEnabled())
-            return false;
-
-        // Skip native daily quest limit check
-        projectMemberInfo* info = GetSession()->GetprojectMemberInfo();
-        if (!info || !info->CanCompleteMoreDailyQuests())
-            return false;
-
-        if (info->CompletedDailyQuestExclusiveGroups.find(qInfo->GetExclusiveGroup()) != info->CompletedDailyQuestExclusiveGroups.end())
-            return false;
-
-        return true;
-    }
 
     return m_dailyquests.find(qInfo->GetQuestId()) == m_dailyquests.end();
 }
@@ -17781,23 +17734,6 @@ void Player::KilledMonsterCredit(uint32 entry, uint64 guid /*= 0*/, uint32 count
 
                         SendQuestUpdateAddCredit(qInfo, questObjective, ObjectGuid(guid), currentCounter, addKillCount);
 
-                        // Complete all objectives on completion of one
-                        if (qInfo->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST) && questObjective->Type == QUEST_OBJECTIVE_TYPE_NPC && GetQuestObjectiveCounter(questObjective->Id) >= uint32(questObjective->Amount))
-                        {
-                            for (auto&& objective2 : qInfo->m_questObjectives)
-                            {
-                                if (questObjective->Id == objective2->Id || !objective2->Amount)
-                                    continue;
-
-                                uint16 c = GetQuestObjectiveCounter(objective2->Id);
-                                uint32 r = objective2->Amount;
-                                if (c >= r)
-                                    continue;
-
-                                m_questObjectiveStatus[objective2->Id] = objective2->Amount;
-                                SendQuestUpdateAddCredit(qInfo, objective2, ObjectGuid(guid), c, r - c);
-                            }
-                        }
                     }
 
                     if (CanCompleteQuest(questId))
@@ -20010,19 +19946,6 @@ void Player::_LoadQuestStatus(PreparedQueryResult result)
     for (uint16 i = slot; i < MAX_QUEST_LOG_SIZE; ++i)
         SetQuestSlot(i, 0);
 
-    // Remove status of all daily quests, in case the player completed them on another character/account
-    if (sWorld->AreprojectDailyQuestsEnabled())
-    {
-        if (projectMemberInfo* info = GetSession()->GetprojectMemberInfo())
-        {
-            for (auto&& group : info->CompletedDailyQuestExclusiveGroups)
-            {
-                auto bounds = sObjectMgr->mExclusiveQuestGroups.equal_range(group);
-                for (auto itr = bounds.first; itr != bounds.second; ++itr)
-                    RemoveActiveQuest(itr->second, false, true);
-            }
-        }
-    }
 }
 
 void Player::_LoadQuestObjectiveStatus(PreparedQueryResult result)
@@ -24600,13 +24523,6 @@ bool Player::CanAlwaysSee(WorldObject const* obj) const
     if (uint64 guid = GetUInt64Value(PLAYER_FIELD_FARSIGHT_OBJECT))
         if (obj->GetGUID() == guid)
             return true;
-
-    // Exploiting our visibility system to make summoned .premium NPCs only visible to the summoner
-    if (obj->GetEntry() >= 190000)
-        if (Unit const* unit = obj->ToUnit())
-            if (TempSummon const* summon = unit->ToTempSummon())
-                if (summon->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_project_NPC && summon->GetSummonerGUID() == GetGUID())
-                    return true;
 
     return false;
 }
@@ -30481,7 +30397,6 @@ void Player::SolveResearchProject(Spell* spell)
 
     UpdateResearchProjects();
 
-    CreditprojectDailyQuest(180025); // project Daily Quest Credit - Artifacts
 }
 
 bool Player::HasCompletedAllRareProjectsForRace(uint32 researchBranchId)
@@ -31149,34 +31064,6 @@ void Player::SetCanTurnWhileFalling(bool on)
         data.WriteGuidBytes(guid, 1, 6);
     }
     SendDirectMessage(&data);
-}
-
-bool Player::CreditprojectDailyQuest(uint32 entry, uint32 count)
-{
-    if (!sWorld->AreprojectDailyQuestsEnabled())
-        return true;
-
-    auto&& quests = sWorld->GetprojectDailyQuestRelation(entry);
-    if (!quests)
-        return false;
-
-    for (auto&& quest : *quests)
-        if (!IsActiveQuest(quest->GetQuestId()))
-            if (projectMemberInfo* info = GetSession()->GetprojectMemberInfo())
-                if (info->CanCompleteMoreDailyQuests() && info->GetSetting(projectMemberInfo::Setting::AutoAcceptprojectDailyQuests).Bool)
-                    if (CanTakeQuest(quest, false))
-                        if (!sPoolMgr->IsPartOfAPool<Quest>(quest->GetQuestId()) || sPoolMgr->IsSpawnedObject<Quest>(quest->GetQuestId()))
-                        {
-                            AddQuest(quest, nullptr);
-
-                            if (CanCompleteQuest(quest->GetQuestId()))
-                                CompleteQuest(quest->GetQuestId());
-                        }
-
-    if (std::any_of(quests->begin(), quests->end(), [this](Quest const* const& quest) { return IsActiveQuest(quest->GetQuestId()); }))
-        KilledMonsterCredit(entry, 0, count);
-
-    return true;
 }
 
 std::list<Item*> Player::GetAllItems()

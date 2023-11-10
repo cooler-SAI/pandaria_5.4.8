@@ -73,30 +73,6 @@ enum BattlegroundQueueGroupTypes
 };
 #define BG_QUEUE_GROUP_TYPES_COUNT 4
 
-struct QueueAnnounceContext
-{
-    enum class Show : uint32
-    {
-        Never,
-        WhileInSameQueue,
-        WhileQueued,
-        Always,
-    };
-
-    bool Enter;
-    GroupQueueInfo const& GroupInfo;
-    BattlegroundBracketId BracketId;
-    bool IsPremade;
-    bool IsSolo;
-    SoloQueueRole SoloSpec;
-    uint32 QueuedA;
-    uint32 QueuedH;
-    std::string ArenaTeamName;
-
-    static bool IsEnabled(BattlegroundTypeId bgTypeId, bool isRated, bool isSolo);
-    void Announce() const;
-};
-
 class Battleground;
 class BattlegroundQueue
 {

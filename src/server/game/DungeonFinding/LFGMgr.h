@@ -32,16 +32,6 @@ class Quest;
 
 namespace lfg
 {
-struct QueueAnnounceContextLFG
-{
-    using Show = QueueAnnounceContext::Show;
-
-    uint32 DungeonId;
-    LfgRolesMap const& Queuers;
-
-    static bool IsEnabled();
-    void Announce() const;
-};
 
 enum LfgOptions
 {

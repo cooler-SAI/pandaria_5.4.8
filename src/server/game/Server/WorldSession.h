@@ -290,13 +290,10 @@ class WorldSession : public Schedulable
         void SendDispalyPromotionOpcode();
 
         AccountTypes GetSecurity() const { return _security; }
-        bool IsPremium() { return _projectMemberInfo && _projectMemberInfo->IsPremium(); }
         uint32 GetAccountId() const { return _accountId; }
         Player* GetPlayer() const { return _player; }
         std::string const& GetPlayerName() const;
         std::string GetPlayerInfo() const;
-        projectMemberInfo* GetprojectMemberInfo() const { return _projectMemberInfo; }
-        void UpdateprojectMemberInfo();
 
         uint32 GetCurrentVendor() const { return m_currentVendorEntry; }
         void SetCurrentVendor(uint32 vendorEntry) { m_currentVendorEntry = vendorEntry; }
@@ -1259,8 +1256,6 @@ class WorldSession : public Schedulable
         z_stream_s* _compressionStream;
 
         std::unique_ptr<AccountAchievementMgr> _achievementMgr;
-
-        projectMemberInfo* _projectMemberInfo;
 
         MuteInfo _mute;
         uint32 m_currentVendorEntry;

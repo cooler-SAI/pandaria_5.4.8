@@ -55,142 +55,7 @@ static void AlmostAssert(char const* filter, Args... args)
 
 namespace lfg
 {
-bool QueueAnnounceContextLFG::IsEnabled()
-{
-    return sWorld->getBoolConfig(CONFIG_ICORE_QUEUE_ANNOUNCE_RAID);
-}
 
-void QueueAnnounceContextLFG::Announce() const
-{
-    LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(DungeonId);
-    if (!dungeon)
-        return;
-
-    if (!IsEnabled())
-        return;
-
-    if (dungeon->difficulty != RAID_DIFFICULTY_25MAN_LFR)
-        return;
-
-    sWorld->SendRaidQueueInfo();
-
-    auto builder = [this, dungeon](std::vector<WorldPacket*>& packets, LocaleConstant locale)
-    {
-        auto& queue = sLFGMgr->GetQueueManager(Queuers.begin()->first).GetQueue(dungeon->ID);
-        uint32 queuedTanks   = queue.GetTotalPlayers(PLAYER_ROLE_TANK);
-        uint32 queuedHealers = queue.GetTotalPlayers(PLAYER_ROLE_HEALER);
-        uint32 queuedDPS     = queue.GetTotalPlayers(PLAYER_ROLE_DAMAGE);
-
-        std::string roleStr;
-        if (Queuers.size() == 1)
-        {
-            uint32 role = Queuers.begin()->second & ~PLAYER_ROLE_LEADER;
-            switch (role)
-            {
-                case PLAYER_ROLE_TANK:   roleStr += "|cFF00AEF01 |TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:1:-1:64:64:0:18:22:40|t";  break;
-                case PLAYER_ROLE_HEALER: roleStr += "|cFF00FF441 |TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:1:-1:64:64:20:38:1:19|t";  break;
-                case PLAYER_ROLE_DAMAGE: roleStr += "|cFFF00A0A1 |TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:1:-1:64:64:20:38:22:40|t"; break;
-                default:                 roleStr += "|cFFF00A0A1 |TInterface\\LFGFrame\\UI-LFG-ICON-PORTRAITROLES:0:0:1:-1:64:64:20:38:22:40|t"; break;
-            }
-            roleStr += locale == LOCALE_ruRU ? " |cFFFFFFFFвступил" : " |cFFFFFFFFjoined";
-        }
-        else
-            roleStr = Format("%u %s", (uint32)Queuers.size(), locale == LOCALE_ruRU ? "|4игрок|r|cFFFFFFFF вступил:игрока|r|cFFFFFFFF вступили:игроков|r|cFFFFFFFF вступило;" : "|4player:players;|r|cFFFFFFFF joined");
-
-        //[Raid: %s]: %s joined, %u %u %u in queue
-        std::string text = Format(sObjectMgr->GetTrinityString(LANG_QUEUE_ANNOUNCE_RAID, locale),
-            dungeon->name[locale], roleStr.c_str(), queuedTanks, queuedHealers, queuedDPS);
-
-        WorldPacket* data = new WorldPacket();
-        ChatHandler::BuildChatPacket(*data, CHAT_MSG_SYSTEM, LANG_UNIVERSAL, 0, 0, text);
-        packets.push_back(data);
-    };
-    Trinity::LocalizedPacketListDo<decltype(builder)> sender{ builder };
-    for (auto&& session : sWorld->GetAllSessions())
-    {
-        Player* player = session.second->GetPlayer();
-        projectMemberInfo* info = session.second->GetprojectMemberInfo();
-        if (!player || !info)
-            continue;
-
-        // Don't show to players in the wrong level range
-        if (dungeon && (player->GetLevel() < dungeon->minlevel || player->GetLevel() > dungeon->maxlevel))
-            continue;
-
-        Show setting = info->GetSetting(projectMemberInfo::Setting::QueueAnnounceRaidFinder).As<Show>();
-
-        // Always show for the players that just queued
-        if (Queuers.find(player->GetGUID()) != Queuers.end())
-            setting = Show::Always;
-
-        uint64 gguid = player->GetGroup() ? player->GetGroup()->GetGUID() : player->GetGUID();
-        switch (setting)
-        {
-            case Show::Never:
-                continue;
-            case Show::WhileInSameQueue:
-            {
-                if (!player->IsUsingLfg())
-                    continue;
-
-                bool found = false;
-                if (auto queues = sLFGMgr->GetPlayerQueues(player->GetGUID()))
-                {
-                    for (auto&& itr : *queues)
-                    {
-                        // TODO: We can check only state, no?
-                        if (sLFGMgr->GetQueueManager(Queuers.begin()->first).Contains(Queuer{ gguid, itr.first }))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                    continue;
-
-                //[[fallthrough]];
-            }
-            case Show::WhileQueued:
-            {
-                if (!player->IsUsingLfg())
-                    continue;
-
-                bool found = false;
-                if (auto queues = sLFGMgr->GetPlayerQueues(player->GetGUID()))
-                {
-                    for (auto&& itr : *queues)
-                    {
-                        auto& dungeons = itr.second.Dungeons;
-                        if (std::any_of(dungeons.begin(), dungeons.end(), [](uint32 dungeonId)
-                        {
-                            if (LFGDungeonEntry const* dungeon = sLFGDungeonStore.LookupEntry(dungeonId))
-                                return dungeon->difficulty == RAID_DIFFICULTY_25MAN_LFR;
-                            return false;
-                        }))
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found)
-                    continue;
-
-                //[[fallthrough]];
-            }
-            case Show::Always:
-                sender(player);
-
-                if (!session.second->queueAnnounceSent)
-                {
-                    session.second->queueAnnounceSent = true;
-                    ChatHandler(player).SendSysMessage(LANG_QUEUE_ANNOUNCE_INFO);
-                }
-                break;
-        }
-    }
-}
 
 LFGMgr::LFGMgr(): m_QueueTimer(0), m_ShortageCheckTimer(0), m_lfgProposalId(1),
     m_options(sWorld->getIntConfig(CONFIG_LFG_OPTIONSMASK))
@@ -936,14 +801,6 @@ void LFGMgr::JoinLfg(Player* player, LfgRoles roles, LfgDungeonSet& dungeons, co
         if (!roles)
             role = PLAYER_ROLE_DAMAGE;
 
-        if (QueueAnnounceContextLFG::IsEnabled() && isRaid && !dungeons.empty())
-        {
-            QueueAnnounceContextLFG
-            {
-                *dungeons.begin(),
-                { { guid, role } },
-            }.Announce();
-        }
     }
 
     if (sLog->ShouldLog("lfg", LOG_LEVEL_DEBUG))
@@ -1233,16 +1090,6 @@ void LFGMgr::UpdateRoleCheck(uint64 gguid, uint64 guid /* = 0 */, uint8 roles /*
                         player->GetSession()->SendLfgJoinResult(queueId, joinData);
                 SendLfgUpdateStatus(LFG_UPDATETYPE_ADDED_TO_QUEUE, pguid, queueId);
             }
-        }
-
-        // announce personal
-        if (QueueAnnounceContextLFG::IsEnabled() && roleCheck.raid && !roleCheck.rDungeonId && !roleCheck.dungeons.empty())
-        {
-            QueueAnnounceContextLFG
-            {
-                *roleCheck.dungeons.begin(),
-                roleCheck.roles,
-            }.Announce();
         }
 
         RoleChecksStore.erase(itRoleCheck);
@@ -2317,24 +2164,6 @@ void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
             }
         }
 
-        // Award daily quest credit
-        if (sWorld->AreprojectDailyQuestsEnabled())
-        {
-            player->CreditprojectDailyQuest(180017); // project Daily Quest Credit - Random Dungeon
-            if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
-            {
-                for (auto&& slot : group->GetMemberSlots())
-                {
-                    if (slot.guid == guid)
-                    {
-                        if (slot.roles & (PLAYER_ROLE_TANK | PLAYER_ROLE_HEALER | PLAYER_ROLE_DAMAGE))
-                            player->CreditprojectDailyQuest(slot.roles & PLAYER_ROLE_TANK ? 180006 : slot.roles & PLAYER_ROLE_HEALER ? 180007 : 180008); // project Daily Quest Credit - Random Dungeons as *
-                        if (slot.roles & (PLAYER_ROLE_TANK | PLAYER_ROLE_HEALER))
-                            player->CreditprojectDailyQuest(180016); // project Daily Quest Credit - Random Dungeons as Tank or Healer
-                    }
-                }
-            }
-        }
 
         if (queueData.CTARoles != PLAYER_ROLE_NONE && player->GetGroup() && (player->GetGroup()->GetLfgRoles(guid) & ~PLAYER_ROLE_LEADER) == queueData.CTARoles)
         {

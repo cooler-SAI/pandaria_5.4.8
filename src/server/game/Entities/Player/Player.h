@@ -3329,8 +3329,6 @@ public:
     float GetBonusRollExtraChance() const { return m_bonusRollBonusChance; }
     void SetBonusRollExtraChance(float value);
 
-    bool CreditprojectDailyQuest(uint32 entry, uint32 count = 1);
-
     std::unordered_map<uint32, std::string> overrideTexts;
     void AddOverrideText(uint32 id, std::string text)
     {

@@ -2331,10 +2331,6 @@ void Spell::EffectOpenLock(SpellEffIndex effIndex)
                 {
                     player->UpdateGatherSkill(skillId, pureSkillValue, reqSkillValue, 1, gameObjTarget);
                     gameObjTarget->AddToSkillupList(player->GetGUIDLow());
-
-                    if (sWorld->AreprojectDailyQuestsEnabled())
-                        if (skillId == SKILL_HERBALISM || skillId == SKILL_MINING)
-                            player->CreditprojectDailyQuest(180013); // project Daily Quest Credit - Nodes Gathered
                 }
             }
             else if (itemTarget)
@@ -5389,9 +5385,6 @@ void Spell::EffectSkinning(SpellEffIndex /*effIndex*/)
     // Double chances for elites
     m_caster->ToPlayer()->UpdateGatherSkill(skill, skillValue, reqValue, creature->isElite() ? 2 : 1, unitTarget);
 
-    if (sWorld->AreprojectDailyQuestsEnabled())
-        if (skill == SKILL_HERBALISM || skill == SKILL_MINING || skill == SKILL_SKINNING)
-            m_caster->ToPlayer()->CreditprojectDailyQuest(180013); // project Daily Quest Credit - Nodes Gathered
 }
 
 void Spell::EffectCharge(SpellEffIndex /*effIndex*/)

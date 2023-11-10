@@ -314,11 +314,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-        {
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
-            auctioneer = creature ? creature->GetGUID() : 0;
-        }
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionSellItem - Unit (GUID: %u) not found or you can't interact with him.", GUID_LOPART(auctioneer));
@@ -600,8 +595,6 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionPlaceBid - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -747,8 +740,6 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionRemoveItem - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -858,8 +849,6 @@ void WorldSession::HandleAuctionListBidderItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListBidderItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -928,8 +917,6 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListOwnerItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -1010,8 +997,6 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));

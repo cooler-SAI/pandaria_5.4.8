@@ -3852,16 +3852,6 @@ void Spell::cast(bool skipCheck)
                 if (sWorld->IsArenaPrecastSpell(GetSpellInfo()->Id))
                     bg->UpdatePlayerScore(m_caster->ToPlayer(), SCORE_SPELLS_PRECAST, 1);
 
-        // Credit quests
-        SkillLineAbilityMapBounds bounds;
-        if (sWorld->AreprojectDailyQuestsEnabled() &&
-            m_spellInfo->HasAttribute(SPELL_ATTR0_TRADESPELL) && (
-            m_spellInfo->HasEffect(SPELL_EFFECT_CREATE_ITEM) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_CREATE_ITEM_2) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_ENCHANT_ITEM) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC)) &&
-            (bounds = sSpellMgr->GetSkillLineAbilityMapBounds(m_spellInfo->Id), bounds.first != bounds.second))
-            m_caster->ToPlayer()->CreditprojectDailyQuest(180012); // project Daily Quest Credit - Items Crafted
     }
 
     SetExecutedCurrently(false);

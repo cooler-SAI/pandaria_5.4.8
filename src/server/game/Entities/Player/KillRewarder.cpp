@@ -186,7 +186,6 @@ void KillRewarder::RewardKillCredit(Player* player)
         if (Creature* target = _victim->ToCreature())
         {
             player->KilledMonster(target->GetCreatureTemplate(), target->GetGUID());
-            player->CreditprojectDailyQuest(target->GetEntry());
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE, target->GetCreatureType(), 1, 0, target);
 
             if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
@@ -197,14 +196,6 @@ void KillRewarder::RewardKillCredit(Player* player)
                     guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE_TYPE_GUILD, 1, 0, 0, target, player);
                     guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_KILL_CREATURE, target->GetEntry(), 1, 0, target, player);
                 }
-            }
-
-            if (sWorld->AreprojectDailyQuestsEnabled())
-            {
-                if (uint32 type = target->GetCreatureType())
-                    player->CreditprojectDailyQuest(180300 + type); // project Daily Quest Credit - *
-                if (uint32 family = target->GetCreatureTemplate()->family)
-                    player->CreditprojectDailyQuest(180400 + family); // project Daily Quest Credit - *
             }
         }
 }

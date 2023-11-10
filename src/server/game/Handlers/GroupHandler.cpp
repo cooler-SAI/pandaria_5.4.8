@@ -353,9 +353,6 @@ void WorldSession::HandleGroupInviteResponseOpcode(WorldPacket& recvData)
 
         group->BroadcastGroupUpdate();
 
-        if (group->isRaidGroup())
-            if (projectMemberInfo* info = _player->GetSession()->GetprojectMemberInfo())
-                info->Notify(_player, projectMemberInfo::Notification::RaidInvite);
     }
     else
     {

@@ -463,7 +463,6 @@ void PlayerMenu::SendQuestGiverStatus(uint32 questStatus, uint64 npcGUID) const
 
 void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, bool activateAccept, bool startedByAreaTrigger) const
 {
-    projectMemberInfo* info = quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST) ? _session->GetprojectMemberInfo() : nullptr;
 
     std::string questTitle           = quest->GetTitle();
     std::string questDetails         = quest->GetDetails();
@@ -509,10 +508,6 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, 
     {
         uint32 id = quest->RewardItemId[i];
         uint32 count = quest->RewardItemIdCount[i];
-
-        // Add fake reward item for premium players
-        if (info)
-            info->ModifyQuestReward(quest, i, id, count);
 
         if (ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(id))
             rewItemDisplayId[i] = itemTemplate->DisplayInfoID;
@@ -588,7 +583,7 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, 
     data << uint32(quest->GetFlags2());
     data << uint32(0); // should be quest->GetRewSpellCast(), but need to know in which cases this need sends
     data << uint32(quest->RewardChoiceItemId[3]);
-    data << uint32(quest->GetRewItemsCount() + (info && info->GetPremiumQuestRewardBonus(quest) ? 1 : 0) + (info && info->GetVotingQuestRewardBonus(quest) ? 1 : 0));
+    data << uint32(quest->GetRewItemsCount());
     data << uint32(quest->GetRewardSkillPoints());
     data << uint32(rewItemDisplayId[0]);
     data << uint32(quest->RewardChoiceItemId[4]);
@@ -671,7 +666,6 @@ void PlayerMenu::SendQuestGiverQuestDetails(Quest const* quest, uint64 npcGUID, 
 
 void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
 {
-    projectMemberInfo* info = quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST) ? _session->GetprojectMemberInfo() : nullptr;
 
     std::string questTitle = quest->GetTitle();
     std::string questDetails = quest->GetDetails();
@@ -706,10 +700,6 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
     {
         uint32 id = quest->RewardItemId[i];
         uint32 count = quest->RewardItemIdCount[i];
-
-        // Add fake reward item for premium players
-        if (info)
-            info->ModifyQuestReward(quest, i, id, count);
 
         rewInfo.push_back(std::make_pair(id, count));
     }
@@ -864,7 +854,6 @@ void PlayerMenu::SendQuestQueryResponse(Quest const* quest) const
 
 void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGuid, bool enableNext) const
 {
-    projectMemberInfo* info = quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST) ? _session->GetprojectMemberInfo() : nullptr;
 
     std::string questTitle = quest->GetTitle();
     std::string questOfferRewardText = quest->GetOfferRewardText();
@@ -898,10 +887,6 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGuid, b
     {
         uint32 id = quest->RewardItemId[i];
         uint32 count = quest->RewardItemIdCount[i];
-
-        // Add fake reward item for premium players
-        if (info)
-            info->ModifyQuestReward(quest, i, id, count);
 
         ItemTemplate const* itemTemplate = sObjectMgr->GetItemTemplate(id);
         rewItemDisplayId[i] = itemTemplate ? itemTemplate->DisplayInfoID : 0;
@@ -982,7 +967,7 @@ void PlayerMenu::SendQuestGiverOfferReward(Quest const* quest, uint64 npcGuid, b
     data << uint32(quest->XPValue(_session->GetPlayer()) * sWorld->getRate(RATE_XP_QUEST));
     data << uint32(quest->GetCharTitleId());
     data << uint32(quest->RewardChoiceItemId[2]);
-    data << uint32(quest->GetRewItemsCount() + (info && info->GetPremiumQuestRewardBonus(quest) ? 1 : 0) + (info && info->GetVotingQuestRewardBonus(quest) ? 1 : 0));
+    data << uint32(quest->GetRewItemsCount());
     data << uint32(quest->GetSuggestedPlayers());
     data << uint32(quest->RewardChoiceItemId[4]);
     data << uint32(questEnderEntry);

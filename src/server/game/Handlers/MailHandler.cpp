@@ -109,7 +109,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(0, MAIL_SEND, MAIL_ERR_SILENT);
                 return;
@@ -249,11 +249,8 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         }
     }
 
-    uint32 myMemberId = sWorld->GetprojectMemberID(GetAccountId());
-    uint32 receiverMemberId = sWorld->GetprojectMemberID(receiverAccountId);
-
     if (!accountBound && player->GetTeam() != receiverTeam &&  !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_MAIL) &&
-        GetAccountId() != receiverAccountId && myMemberId != receiverMemberId && GetSecurity() == SEC_PLAYER)
+        GetAccountId() != receiverAccountId && GetSecurity() == SEC_PLAYER)
     {
         player->SendMailResult(0, MAIL_SEND, MAIL_ERR_NOT_YOUR_TEAM);
         return;
@@ -423,7 +420,7 @@ void WorldSession::HandleMailMarkAsRead(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
                 return;// Mail interactions on client don't get locked up when this action is performed, thus no result packet is needed
 
     if (Mail* mail = _player->GetMail(mailId))
@@ -580,7 +577,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_SILENT);
                 return;
@@ -733,7 +730,7 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_SILENT);
                 return;
@@ -813,7 +810,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(0, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT); // Incorrect mailAction, but we need to feed something to the client for it to unlock mail interactions
                 return;
@@ -953,12 +950,6 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
     // recalculate m_nextMailDelivereTime and unReadMails
     _player->UpdateNextMailTimeAndUnreads();
 
-    if (projectMemberInfo* info = _player->GetSession()->GetprojectMemberInfo())
-    {
-        auto notification = rand() % 2 ? projectMemberInfo::Notification::Mail : projectMemberInfo::Notification::RMT;
-        if (!info->Notify(_player, notification))
-            info->Notify(_player, notification == projectMemberInfo::Notification::Mail ? projectMemberInfo::Notification::RMT : projectMemberInfo::Notification::Mail);
-    }
 }
 
 //used when player copies mail body to his inventory
@@ -989,7 +980,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT);
                 return;

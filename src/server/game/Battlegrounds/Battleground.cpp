@@ -1317,52 +1317,6 @@ void Battleground::EndBattleground(uint32 winner)
         sBattlegroundMgr->EnqueueNewGameStat(stat);
     }
 
-    if (sWorld->AreprojectDailyQuestsEnabled())
-    {
-        for (BattlegroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-        {
-            if (Player* player = _GetPlayer(itr, "EndBattleground"))
-            {
-                bool won = itr->second.Team == winner;
-                if (winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam || // ARENA_NORMAL
-                    GetStatus() == STATUS_WAIT_JOIN ||                                        // ARENA_TIMEOUT
-                    m_winner == WINNER_NONE ||                                                // ARENA_NO_WINNERS
-                    m_Players.empty())                                                        // ARENA_NO_WINNERS
-                {
-                    if (GetArenaType() == ARENA_TYPE_3v3)
-                        player->CreditprojectDailyQuest(180015); // project Daily Quest Credit - 3v3 Arena Participation
-                    if (won)
-                        player->CreditprojectDailyQuest(180003); // project Daily Quest Credit - Any Arena Victory
-                    player->CreditprojectDailyQuest(180002); // project Daily Quest Credit - Any Arena Participation
-                }
-                else // BG_DEFAULT
-                {
-                    if (IsArena()) // Unrated arenas end up here.
-                        break;
-                    if (won)
-                        player->CreditprojectDailyQuest(180001); // project Daily Quest Credit - Any Battleground Victory
-                    player->CreditprojectDailyQuest(180000); // project Daily Quest Credit - Any Battleground Participation
-                    player->CreditprojectDailyQuest(180100 + GetTypeID()); // project Daily Quest Credit - * Participation
-                    auto itr = PlayerScores.find(player->GetGUID());
-                    if (itr != PlayerScores.end() && itr->second)
-                    {
-                        if (uint32 damage = itr->second->DamageDone / 1000)
-                            player->CreditprojectDailyQuest(180004, damage); // project Daily Quest Credit - Battleground Damage Dealt
-                        if (uint32 heal = itr->second->HealingDone / 1000)
-                            player->CreditprojectDailyQuest(180005, heal); // project Daily Quest Credit - Battleground Damage Healed
-                        if (uint32 kills = itr->second->HonorableKills)
-                            player->CreditprojectDailyQuest(180009, kills); // project Daily Quest Credit - Battleground Honorable Kill
-                    }
-                    if (IsRatedBG())
-                    {
-                        if (won)
-                            player->CreditprojectDailyQuest(180019); // project Daily Quest Credit - Solo 3v3 Arena Victory
-                        player->CreditprojectDailyQuest(180020); // project Daily Quest Credit - Solo 3v3 Arena Participation
-                    }
-                }
-            }
-        }
-    }
 }
 
 uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const

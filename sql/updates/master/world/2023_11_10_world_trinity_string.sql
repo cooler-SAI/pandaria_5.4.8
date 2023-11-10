@@ -1,0 +1,4 @@
+-- trinity_string
+DELETE FROM `trinity_string` WHERE `entry`=15005;
+INSERT INTO `trinity_string` (`entry`, `content_default`, `content_loc1`, `content_loc2`, `content_loc3`, `content_loc4`, `content_loc5`, `content_loc6`, `content_loc7`, `content_loc8`, `content_loc9`, `content_loc10`, `content_loc11`, `content_female`, `content_female_loc1`, `content_female_loc2`, `content_female_loc3`, `content_female_loc4`, `content_female_loc5`, `content_female_loc6`, `content_female_loc7`, `content_female_loc8`, `content_female_loc9`, `content_female_loc10`, `content_female_loc11`) VALUES 
+(15005, 'Your new balance is:', NULL, NULL, 'Deine neues Guthaben beträgt:', '您的余额:', '您的余額', NULL, NULL, 'Ваш остаток на балансе:', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);

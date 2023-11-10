@@ -68,13 +68,7 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
 
     if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION) && !boost)
     {
-        uint32 memberId = sWorld->GetprojectMemberID(accountId);
-        auto promoted = LoginDatabase.PQuery("SELECT member_id FROM boost_promotion_executed WHERE member_id = '%d'", memberId);
-        if (!promoted)
-        {
-            LoginDatabase.PExecute("INSERT INTO boost_promotion_executed (member_id) VALUES ('%d')", memberId);
-            return;
-        }
+        // to be impl new here
     }
 
     uint32 counter = 0;
@@ -643,9 +637,8 @@ void CharacterBooster::_HandleCharacterBoost() const
 
     if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION))
     {
-        auto promoted = LoginDatabase.PQuery("SELECT member_id FROM boost_promotion_executed WHERE member_id = '%d'", sWorld->GetprojectMemberID(GetSession()->GetAccountId()));
         auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realmID);
-        if (promoted && !paid)
+        if (!paid)
             return;
     }
 

@@ -138,14 +138,5 @@ void LoginDatabaseConnection::DoPrepareStatements()
     // WoW-Token
     PrepareStatement(LOGIN_INS_WOW_TOKEN, "INSERT INTO wow_token (accountId, characterGuid, realm, coins) VALUES (?, ?, ?, ?)", CONNECTION_SYNCH);
 
-    // project
-    PrepareStatement(LOGIN_SEL_project_MEMBER_PREMIUM, "SELECT unsetdate FROM project_member_premiums WHERE (member_id = ? OR member_id = 0) AND active = 1 ORDER BY unsetdate DESC", CONNECTION_SYNCH);
-    PrepareStatement(LOGIN_SEL_ACCOUNT_VERIFIED, "SELECT 1 FROM account WHERE project_member_id = ? AND project_verified LIMIT 1", CONNECTION_SYNCH);
-    PrepareStatement(LOGIN_SEL_project_MEMBER_SETTINGS, "SELECT setting, value FROM project_member_settings WHERE member_id = ?", CONNECTION_SYNCH);
-    PrepareStatement(LOGIN_REP_project_MEMBER_SETTING, "REPLACE INTO project_member_settings (member_id, setting, value) VALUES (?, ?, ?)", CONNECTION_ASYNC);
-    PrepareStatement(LOGIN_DEL_project_MEMBER_SETTING, "DELETE FROM project_member_settings WHERE member_id = ? AND setting = ?", CONNECTION_ASYNC);
-    PrepareStatement(LOGIN_SEL_project_MEMBER_TODAYS_DAILY_REWARDS, "SELECT source_id FROM project_member_rewards WHERE member_id = ? AND source_type = ? AND reward_day = ? AND realmid = ?", CONNECTION_SYNCH);
-    PrepareStatement(LOGIN_INS_project_MEMBER_REWARD, "INSERT INTO project_member_rewards (member_id, character_guid, account_id, realmid, source_type, source_id, reward_amount, reward_date, reward_day) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
-
     PrepareStatement(LOGIN_INS_ARENA_GAMES, "INSERT INTO arena_games (`gameid`, `teamid`, `guid`, `changeType`, `ratingChange`, `teamRating`, `damageDone`, `deaths`, `healingDone`, `damageTaken`, `healingTaken`, `killingBlows`, `damageAbsorbed`, `timeControlled`, `aurasDispelled`, `aurasStolen`, `highLatencyTimes`, `spellsPrecast`, `mapId`, `start`, `end`, `class`, `season`, `type`, `realmid`, `matchMakerRating`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", CONNECTION_ASYNC);
 }

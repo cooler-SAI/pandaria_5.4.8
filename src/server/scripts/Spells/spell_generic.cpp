@@ -3278,7 +3278,6 @@ class spell_gen_survey : public SpellScriptLoader
 
                     go = player->SummonGameObject(find->goEntry, find->x, find->y, find->z, 0, { }, 30); // TODO: verify despawn time
 
-                    player->CreditprojectDailyQuest(180024); // project Daily Quest Credit - Surveys
                 }
                 else
                 {

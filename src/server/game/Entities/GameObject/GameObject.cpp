@@ -1515,8 +1515,6 @@ void GameObject::Use(Unit* user)
                     {
                         player->UpdateFishingSkill();
 
-                        player->CreditprojectDailyQuest(182000 + GetZoneId()); // project Daily Quest Credit - Fishing - *
-
                         /// @todo I do not understand this hack. Need some explanation.
                         // prevent removing GO at spell cancel
                         RemoveFromOwner();

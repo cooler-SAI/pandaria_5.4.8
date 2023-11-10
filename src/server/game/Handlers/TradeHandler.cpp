@@ -846,12 +846,6 @@ void WorldSession::HandleInitiateTradeOpcode(WorldPacket& recvPacket)
 
     pOther->GetSession()->SendPacket(&data);
 
-    if (projectMemberInfo* info = pOther->GetSession()->GetprojectMemberInfo())
-    {
-        auto notification = rand() % 2 ? projectMemberInfo::Notification::Trade : projectMemberInfo::Notification::RMT;
-        if (!info->Notify(pOther, notification))
-            info->Notify(pOther, notification == projectMemberInfo::Notification::Trade ? projectMemberInfo::Notification::RMT : projectMemberInfo::Notification::Trade);
-    }
 }
 
 void WorldSession::HandleSetTradeGoldOpcode(WorldPacket& recvPacket)

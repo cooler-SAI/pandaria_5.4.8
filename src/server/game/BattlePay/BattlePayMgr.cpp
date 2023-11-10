@@ -583,9 +583,6 @@ void BattlePayMgr::SendBattlePayProductList(WorldSession* session)
                 if (product->Id == BATTLE_PAY_SERVICE_BOOST)
                     if (session->HasBoost())
                         hasProduct = true;
-                if (product->Id == BATTLE_PAY_SERVICE_PREMIUM)
-                    if (session->IsPremium())
-                        hasProduct = true;
             }
             else if (product->Type == BATTLE_PAY_PRODUCT_TYPE_ITEM)
             {
@@ -936,9 +933,6 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
         BattlePayProduct* product = GetProductId(purchase->ProductId);
         if (product->Id == BATTLE_PAY_SERVICE_BOOST && purchase->GetSession()->HasBoost())
             validPurchase = false;
-        if (product->Id == BATTLE_PAY_SERVICE_PREMIUM && purchase->GetSession()->IsPremium())
-            validPurchase = false;
-
 
         uint32 serverToken = irand(1, 999999); // temp solution
         
@@ -994,11 +988,6 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
                 {
                     SetBoosting(purchase->GetSession(), purchase->GetSession()->GetAccountId(), true);
                     SendBattlePayDistributionUpdate(purchase->GetSession(), BATTLE_PAY_SERVICE_BOOST, CHARACTER_BOOST_ALLOW);
-                }
-            if (product->Id == BATTLE_PAY_SERVICE_PREMIUM)
-                if (!purchase->GetSession()->IsPremium())
-                {
-                    //purchase->GetSession()->SetPremium(true);
                 }
         }
         else if (product->Type == BATTLE_PAY_PRODUCT_TYPE_ITEM)
