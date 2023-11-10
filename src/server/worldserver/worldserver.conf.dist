@@ -38,7 +38,28 @@
 #    STARTING GUILD
 #
 ###################################################################################################
-
+Battleground.PremadeGroupWaitForMatch = 1800000
+Battleground.PrematureFinishTimer = 300000
+mmap.AllowReuseOfPreviousPathSegments = 1
+AuthServer.Process =
+AuthServer.Command =
+DEBUG_LFG_QUEUE_SAVE_PREV_STATE = 0
+Arena.BonusReward.GamesCount.2v2 = 0
+Arena.BonusReward.Item.2v2 = 0
+Arena.BonusReward.MailTitle.2v2 = 
+Arena.BonusReward.MailText.2v2 =
+Arena.BonusReward.GamesCount.3v3 = 0
+Arena.BonusReward.Item.3v3 = 
+Arena.BonusReward.MailTitle.3v3 = 
+Arena.BonusReward.MailText.3v3 =
+Arena.BonusReward.GamesCount.5v5 = 0
+Arena.BonusReward.Item.5v5 = 0
+Arena.BonusReward.MailTitle.5v5 = 
+Arena.BonusReward.MailText.5v5 = 
+Arena.BonusReward.GamesCount.RBG = 0
+Arena.BonusReward.Item.RBG = 0 
+Arena.BonusReward.MailTitle.RBG = 
+Arena.BonusReward.MailText.RBG = 
 ###################################################################################################
 # EXAMPLE CONFIG
 #
@@ -3733,7 +3754,7 @@ Transmogrification.NotAllowed = ""
 #
 #    For custom gold cost set ScaledCostModifier to 0.0 and CopperCost to what ever cost you want
 
-Transmogrification.ScaledCostModifier = 1.0f
+Transmogrification.ScaledCostModifier = 1.000000
 Transmogrification.CopperCost = 0
 
 #
