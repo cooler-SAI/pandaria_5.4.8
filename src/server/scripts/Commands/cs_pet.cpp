@@ -113,9 +113,9 @@ public:
 
         player->SetMinion(pet, true);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         pet->SavePetToDB(trans);
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
         stmt->setUInt8(0, newPetSlot);
         stmt->setUInt32(1, player->GetGUIDLow());
         stmt->setUInt32(2, pet->GetCharmInfo()->GetPetNumber());

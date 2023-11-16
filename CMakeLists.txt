@@ -91,7 +91,7 @@ else()
   set(Boost_USE_STATIC_LIBS ON)
 endif()
 
-find_package(Boost COMPONENTS system locale thread regex serialization
+find_package(Boost COMPONENTS system locale thread regex serialization filesystem
     REQUIRED
 )
 

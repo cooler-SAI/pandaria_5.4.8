@@ -535,12 +535,15 @@ void Creature::Update(uint32 diff)
                 {
                     uint32 gguid = lootingGroupLowGUID;
                     uint64 crguid = GetGUID();
-                    TaskMgr::Default()->ScheduleInvocation([=]
-                    {
-                        if (Creature* creature = ObjectAccessor::FindCreature(crguid))
-                            if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
-                                group->EndRoll(&creature->loot);
-                    });
+                    if (Creature* creature = ObjectAccessor::FindCreature(crguid))
+                        if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
+                            group->EndRoll(&creature->loot);                    
+                    // TaskMgr::Default()->ScheduleInvocation([=]
+                    // {
+                    //     if (Creature* creature = ObjectAccessor::FindCreature(crguid))
+                    //         if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
+                    //             group->EndRoll(&creature->loot);
+                    // });
                     m_groupLootTimer = 0;
                     lootingGroupLowGUID = 0;
                 }
@@ -1041,9 +1044,9 @@ void Creature::SaveToDB(uint32 mapid, uint16 spawnMask, uint32 phaseMask)
     data.WalkMode = m_WalkMode;
 
     // update in DB
-    SQLTransaction trans = WorldDatabase.BeginTransaction();
+    WorldDatabaseTransaction trans = WorldDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_CREATURE);
+    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_CREATURE);
     stmt->setUInt32(0, m_DBTableGuid);
     trans->Append(stmt);
 
@@ -1428,9 +1431,9 @@ void Creature::DeleteFromDB()
     GetMap()->RemoveCreatureRespawnTime(m_DBTableGuid);
     sObjectMgr->DeleteCreatureData(m_DBTableGuid);
 
-    SQLTransaction trans = WorldDatabase.BeginTransaction();
+    WorldDatabaseTransaction trans = WorldDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_CREATURE);
+    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_CREATURE);
     stmt->setUInt32(0, m_DBTableGuid);
     trans->Append(stmt);
 

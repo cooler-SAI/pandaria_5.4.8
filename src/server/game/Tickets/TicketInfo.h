@@ -113,7 +113,7 @@ public:
     virtual void SetUnassigned() { _assignedTo = 0; }
 
     virtual void LoadFromDB(Field* fields) = 0;
-    virtual void SaveToDB(SQLTransaction& trans) const = 0;
+    virtual void SaveToDB(CharacterDatabaseTransaction trans) const = 0;
     virtual void DeleteFromDB() = 0;
 
     virtual std::string FormatMessageString(ChatHandler& handler, bool detailed = false) const = 0;
@@ -151,7 +151,7 @@ public:
     bool GetViewed(){ return _viewed; }
 
     void  LoadFromDB(Field* fields) override;
-    void  SaveToDB(SQLTransaction& trans) const override;
+    void  SaveToDB(CharacterDatabaseTransaction trans) const override;
     void  DeleteFromDB() override;
 
     std::string FormatMessageString(ChatHandler& handler, bool detailed = false) const;
@@ -192,7 +192,7 @@ public:
     void SetNote(std::string const& bugnote) { _bugnote = bugnote; }
 
     void LoadFromDB(Field* fields) override;
-    void SaveToDB(SQLTransaction& trans) const override;
+    void SaveToDB(CharacterDatabaseTransaction trans) const override;
     void DeleteFromDB() override;
 
     using TicketInfo::FormatMessageString;

@@ -1379,7 +1379,7 @@ public:
                 std::string itemName = itemNameStr+1;
                 WorldDatabase.EscapeString(itemName);
 
-                PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_ITEM_TEMPLATE_BY_NAME);
+                WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_ITEM_TEMPLATE_BY_NAME);
                 stmt->setString(0, itemName);
                 PreparedQueryResult result = WorldDatabase.Query(stmt);
 
@@ -1819,7 +1819,7 @@ public:
                 return false;
 
             // Query informations from the DB
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_PINFO);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_PINFO);
             stmt->setUInt32(0, lowguid);
             PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -1846,7 +1846,7 @@ public:
         }
 
         // Query the prepared statement for login data
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO);
         stmt->setInt32(0, int32(realmID));
         stmt->setUInt32(1, accId);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
@@ -1876,15 +1876,16 @@ public:
         std::string nameLink = handler->playerLink(targetName);
 
         // Returns banType, banTime, bannedBy, banreason
-        PreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO_BANS);
+        LoginDatabasePreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO_BANS);
+        CharacterDatabasePreparedStatement* cstmt = nullptr;
         stmt2->setUInt32(0, accId);
         PreparedQueryResult result2 = LoginDatabase.Query(stmt2);
         if (!result2)
         {
             banType = "Character";
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_BANS);
-            stmt->setUInt32(0, lowguid);
-            result2 = CharacterDatabase.Query(stmt);
+            cstmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_BANS);
+            cstmt->setUInt32(0, lowguid);
+            result2 = CharacterDatabase.Query(cstmt);
         }
 
         if (result2)
@@ -1896,9 +1897,9 @@ public:
         }
 
         // Can be used to query data from World database
-        stmt2 = WorldDatabase.GetPreparedStatement(WORLD_SEL_REQ_XP);
-        stmt2->setUInt8(0, level);
-        PreparedQueryResult result3 = WorldDatabase.Query(stmt2);
+        WorldDatabasePreparedStatement* stmt3 = WorldDatabase.GetPreparedStatement(WORLD_SEL_REQ_XP);
+        stmt3->setUInt8(0, level);
+        PreparedQueryResult result3 = WorldDatabase.Query(stmt3);
 
         if (result3)
         {
@@ -1907,9 +1908,9 @@ public:
         }
 
         // Can be used to query data from Characters database
-        stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_XP);
-        stmt2->setUInt32(0, lowguid);
-        PreparedQueryResult result4 = CharacterDatabase.Query(stmt2);
+        cstmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_XP);
+        cstmt->setUInt32(0, lowguid);
+        PreparedQueryResult result4 = CharacterDatabase.Query(cstmt);
 
         if (result4)
         {
@@ -1920,9 +1921,9 @@ public:
             if (gguid != 0)
             {
                 // Guild Data - an own query, because it may not happen.
-                PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
-                stmt3->setUInt32(0, lowguid);
-                PreparedQueryResult result5 = CharacterDatabase.Query(stmt3);
+                CharacterDatabasePreparedStatement* stmt4 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
+                stmt4->setUInt32(0, lowguid);
+                PreparedQueryResult result5 = CharacterDatabase.Query(stmt4);
                 if (result5)
                 {
                     Field* fields  = result5->Fetch();
@@ -2043,9 +2044,9 @@ public:
 
         // Mail Data - an own query, because it may or may not be useful.
         // SQL: "SELECT SUM(CASE WHEN (checked & 1) THEN 1 ELSE 0 END) AS 'readmail', COUNT(*) AS 'totalmail' FROM mail WHERE `receiver` = ?"
-        PreparedStatement* stmt4 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
-        stmt4->setUInt32(0, lowguid);
-        PreparedQueryResult result6 = CharacterDatabase.Query(stmt4);
+        CharacterDatabasePreparedStatement* stmt5 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
+        stmt5->setUInt32(0, lowguid);
+        PreparedQueryResult result6 = CharacterDatabase.Query(stmt5);
         if (result6)
         {
             // Define the variables, so the compiler knows they exist
@@ -2201,7 +2202,7 @@ public:
         else if (muteTime > maxMuteTime)
             muteTime = maxMuteTime;
 
-        SQLTransaction trans = LoginDatabase.BeginTransaction();
+        LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
 
         // Write mute history
         uint32 muteId = sObjectMgr->GenerateMuteID();
@@ -3132,7 +3133,7 @@ public:
             if (targetName)
             {
                 // Check for offline players
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_BY_NAME);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_BY_NAME);
                 stmt->setString(0, name);
                 PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -3166,7 +3167,7 @@ public:
     static bool HandleListFreezeCommand(ChatHandler* handler, char const* /*args*/)
     {
         // Get names from DB
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_AURA_FROZEN);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_AURA_FROZEN);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
         if (!result)
         {
@@ -3415,7 +3416,7 @@ public:
             return false;
 
         player->ClearLootLockouts();
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_LOOTLOCKOUTS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_LOOTLOCKOUTS);
         stmt->setUInt32(0, player->GetGUIDLow());
         CharacterDatabase.Execute(stmt);
         handler->SendSysMessage("All loot lockouts cleared");
@@ -4205,7 +4206,7 @@ public:
             handler->PSendSysMessage("Restoring item %s (GUID: %u, Entry: %u) to player %s (GUID: %u) inventory.", name.c_str(), itemGuid, info.itemEntry, playerName.c_str(), info.owner_guid);
 
             uint8 index = 0;
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ITEM_INSTANCE);
             stmt->setUInt32(  index, info.itemEntry);
             stmt->setUInt32(++index, info.owner_guid);
             stmt->setUInt32(++index, info.creatorGuid);
@@ -4238,7 +4239,7 @@ public:
         {
             handler->PSendSysMessage("Deleting item %s (GUID: %u, Entry: %u) from player %s (GUID: %u) inventory. Use .itemdelete revert %u to restore the item.", name.c_str(), itemGuid, info.itemEntry, playerName.c_str(), info.owner_guid, itemGuid);
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
             stmt->setUInt32(0, itemGuid);
             CharacterDatabase.Execute(stmt);
 
@@ -4453,7 +4454,7 @@ public:
 
         std::list<Item*> itemStorage;
         QueryResult result;
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         if (all)
             result = CharacterDatabase.PQuery("SELECT id, old_item_guid, item_entry, item_count FROM item_deleted WHERE owner_guid = '%u' AND `restored`=0", GUID_LOPART(guid));

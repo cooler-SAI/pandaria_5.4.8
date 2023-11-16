@@ -466,7 +466,7 @@ void BattlePayMgr::UpdatePointsBalance(WorldSession* session, uint64 points)
     }
     else
     {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BATTLEPAY_DECREMENT_COINS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_BATTLEPAY_DECREMENT_COINS);
         stmt->setUInt32(0, points);
         stmt->setUInt32(1, session->GetAccountId());    
         LoginDatabase.Query(stmt);
@@ -491,7 +491,7 @@ bool BattlePayMgr::HasPointsBalance(WorldSession* session, uint64 points)
     }
     else
     {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BATTLEPAY_COINS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_BATTLEPAY_COINS);
         stmt->setUInt32(0, session->GetAccountId());
         PreparedQueryResult result_don = LoginDatabase.Query(stmt);
 
@@ -996,7 +996,7 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
             {
                 uint32 mailId = sObjectMgr->GenerateMailID();
 
-                SQLTransaction trans = CharacterDatabase.BeginTransaction();
+                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
                 // not blizzlike, but who cares (temp solution)
                 std::string productTitle = product->Title;
@@ -1009,7 +1009,7 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
                         ObjectMgr::GetLocaleString(locProd->Description, localeConstant, productDescription);
                     }
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
                 stmt->setUInt32(0, mailId);
                 stmt->setUInt8(1, MAIL_NORMAL);
                 stmt->setInt8(2, MAIL_STATIONERY_DEFAULT);
@@ -1030,7 +1030,7 @@ void BattlePayMgr::SendBattlePayPurchaseUpdate(PurchaseInfo* purchase)
                 {
                     item->SaveToDB(trans);
 
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL_ITEM);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL_ITEM);
                     stmt->setUInt32(0, mailId);
                     stmt->setUInt32(1, item->GetGUIDLow());
                     stmt->setUInt32(2, purchase->SelectedPlayer);

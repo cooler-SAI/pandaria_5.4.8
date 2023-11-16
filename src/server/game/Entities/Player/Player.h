@@ -1898,7 +1898,7 @@ class Player : public Unit, public GridObject<Player>
     /***                   LOAD SYSTEM                     ***/
     /*********************************************************/
 
-    bool LoadFromDB(uint32 guid, SQLQueryHolder *holder);
+    bool LoadFromDB(uint32 guid, CharacterDatabaseQueryHolder const& holder);
     bool isBeingLoaded() const;
 
     void Initialize(uint32 guid);
@@ -1926,8 +1926,8 @@ class Player : public Unit, public GridObject<Player>
     /*********************************************************/
 
     void SaveToDB(bool create = false);
-    void SaveInventoryAndGoldToDB(SQLTransaction& trans);                    // fast save function for item/money cheating preventing
-    void SaveGoldToDB(SQLTransaction& trans);
+    void SaveInventoryAndGoldToDB(CharacterDatabaseTransaction trans);                    // fast save function for item/money cheating preventing
+    void SaveGoldToDB(CharacterDatabaseTransaction trans);
 
     static void SetUInt32ValueInArray(Tokenizer& data, uint16 index, uint32 value);
     static void Customize(uint64 guid, uint8 gender, uint8 skin, uint8 face, uint8 hairStyle, uint8 hairColor, uint8 facialHair);
@@ -3285,7 +3285,7 @@ public:
     void SetLastPetNumber(uint32 petnumber) { m_lastpetnumber = petnumber; }
 
     uint32 GetCurrentPetId() const { return m_currentPetId; }
-    void SetCurrentPetId(uint32 newPetId, SQLTransaction trans = nullptr);
+    void SetCurrentPetId(uint32 newPetId, CharacterDatabaseTransaction trans = nullptr);
     void AddNewPet(int8 slot, Pet* pet);
     void SwapPets(int8 destSlot, int8 srcSlot);
     uint32 GetPetIdBySlot(uint8 slot) const;
@@ -3471,31 +3471,31 @@ protected:
     /***                   SAVE SYSTEM                     ***/
     /*********************************************************/
 
-    void _SaveActions(SQLTransaction& trans);
-    void _SaveAuras(SQLTransaction& trans);
-    void _SaveInventory(SQLTransaction& trans);
-    void _SaveVoidStorage(SQLTransaction& trans);
-    void _SaveMail(SQLTransaction& trans);
-    void _SaveQuestStatus(SQLTransaction& trans);
-    void _SaveQuestObjectiveStatus(SQLTransaction& trans);
-    void _SaveDailyQuestStatus(SQLTransaction& trans);
-    void _SaveWeeklyQuestStatus(SQLTransaction& trans);
-    void _SaveMonthlyQuestStatus(SQLTransaction& trans);
-    void _SaveSeasonalQuestStatus(SQLTransaction& trans);
-    void _SaveSkills(SQLTransaction& trans);
-    void _SaveSpells(SQLTransaction& trans);
-    void _SaveEquipmentSets(SQLTransaction& trans);
-    void _SaveBGData(SQLTransaction& trans);
-    void _SaveGlyphs(SQLTransaction& trans);
-    void _SaveTalents(SQLTransaction& trans);
-    void _SaveStats(SQLTransaction& trans);
-    void _SaveInstanceTimeRestrictions(SQLTransaction& trans);
-    void _SaveCurrency(SQLTransaction& trans);
-    void _SaveCUFProfiles(SQLTransaction& trans);
-    void _SaveResearchHistory(SQLTransaction& trans);
-    void _SaveResearchProjects(SQLTransaction& trans);
-    void _SaveDeserterInfo(SQLTransaction& trans);
-    void _SaveBattlegroundStats(SQLTransaction& trans);
+    void _SaveActions(CharacterDatabaseTransaction trans);
+    void _SaveAuras(CharacterDatabaseTransaction trans);
+    void _SaveInventory(CharacterDatabaseTransaction trans);
+    void _SaveVoidStorage(CharacterDatabaseTransaction trans);
+    void _SaveMail(CharacterDatabaseTransaction trans);
+    void _SaveQuestStatus(CharacterDatabaseTransaction trans);
+    void _SaveQuestObjectiveStatus(CharacterDatabaseTransaction trans);
+    void _SaveDailyQuestStatus(CharacterDatabaseTransaction trans);
+    void _SaveWeeklyQuestStatus(CharacterDatabaseTransaction trans);
+    void _SaveMonthlyQuestStatus(CharacterDatabaseTransaction trans);
+    void _SaveSeasonalQuestStatus(CharacterDatabaseTransaction trans);
+    void _SaveSkills(CharacterDatabaseTransaction trans);
+    void _SaveSpells(CharacterDatabaseTransaction trans);
+    void _SaveEquipmentSets(CharacterDatabaseTransaction trans);
+    void _SaveBGData(CharacterDatabaseTransaction trans);
+    void _SaveGlyphs(CharacterDatabaseTransaction trans);
+    void _SaveTalents(CharacterDatabaseTransaction trans);
+    void _SaveStats(CharacterDatabaseTransaction trans);
+    void _SaveInstanceTimeRestrictions(CharacterDatabaseTransaction trans);
+    void _SaveCurrency(CharacterDatabaseTransaction trans);
+    void _SaveCUFProfiles(CharacterDatabaseTransaction trans);
+    void _SaveResearchHistory(CharacterDatabaseTransaction trans);
+    void _SaveResearchProjects(CharacterDatabaseTransaction trans);
+    void _SaveDeserterInfo(CharacterDatabaseTransaction trans);
+    void _SaveBattlegroundStats(CharacterDatabaseTransaction trans);
 
     /*********************************************************/
     /***              ENVIRONMENTAL SYSTEM                 ***/
@@ -3679,7 +3679,7 @@ protected:
     InventoryResult CanStoreItem_InBag(uint8 bag, ItemPosCountVec& dest, ItemTemplate const* pProto, uint32& count, bool merge, bool non_specialized, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const;
     InventoryResult CanStoreItem_InInventorySlots(uint8 slot_begin, uint8 slot_end, ItemPosCountVec& dest, ItemTemplate const* pProto, uint32& count, bool merge, Item* pSrcItem, uint8 skip_bag, uint8 skip_slot) const;
     Item* _StoreItem(uint16 pos, Item* pItem, uint32 count, bool clone, bool update);
-    Item* _LoadItem(SQLTransaction& trans, uint32 zoneId, uint32 timeDiff, Field* fields);
+    Item* _LoadItem(CharacterDatabaseTransaction trans, uint32 zoneId, uint32 timeDiff, Field* fields);
 
     std::set<uint32> m_refundableItems;
     void SendRefundInfo(Item* item);

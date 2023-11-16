@@ -59,7 +59,7 @@ namespace logs
                 return;
         }
 
-        PreparedStatement* stmt = ArchiveDatabase.GetPreparedStatement(ARCH_INS_CURRENCY_TRANSACTIONS);
+        ArchiveDatabasePreparedStatement* stmt = ArchiveDatabase.GetPreparedStatement(ARCH_INS_CURRENCY_TRANSACTIONS);
         uint32 index = 0;
         stmt->setUInt32(index, player->GetGUIDLow());
         stmt->setUInt32(++index, time(nullptr));

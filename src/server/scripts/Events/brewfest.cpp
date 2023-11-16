@@ -612,7 +612,7 @@ class event_brewfest_month : GameEventScript
         void OnStarted() override
         {
             // Send mail to all online players
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& session : sWorld->GetAllSessions())
                 if (Player* player = session.second->GetPlayer())
                     SendMail(player, trans);
@@ -623,7 +623,7 @@ class event_brewfest_month : GameEventScript
         {
             if (IsEligible(player))
             {
-                SQLTransaction trans = CharacterDatabase.BeginTransaction();
+                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
                 SendMail(player, trans);
                 CharacterDatabase.CommitTransaction(trans);
             }
@@ -635,7 +635,7 @@ class event_brewfest_month : GameEventScript
         uint32 questFirstID;
         uint32 questSeasonalID;
 
-        void SendMail(Player* player, SQLTransaction& trans)
+        void SendMail(Player* player, CharacterDatabaseTransaction trans)
         {
             if (IsEligible(player))
             {

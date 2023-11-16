@@ -50,7 +50,7 @@ public:
             pendingLockouts.push_back({ id, difficulty });
         }
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_LOOTLOCKOUTS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHARACTER_LOOTLOCKOUTS);
         stmt->setUInt32(0, m_owner->GetGUIDLow());
         stmt->setUInt32(1, id);
         stmt->setUInt32(2, difficulty);

@@ -45,7 +45,7 @@ enum CorpseFlags
     CORPSE_FLAG_LOOTABLE    = 0x20
 };
 
-class Corpse : public WorldObject, public GridObject<Corpse>
+class TC_GAME_API Corpse : public WorldObject, public GridObject<Corpse>
 {
     public:
         explicit Corpse(CorpseType type = CORPSE_BONES);
@@ -61,7 +61,7 @@ class Corpse : public WorldObject, public GridObject<Corpse>
         bool LoadCorpseFromDB(uint32 guid, Field* fields);
 
         void DeleteBonesFromWorld();
-        void DeleteFromDB(SQLTransaction& trans);
+        void DeleteFromDB(CharacterDatabaseTransaction trans);
 
         uint64 GetOwnerGUID() const { return GetUInt64Value(CORPSE_FIELD_OWNER); }
 

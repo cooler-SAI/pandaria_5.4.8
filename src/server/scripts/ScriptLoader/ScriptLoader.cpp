@@ -79,7 +79,6 @@ void AddSC_mmaps_commandscript();
 void AddSC_modify_commandscript();
 void AddSC_npc_commandscript();
 void AddSC_pet_commandscript();
-void AddSC_premium_commandscript();
 void AddSC_quest_commandscript();
 void AddSC_reload_commandscript();
 void AddSC_reset_commandscript();
@@ -1089,8 +1088,6 @@ void AddSpellScripts()
 
 void AddCommandScripts()
 {
-    AddSC_premium_commandscript();
-
     AddSC_server_commandscript();
     AddSC_account_commandscript();
     AddSC_achievement_commandscript();

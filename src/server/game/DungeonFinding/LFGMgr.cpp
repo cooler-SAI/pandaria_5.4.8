@@ -106,7 +106,7 @@ void LFGMgr::SaveToDB(uint64 guid, uint32 dbGuid)
     if (!IS_GROUP_GUID(guid))
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_LFG_DATA);
 
     stmt->setUInt32(0, dbGuid);
 
@@ -2030,11 +2030,12 @@ void LFGMgr::TeleportPlayer(Player* player, bool out, bool fromOpcode /*= false*
 void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
 {
     // Map can't disappear, right? rigth?
-    if (std::this_thread::get_id() != sWorld->GetThreadId())
-    {
-        TaskMgr::Default()->ScheduleInvocation([=] { sLFGMgr->FinishDungeon(gguid, dungeonId, map); });
-        return;
-    }
+    // if (std::this_thread::get_id() != sWorld->GetThreadId())
+    // {
+    //     TaskMgr::Default()->ScheduleInvocation([=] { sLFGMgr->FinishDungeon(gguid, dungeonId, map); });
+    //     return;
+    // }
+    sLFGMgr->FinishDungeon(gguid, dungeonId, map);
 
     uint32 queueId = GetActiveQueueId(gguid);
     if (!queueId)
@@ -2182,7 +2183,7 @@ void LFGMgr::FinishDungeon(uint64 gguid, uint32 dungeonId, Map* map)
     if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
     {
         group->SendUpdate();
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_LFG_DATA);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_LFG_DATA);
         stmt->setUInt32(0, LFG_STATE_FINISHED_DUNGEON);
         stmt->setUInt32(1, group->GetDbStoreId());
         CharacterDatabase.Execute(stmt);

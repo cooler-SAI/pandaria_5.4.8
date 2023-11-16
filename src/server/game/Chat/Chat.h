@@ -144,7 +144,7 @@ class ChatHandler
 
         static bool ValidatePipeSequence(std::string const& text);
 
-        virtual CommandHolder CreateCommandHolder(TaskBase* task);
+        // virtual CommandHolder CreateCommandHolder(TaskBase* task);
 
     protected:
         explicit ChatHandler() : m_session(NULL), sentErrorMessage(false) { }     // for CLI subclass
@@ -219,7 +219,7 @@ class CliHandler : public ChatHandler
         bool needReportToTarget(Player* chr) const;
         LocaleConstant GetSessionDbcLocale() const;
         int GetSessionDbLocaleIndex() const;
-        CommandHolder CreateCommandHolder(TaskBase* task);
+        // CommandHolder CreateCommandHolder(TaskBase* task);
     private:
         void* m_callbackArg;
         Print* m_print;

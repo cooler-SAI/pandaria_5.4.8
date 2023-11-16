@@ -145,7 +145,7 @@ public:
     void ApplyRetroactiveFixes(Player* player);
 
     void AddService(Player* target, uint32 guid, ServiceEntry& entry);
-    void ExecuteService(Player* player, ServiceEntry const& entry, SQLTransaction const& trans = nullptr);
+    void ExecuteService(Player* player, ServiceEntry const& entry, CharacterDatabaseTransaction trans = nullptr);
 
     uint32 GenerateServiceId() { return ++_serviceID; }
 

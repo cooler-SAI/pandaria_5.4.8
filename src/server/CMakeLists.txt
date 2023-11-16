@@ -17,6 +17,7 @@ if( SERVERS )
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.cpp
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.h
   )
+  add_subdirectory(database)
   add_subdirectory(shared)
   add_subdirectory(game)
   add_subdirectory(collision)

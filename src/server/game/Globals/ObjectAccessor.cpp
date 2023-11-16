@@ -248,13 +248,11 @@ Player* ObjectAccessor::FindPlayerInOrOutOfWorld(uint64 guid)
 
 Creature* ObjectAccessor::FindCreature(uint64 guid)
 {
-    ENSURE_WORLD_THREAD();
     return GetObjectInWorld(guid, (Creature*)nullptr);
 }
 
 GameObject* ObjectAccessor::FindGameObject(uint64 guid)
 {
-    ENSURE_WORLD_THREAD();
     return GetObjectInWorld(guid, (GameObject*)nullptr);
 }
 
@@ -404,7 +402,7 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(uint64 player_guid, bool insignia
     RemoveCorpse(corpse);
 
     // remove corpse from DB
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     corpse->DeleteFromDB(trans);
     CharacterDatabase.CommitTransaction(trans);
 

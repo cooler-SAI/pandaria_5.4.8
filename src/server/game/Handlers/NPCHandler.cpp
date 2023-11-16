@@ -741,8 +741,8 @@ void WorldSession::HandleSetPetSlot(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
     stmt->setUInt8(0, newSlot);
     stmt->setUInt32(1, GetPlayer()->GetGUIDLow());
     stmt->setUInt32(2, oldPetId);
@@ -944,13 +944,17 @@ void WorldSession::HandleStableSwapPet(WorldPacket& recvData)
 
     // Find swapped pet slot in stable
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PET_SLOT_BY_ID);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PET_SLOT_BY_ID);
 
     stmt->setUInt32(0, _player->GetGUIDLow());
     stmt->setUInt32(1, petId);
 
-    _stableSwapCallback.SetParam(petId);
-    _stableSwapCallback.SetFutureResult(CharacterDatabase.AsyncQuery(stmt));
+    // _stableSwapCallback.SetParam(petId);
+    // _stableSwapCallback.SetFutureResult(CharacterDatabase.AsyncQuery(stmt));
+
+    _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
+        .WithPreparedCallback(std::bind(&WorldSession::HandleStableSwapPetCallback, this, std::placeholders::_1, petId )));
+
 }
 
 void WorldSession::HandleStableSwapPetCallback(PreparedQueryResult result, uint32 petId)

@@ -196,11 +196,13 @@ namespace Vignette
             // Update the position of the vignette if vignette is linked to a creature
             if (IS_UNIT_GUID(vignette->GeSourceGuid()))
             {
-                TaskMgr::Default()->ScheduleInvocation([=]
-                {
-                    if (Creature* sourceCreature = sObjectAccessor->FindCreature(vignette->GeSourceGuid()))
-                        vignette->UpdatePosition(G3D::Vector3(sourceCreature->GetPositionX(), sourceCreature->GetPositionY(), sourceCreature->GetPositionZ()));
-                });
+                // TaskMgr::Default()->ScheduleInvocation([=]
+                // {
+                //     if (Creature* sourceCreature = sObjectAccessor->FindCreature(vignette->GeSourceGuid()))
+                //         vignette->UpdatePosition(G3D::Vector3(sourceCreature->GetPositionX(), sourceCreature->GetPositionY(), sourceCreature->GetPositionZ()));
+                // });
+                if (Creature* sourceCreature = sObjectAccessor->FindCreature(vignette->GeSourceGuid()))
+                    vignette->UpdatePosition(G3D::Vector3(sourceCreature->GetPositionX(), sourceCreature->GetPositionY(), sourceCreature->GetPositionZ()));                
             }
 
             if (vignette->NeedClientUpdate())

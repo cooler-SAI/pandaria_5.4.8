@@ -397,7 +397,19 @@ TC_COMMON_API bool WriteWinConsole(std::string_view str, bool error = false);
 
 uint32 CreatePIDFile(const std::string& filename);
 
-std::string ByteArrayToHexStr(uint8 const* bytes, uint32 length, bool reverse = false);
+namespace Trinity::Impl
+{
+    TC_COMMON_API std::string ByteArrayToHexStr(uint8 const* bytes, size_t length, bool reverse = false);
+    TC_COMMON_API void HexStrToByteArray(std::string_view str, uint8* out, size_t outlen, bool reverse = false);
+}
+
+template <typename Container>
+std::string ByteArrayToHexStr(Container const& c, bool reverse = false)
+{
+    return Trinity::Impl::ByteArrayToHexStr(std::data(c), std::size(c), reverse);
+}
+
+//std::string ByteArrayToHexStr(uint8 const* bytes, uint32 length, bool reverse = false);
 bool StringToBool(std::string const& str);
 TC_COMMON_API bool StringEqualI(std::string_view str1, std::string_view str2);
 #endif

@@ -32,7 +32,8 @@
 #include "Banner.h"
 #include "AppenderDB.h"
 #include "Common.h"
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
+#include "DatabaseLoader.h"
 #include "Configuration/Config.h"
 #include "Log.h"
 #include "SystemConfig.h"
@@ -41,6 +42,7 @@
 #include "RealmList.h"
 #include "RealmAcceptor.h"
 #include "AppenderDB.h"
+#include "MySQLThreading.h"
 
 #ifdef __linux__
 #include <sched.h>
@@ -57,7 +59,7 @@ void StopDB();
 
 bool stopEvent = false;                                     // Setting it to true stops the server
 
-LoginDatabaseWorkerPool LoginDatabase;                      // Accessor to the authserver database
+// LoginDatabaseWorkerPool LoginDatabase;                      // Accessor to the authserver database
 
 /// Handle authserver's termination signals
 class AuthServerSignalHandler : public Trinity::SignalHandler
@@ -313,12 +315,21 @@ bool StartDB()
         synch_threads = 1;
     }
 
-    // NOTE: While authserver is singlethreaded you should keep synch_threads == 1. Increasing it is just silly since only 1 will be used ever.
-    if (!LoginDatabase.Open(dbstring, uint8(worker_threads), uint8(synch_threads)))
-    {
-        TC_LOG_ERROR("server.authserver", "Cannot connect to database");
+    DatabaseLoader loader("server.authserver", DatabaseLoader::DATABASE_NONE);
+    loader
+        .AddDatabase(LoginDatabase, "Login");
+
+    if (!loader.Load())
         return false;
-    }
+
+    TC_LOG_INFO("server.authserver", "Started auth database connection pool.");        
+
+    // // NOTE: While authserver is singlethreaded you should keep synch_threads == 1. Increasing it is just silly since only 1 will be used ever.
+    // if (!LoginDatabase.Open(dbstring, uint8(worker_threads), uint8(synch_threads)))
+    // {
+    //     TC_LOG_ERROR("server.authserver", "Cannot connect to database");
+    //     return false;
+    // }
 
     TC_LOG_INFO("server.authserver", "Started auth database connection pool.");
     sLog->SetRealmId(0); // Enables DB appenders when realm is set.

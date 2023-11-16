@@ -16,6 +16,7 @@ file(GLOB_RECURSE sources_Asio Asio/*.cpp Asio/*.h)
 file(GLOB_RECURSE sources_Configuration Configuration/*.cpp Configuration/*.h)
 file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h Cryptography/Authentication/*.cpp Cryptography/Authentication/*.h)
 file(GLOB_RECURSE sources_Logging Logging/*.cpp Logging/*.h)
+file(GLOB_RECURSE sources_Hacks Hacks/*.cpp Hacks/*.h)
 file(GLOB_RECURSE sources_Utilities Utilities/*.cpp Utilities/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
@@ -24,6 +25,7 @@ source_group(Asio FILES ${sources_Asio})
 source_group(Configuration FILES ${sources_Configuration})
 source_group(Cryptography FILES ${sources_Cryptography})
 source_group(Logging FILES ${sources_Logging})
+source_group(Hacks FILES ${sources_Hacks})
 source_group(Utilities FILES ${sources_Utilities})
 
 # Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in shared project
@@ -42,6 +44,7 @@ set(common_STAT_SRCS
   ${sources_Cryptography}
   ${sources_Debugging}
   ${sources_Logging}
+  ${sources_Hacks}
   ${sources_Utilities}
   ${sources_localdir}
 )
@@ -54,6 +57,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography
     ${CMAKE_CURRENT_SOURCE_DIR}/Cryptography/Authentication  
     ${CMAKE_CURRENT_SOURCE_DIR}/Debugging
+    ${CMAKE_CURRENT_SOURCE_DIR}/Hacks
     ${CMAKE_CURRENT_SOURCE_DIR}/Logging
     ${CMAKE_CURRENT_SOURCE_DIR}/Utilities
     ${CMAKE_BINARY_DIR}

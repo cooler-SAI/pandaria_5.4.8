@@ -89,11 +89,26 @@ void Assert(char const* file, int line, char const* function, std::string debugI
     Crash(formattedMessage.c_str());
 }
 
-void Fatal(char const* file, int line, char const* function, char const* message)
+// void Fatal(char const* file, int line, char const* function, char const* message)
+// {
+//     fprintf(stderr, "\n%s:%i in %s FATAL ERROR:\n  %s\n",
+//                    file, line, function, message);
+//     std::abort();
+// }
+
+void Fatal(char const* file, int line, char const* function, char const* message, ...)
 {
-    fprintf(stderr, "\n%s:%i in %s FATAL ERROR:\n  %s\n",
-                   file, line, function, message);
-    std::abort();
+    va_list args;
+    va_start(args, message);
+
+    std::string formattedMessage = StringFormat("\n%s:%i in %s FATAL ERROR:\n", file, line, function) + FormatAssertionMessage(message, args) + '\n';
+    va_end(args);
+
+    fprintf(stderr, "%s", formattedMessage.c_str());
+    fflush(stderr);
+
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    Crash(formattedMessage.c_str());
 }
 
 void Error(char const* file, int line, char const* function, char const* message)

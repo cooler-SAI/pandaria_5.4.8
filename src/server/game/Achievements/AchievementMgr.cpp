@@ -594,9 +594,9 @@ void PlayerAchievementMgrBase::ResetCriterias(CriteriaStartTypes type, uint32 as
 
 void PlayerAchievementMgr::DeleteFromDB(uint32 lowguid)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
     stmt->setUInt32(0, lowguid);
     trans->Append(stmt);
 
@@ -609,9 +609,9 @@ void PlayerAchievementMgr::DeleteFromDB(uint32 lowguid)
 
 void GuildAchievementMgr::DeleteFromDB(uint32 lowguid)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GUILD_ACHIEVEMENTS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GUILD_ACHIEVEMENTS);
     stmt->setUInt32(0, lowguid);
     trans->Append(stmt);
 
@@ -622,14 +622,14 @@ void GuildAchievementMgr::DeleteFromDB(uint32 lowguid)
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
+void PlayerAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     for (auto&& it : m_completedAchievements)
     {
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
         stmt->setUInt16(0, it.first);
         stmt->setUInt32(1, GetOwner()->GetGUID());
         trans->Append(stmt);
@@ -648,7 +648,7 @@ void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_BY_CRITERIA);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_BY_CRITERIA);
         stmt->setUInt32(0, GetOwner()->GetGUID());
         stmt->setUInt16(1, it.first);
         trans->Append(stmt);
@@ -666,9 +666,9 @@ void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
     }
 }
 
-void GuildAchievementMgr::SaveToDB(SQLTransaction& trans)
+void GuildAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt;
+    CharacterDatabasePreparedStatement* stmt;
     std::ostringstream guidstr;
     for (auto&& it : m_completedAchievements)
     {
@@ -713,14 +713,14 @@ void GuildAchievementMgr::SaveToDB(SQLTransaction& trans)
     }
 }
 
-void AccountAchievementMgr::SaveToDB(SQLTransaction& trans)
+void AccountAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     for (auto&& it : m_completedAchievements)
     {
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
         stmt->setUInt32(0, GetOwner()->GetSession()->GetAccountId());
         stmt->setUInt16(1, it.first);
         stmt->setUInt32(2, uint32(it.second.Date));
@@ -735,7 +735,7 @@ void AccountAchievementMgr::SaveToDB(SQLTransaction& trans)
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT_PROGRESS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT_PROGRESS);
         stmt->setUInt32(0, GetOwner()->GetSession()->GetAccountId());
         stmt->setUInt16(1, it.first);
         stmt->setUInt32(2, it.second.Counter);
@@ -825,7 +825,7 @@ void PlayerAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pre
                 // we will remove not existed criteria for all characters
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
 
@@ -896,7 +896,7 @@ void AccountAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pr
                 // we will remove not existed criteria for all characters
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `account_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
                 continue;
@@ -957,7 +957,7 @@ void GuildAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Prep
                 // we will remove not existed criteria for all guilds
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `guild_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA_GUILD);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA_GUILD);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
                 continue;
@@ -2454,7 +2454,7 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement, P
 
         MailDraft draft(subject, text);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         if (item)
         {
             // save new item before send
@@ -2525,7 +2525,7 @@ void PlayerAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
     data << uint32(0);
     SendPacket(&data);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->PAppend("DELETE FROM character_achievement WHERE achievement = %u AND guid = %u", entry->ID, player->GetGUIDLow());
     m_completedAchievements.erase(entry->ID);
 
@@ -2553,12 +2553,12 @@ void PlayerAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 
 void AccountAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 {
-    CALL_NOT_IMPLEMENTED();
+    //CALL_NOT_IMPLEMENTED();
 }
 
 void GuildAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 {
-    CALL_NOT_IMPLEMENTED();
+    //CALL_NOT_IMPLEMENTED();
 }
 
 struct VisibleAchievementPred
@@ -4311,7 +4311,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
             // Remove non existent achievements from all characters
             TC_LOG_ERROR("achievement", "Non-existing achievement %u data removed from table `character_achievement`.", achievementId);
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
             stmt->setUInt16(0, uint16(achievementId));
             CharacterDatabase.Execute(stmt);
 

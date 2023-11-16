@@ -96,9 +96,9 @@ public:
 
     BlackMarketAuctionTemplate* GetTemplate() const;
 
-    void DeleteFromDB(SQLTransaction& trans);
-    void SaveToDB(SQLTransaction& trans);
-    void UpdateToDB(SQLTransaction& trans);
+    void DeleteFromDB(CharacterDatabaseTransaction trans);
+    void SaveToDB(CharacterDatabaseTransaction trans);
+    void UpdateToDB(CharacterDatabaseTransaction trans);
 
     uint32 TimeLeft();
 
@@ -144,13 +144,13 @@ public:
 
     uint32 GetFreeAuctionId();
 
-    void CreateAuctions(uint32 number, SQLTransaction& trans);
+    void CreateAuctions(uint32 number, CharacterDatabaseTransaction trans);
     void UpdateAuction(BlackMarketAuction* auction, uint64 newPrice, uint64 requiredIncrement, Player* newBidder);
 
     void BuildBlackMarketRequestItemsResult(WorldPacket& data, uint32 guidLow);
 
-    void SendAuctionWon(BlackMarketAuction* auction, SQLTransaction& trans);
-    void SendAuctionOutbidded(BlackMarketAuction* auction, Player* newBidder, SQLTransaction& trans);
+    void SendAuctionWon(BlackMarketAuction* auction, CharacterDatabaseTransaction trans);
+    void SendAuctionOutbidded(BlackMarketAuction* auction, Player* newBidder, CharacterDatabaseTransaction trans);
 
     bool isBlackMarketOpen() { return sWorld->getBoolConfig(CONFIG_BLACK_MARKET_OPEN); }
 

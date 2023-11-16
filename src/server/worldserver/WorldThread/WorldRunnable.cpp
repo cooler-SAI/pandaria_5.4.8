@@ -23,7 +23,7 @@
 #include "ObjectAccessor.h"
 #include "World.h"
 #include "WorldSocketMgr.h"
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
 #include "ScriptMgr.h"
 #include "BattlegroundMgr.h"
 #include "MapManager.h"
@@ -103,5 +103,5 @@ void WorldRunnable::run()
     sScriptMgr->Unload();
     sOutdoorPvPMgr->Die();
 
-    TaskMgr::Stop();
+    //TaskMgr::Stop();
 }

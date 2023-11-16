@@ -85,7 +85,7 @@ void InstanceScript::SaveToDB()
     if (data.empty())
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_DATA);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_INSTANCE_DATA);
     stmt->setUInt32(0, GetCompletedEncounterMask());
     stmt->setString(1, data);
     stmt->setUInt32(2, instance->GetInstanceId());
@@ -1071,7 +1071,7 @@ void InstanceScript::SendChallengeNewPlayerRecord()
                 bool newBestTime = challengeTime < challenge->BestTime;
                 bool newBestMedal = medalType > challenge->BestMedal;
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_COMPLETED_CHALLENGE);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_COMPLETED_CHALLENGE);
                 stmt->setUInt32(0, newBestTime ? challengeTime : challenge->BestTime);
                 stmt->setUInt32(1, challengeTime);
                 stmt->setUInt8(2, newBestMedal ? medalType : challenge->BestMedal);
@@ -1097,7 +1097,7 @@ void InstanceScript::SendChallengeNewPlayerRecord()
             }
             else
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_COMPLETED_CHALLENGE);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_COMPLETED_CHALLENGE);
                 stmt->setUInt32(0, player->GetGUIDLow());
                 stmt->setUInt32(1, mapId);
                 stmt->setUInt32(2, challengeTime);
@@ -1168,7 +1168,7 @@ void InstanceScript::SaveChallengeDatasIfNeeded()
     // Delete old group record if it's a new realm-best time (or if it's the first), and reward titles/achievements
     if (!groupChallenge || (groupChallenge && groupChallenge->CompletionTime > challengeTime))
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_CHALLENGE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GROUP_CHALLENGE);
         stmt->setUInt32(0, mapId);
         CharacterDatabase.Execute(stmt);
 
@@ -1200,7 +1200,7 @@ void InstanceScript::SaveChallengeDatasIfNeeded()
         // Delete old guild record if it's a new realm-best time
         if (guildChallenge && guildChallenge->CompletionTime > challengeTime)
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_CHALLENGE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_CHALLENGE);
             stmt->setUInt32(0, mapId);
             stmt->setUInt32(1, guildId);
             CharacterDatabase.Execute(stmt);
@@ -1221,7 +1221,7 @@ void InstanceScript::SaveNewGroupChallenge(uint32 guildId /*= 0*/)
     newGroup.GuildId        = guildId;
     newGroup.MedalEarned    = medalType;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(guildId ? CHAR_INS_GUILD_CHALLENGE : CHAR_INS_GROUP_CHALLENGE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(guildId ? CHAR_INS_GUILD_CHALLENGE : CHAR_INS_GROUP_CHALLENGE);
 
     stmt->setUInt32(index++, instance->GetId());
 
@@ -1321,7 +1321,7 @@ void InstanceScript::RewardNewRealmRecord(RealmCompletedChallenge* oldChallenge 
     // Remove title to previous challengers - Achievement will stay
     if (oldChallenge)
     {
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         for (uint8 i = 0; i < 5; i++)
         {
@@ -1334,7 +1334,7 @@ void InstanceScript::RewardNewRealmRecord(RealmCompletedChallenge* oldChallenge 
                 uint32 flag = 1 << (title->bit_index % 32);
                 uint32 lowGuid = GUID_LOPART(oldChallenge->Members[i].Guid);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_AT_LOGIN_TITLES);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_AT_LOGIN_TITLES);
                 stmt->setUInt32(0, lowGuid);
 
                 if (PreparedQueryResult result = CharacterDatabase.Query(stmt))

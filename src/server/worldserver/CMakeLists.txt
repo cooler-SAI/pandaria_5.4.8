@@ -68,15 +68,14 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management
     ${CMAKE_SOURCE_DIR}/src/server/collision/Models
     ${CMAKE_SOURCE_DIR}/src/server/shared
-    #${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography
     ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Database
+    ${CMAKE_SOURCE_DIR}/src/server/database/Database
+    ${CMAKE_SOURCE_DIR}/src/server/database/Logging    
     ${CMAKE_SOURCE_DIR}/src/server/shared/DataStores
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic/LinkedReference
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic
-    #${CMAKE_SOURCE_DIR}/src/server/shared/Logging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
@@ -194,6 +193,7 @@ target_link_libraries(worldserver
   PRIVATE
     sfmt
     common
+    database
     scripts
     game
     shared

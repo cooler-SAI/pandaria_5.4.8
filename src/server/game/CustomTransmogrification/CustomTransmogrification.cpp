@@ -311,7 +311,7 @@ void Transmogrification::UpdateItem(Player* player, Item* item, uint32 newItemId
     }
 }
 
-void Transmogrification::DeleteFakeEntry(Player* player, uint8 /*slot*/, Item* itemTransmogrified, SQLTransaction* trans)
+void Transmogrification::DeleteFakeEntry(Player* player, uint8 /*slot*/, Item* itemTransmogrified, CharacterDatabaseTransaction trans)
 {
     //if (!GetFakeEntry(item))
     //    return false;
@@ -686,7 +686,7 @@ void Transmogrification::LoadConfig(bool reload)
     }
 }
 
-void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans)
+void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, CharacterDatabaseTransaction trans)
 {
     if (dataMap.find(itemGUID) != dataMap.end())
     {
@@ -695,7 +695,7 @@ void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans
         dataMap.erase(itemGUID);
     }
     if (trans)
-        (*trans)->PAppend("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
+        trans->PAppend("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
     else
         CharacterDatabase.PExecute("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
 }

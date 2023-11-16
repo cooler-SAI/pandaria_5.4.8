@@ -49,7 +49,7 @@ std::vector<ChatCommand> const& ChatHandler::getCommandTable()
         std::vector<ChatCommand> cmds = sScriptMgr->GetChatCommands();
         commandTableCache.swap(cmds);
 
-        PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_COMMANDS);
+        WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_COMMANDS);
         PreparedQueryResult result = WorldDatabase.Query(stmt);
         if (result)
         {
@@ -1364,17 +1364,17 @@ std::string ChatHandler::GetNameLink(Player* chr) const
     return playerLink(chr->GetName());
 }
 
-CommandHolder ChatHandler::CreateCommandHolder(TaskBase* task)
-{
-    GetSession()->NewAction(task);
-    return CommandHolder{ new ChatCommandHolder{ new ChatHandler{*this} } };
-}
+// CommandHolder ChatHandler::CreateCommandHolder(TaskBase* task)
+// {
+//     GetSession()->NewAction(task);
+//     return CommandHolder{ new ChatCommandHolder{ new ChatHandler{*this} } };
+// }
 
-CommandHolder CliHandler::CreateCommandHolder(TaskBase* task)
-{
-    m_holder->Delay(new CliHandler{ *this });
-    return m_hptr;
-}
+// CommandHolder CliHandler::CreateCommandHolder(TaskBase* task)
+// {
+//     m_holder->Delay(new CliHandler{ *this });
+//     return m_hptr;
+// }
 
 void CliCommandHolder::FinishCommand(bool success)
 {

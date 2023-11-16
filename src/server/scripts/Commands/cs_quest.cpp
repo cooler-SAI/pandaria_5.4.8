@@ -149,7 +149,7 @@ public:
         player->RemoveActiveQuest(entry, false);
         player->RemoveRewardedQuest(entry);
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
         stmt->setUInt32(0, player->GetGUIDLow());
         stmt->setUInt32(1, entry);
         CharacterDatabase.Execute(stmt);

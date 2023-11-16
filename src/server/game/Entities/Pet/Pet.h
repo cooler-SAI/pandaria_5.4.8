@@ -61,7 +61,7 @@ class Pet : public Guardian
         bool CreateBaseAtTamed(CreatureTemplate const* cinfo, Map* map, uint32 phaseMask);
         bool LoadPetFromDB(PetLoadMode mode, uint32 param, Position const* pos = nullptr);
         bool isBeingLoaded() const override { return m_loading;}
-        void SavePetToDB(SQLTransaction trans = nullptr);
+        void SavePetToDB(CharacterDatabaseTransaction trans = nullptr);
         void DeletePetFromDB() { Pet::DeleteFromDB(GetCharmInfo()->GetPetNumber()); }
         void Remove(PetRemoveMode mode, int32 flags = PET_REMOVE_FLAG_NONE);
         static void DeleteFromDB(uint32 guidlow);
@@ -107,9 +107,9 @@ class Pet : public Guardian
         bool IsPetAura(Aura const* aura);
 
         void _LoadAuras(uint32 timediff);
-        void _SaveAuras(SQLTransaction& trans);
+        void _SaveAuras(CharacterDatabaseTransaction trans);
         void _LoadSpells();
-        void _SaveSpells(SQLTransaction& trans);
+        void _SaveSpells(CharacterDatabaseTransaction trans);
 
         bool AddSpell(uint32 spellId, ActiveStates active = ACT_DECIDE);
         bool LearnSpell(uint32 spell_id);

@@ -173,7 +173,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& str : spellTok)
             {
                 uint32 spellId = handler->extractSpellIdFromLink((char*)str);
@@ -185,7 +185,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (!CharacterDatabase.Query(stmt))
@@ -264,7 +264,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (CharacterDatabase.Query(stmt))
@@ -326,7 +326,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& str : spellTok)
             {
                 uint32 spellId = handler->extractSpellIdFromLink((char*)str);
@@ -338,7 +338,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (CharacterDatabase.Query(stmt))
@@ -419,7 +419,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& itr : skillTok)
             {
                 Tokenizer skillData{ itr, ':' };
@@ -440,7 +440,7 @@ public:
 
                 if (auto skill = sSkillLineStore.LookupEntry(skillId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (!CharacterDatabase.Query(stmt))
@@ -505,7 +505,7 @@ public:
             {
                 if (auto skill = sSkillLineStore.LookupEntry(atoi(skillId)))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (CharacterDatabase.Query(stmt))
@@ -560,12 +560,12 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& skillId : skillTok)
             {
                 if (auto skill = sSkillLineStore.LookupEntry(atoi(skillId)))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (CharacterDatabase.Query(stmt))
@@ -1193,14 +1193,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_ACHIEVEMENT);
                         stmt->setUInt32(0, GUID_LOPART(guid));
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1311,14 +1311,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
                         stmt->setUInt32(0, ach->ID);
                         stmt->setUInt32(1, GUID_LOPART(guid));
                         trans->Append(stmt);
@@ -1376,7 +1376,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             QueryResult accountCheck = CharacterDatabase.PQuery("SELECT account FROM characters WHERE name = %s", name.c_str());
             uint32 account = (*accountCheck)[0].GetUInt32();
             for (auto&& achievId : achievTok)
@@ -1385,7 +1385,7 @@ public:
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM account_achievement WHERE account = %u AND achievement = %u", account, ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
                         stmt->setUInt32(0, account);
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1499,14 +1499,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
                         stmt->setUInt32(0, ach->ID);
                         stmt->setUInt32(1, GUID_LOPART(guid));
                         trans->Append(stmt);
@@ -1572,14 +1572,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM guild_achievement WHERE guildId = %u AND achievement = %u", guild->GetId(), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GUILD_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GUILD_ACHIEVEMENT);
                         stmt->setUInt32(0, guild->GetId());
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1939,7 +1939,7 @@ public:
         player->RemoveActiveQuest(quest->GetQuestId(), false);
         player->RemoveRewardedQuest(quest->GetQuestId());
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
         stmt->setUInt32(0, player->GetGUIDLow());
         stmt->setUInt32(1, quest->GetQuestId());
         CharacterDatabase.Execute(stmt);

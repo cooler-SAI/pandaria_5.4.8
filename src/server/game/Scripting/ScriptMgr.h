@@ -929,7 +929,7 @@ protected:
 public:
 
     // items
-    virtual void OnItemDelFromDB(SQLTransaction& /*trans*/, uint32 /*itemGuid*/) { }
+    virtual void OnItemDelFromDB(CharacterDatabaseTransaction /*trans*/, uint32 /*itemGuid*/) { }
     virtual void OnMirrorImageDisplayItem(const Item* /*item*/, uint32& /*display*/) { }
 };
 
@@ -1200,7 +1200,7 @@ class ScriptMgr
         void FillGameEventWorldStates(GameEventData const& event, Player* player, WorldStateBuilder& builder);
 
     public: /* GlobalScript */
-        void OnGlobalItemDelFromDB(SQLTransaction& trans, uint32 itemGuid);
+        void OnGlobalItemDelFromDB(CharacterDatabaseTransaction trans, uint32 itemGuid);
         void OnGlobalMirrorImageDisplayItem(const Item *item, uint32 &display);
 
     public: /* UnitScript */

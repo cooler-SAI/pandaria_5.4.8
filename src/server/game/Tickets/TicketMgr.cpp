@@ -141,7 +141,7 @@ void TicketMgr::AddTicket(GmTicket* ticket)
     if (!ticket->IsClosed())
         ++_openGmTicketCount;
 
-    SQLTransaction trans = SQLTransaction(NULL);
+    CharacterDatabaseTransaction trans = CharacterDatabaseTransaction(nullptr);
     ticket->SaveToDB(trans);
 }
 
@@ -151,7 +151,7 @@ void TicketMgr::AddTicket(BugTicket* ticket)
     if (!ticket->IsClosed())
         ++_openBugTicketCount;
 
-    SQLTransaction trans = SQLTransaction(NULL);
+    CharacterDatabaseTransaction trans = CharacterDatabaseTransaction(nullptr);
     ticket->SaveToDB(trans);
 }
 
@@ -207,7 +207,7 @@ template<> void TicketMgr::CloseTicket<GmTicket>(uint32 ticketId, int64 closedBy
 {
     if (GmTicket* ticket = GetTicket<GmTicket>(ticketId))
     {
-        SQLTransaction trans = SQLTransaction(NULL);
+        CharacterDatabaseTransaction trans = CharacterDatabaseTransaction(nullptr);
         ticket->SetClosedBy(closedBy);
         if (closedBy)
             --_openGmTicketCount;
@@ -220,7 +220,7 @@ template<> void TicketMgr::CloseTicket<BugTicket>(uint32 ticketId, int64 closedB
 {
     if (BugTicket* ticket = GetTicket<BugTicket>(ticketId))
     {
-        SQLTransaction trans = SQLTransaction(NULL);
+        CharacterDatabaseTransaction trans = CharacterDatabaseTransaction(nullptr);
         ticket->SetClosedBy(closedBy);
         if (closedBy)
             --_openBugTicketCount;
@@ -238,7 +238,7 @@ template<> void TicketMgr::ResetTickets<GmTicket>()
 
     _lastGmTicketId = 0;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GM_TICKETS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GM_TICKETS);
     CharacterDatabase.Execute(stmt);
 }
 
@@ -251,7 +251,7 @@ template<> void TicketMgr::ResetTickets<BugTicket>()
 
     _lastBugId = 0;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GM_BUGS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GM_BUGS);
     CharacterDatabase.Execute(stmt);
 }
 

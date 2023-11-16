@@ -23,7 +23,7 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "ByteBuffer.h"
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
 #include "World.h"
 #include "Player.h"
 #include "Util.h"
@@ -68,10 +68,10 @@ void WardenWin::Init(WorldSession* session, BigNumber* k)
     _module.clientKeySeedHash = std::make_pair(winWardenModule.ClientKeySeedHash, sizeof(winWardenModule.ClientKeySeedHash));
 
     TC_LOG_DEBUG("warden", "%u - Server side warden initializing...", session->GetAccountId());
-    TC_LOG_DEBUG("warden", "%u - C->S Key: %s", session->GetAccountId(), ByteArrayToHexStr(inputKey, inputKeySize).c_str());
-    TC_LOG_DEBUG("warden", "%u - S->C Key: %s", session->GetAccountId(), ByteArrayToHexStr(outputKey, outputKeySize).c_str());
-    TC_LOG_DEBUG("warden", "%u - Module Key: %s", session->GetAccountId(), ByteArrayToHexStr(_module.key.first, _module.key.second).c_str());
-    TC_LOG_DEBUG("warden", "%u - Module Hash: %s", session->GetAccountId(), ByteArrayToHexStr(_module.hash.first, _module.hash.second).c_str());
+    TC_LOG_DEBUG("warden", "%u - C->S Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(inputKey, inputKeySize).c_str());
+    TC_LOG_DEBUG("warden", "%u - S->C Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(outputKey, outputKeySize).c_str());
+    TC_LOG_DEBUG("warden", "%u - Module Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(_module.key.first, _module.key.second).c_str());
+    TC_LOG_DEBUG("warden", "%u - Module Hash: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(_module.hash.first, _module.hash.second).c_str());
 
     RequestModule();
     DoCustomMemCheck(12967816, 4);
@@ -459,7 +459,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                 {
                     TC_LOG_DEBUG("warden", "RESULT MEM_CHECK fail CheckId %u account Id %u", rd->CheckId, _session->GetAccountId());
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), rd->Length)));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), rd->Length)));
                     buff.rpos(buff.rpos() + rd->Length);
                     continue;
                 }
@@ -480,7 +480,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                     if (type == DRIVER_CHECK)
                         TC_LOG_DEBUG("warden", "RESULT DRIVER_CHECK fail, CheckId %u account Id %u", rd->CheckId, _session->GetAccountId());
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
                     buff.rpos(buff.rpos() + 1);
                     continue;
                 }
@@ -499,7 +499,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                 {
                     TC_LOG_INFO("warden", "%u - RESULT MODULE_CHECK fail, CheckId %u", _session->GetAccountId(), rd->CheckId);
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
                     continue;
                 }
 

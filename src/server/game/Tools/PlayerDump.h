@@ -99,7 +99,7 @@ class PlayerDumpReader : public PlayerDump
     public:
         PlayerDumpReader() { }
 
-        DumpReturn LoadDump(std::string const& file, uint32 account, std::string name, uint32 guid, SQLTransaction& trans);
+        DumpReturn LoadDump(std::string const& file, uint32 account, std::string name, uint32 guid, CharacterDatabaseTransaction trans);
 };
 
 #endif

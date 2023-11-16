@@ -759,7 +759,7 @@ class Game
                         {
                             if (Item* item = Item::CreateItem(reward, count))
                             {
-                                SQLTransaction trans = CharacterDatabase.BeginTransaction();
+                                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
                                 item->SaveToDB(trans);
 
                                 LostItemsMailDraft mail { };

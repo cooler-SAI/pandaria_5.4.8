@@ -932,7 +932,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     //         0           1        2       3          4         5       6          7   8   9         10                    11
     // SELECT id, sessionkey, last_ip, locked, expansion, mutetime, locale, recruiter, os, flags, online_mute_timer, active_mute_id FROM account WHERE username = ?
     size_t hashPos = account.find_last_of('#');
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO_BY_NAME);
     stmt->setString(0, account);
 
     PreparedQueryResult result = LoginDatabase.Query(stmt);
@@ -1169,11 +1169,13 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
         {
             m_Session->SetLatency (latency);
             uint32 id = m_Session->GetAccountId();
-            TaskMgr::Default()->ScheduleInvocation([=]
-            {
-                if (WorldSession* session = sWorld->FindSession(id))
-                    session->HandlePingUpdate(latency);
-            });
+            // TaskMgr::Default()->ScheduleInvocation([=]
+            // {
+            //     if (WorldSession* session = sWorld->FindSession(id))
+            //         session->HandlePingUpdate(latency);
+            // });
+            if (WorldSession* session = sWorld->FindSession(id))
+                session->HandlePingUpdate(latency);            
         }
         else
         {

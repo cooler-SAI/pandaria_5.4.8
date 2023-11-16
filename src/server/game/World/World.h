@@ -29,6 +29,8 @@
 #include "SharedDefines.h"
 #include "ByteBuffer.h"
 #include "LockedQueue.h"
+#include "AsyncCallbackProcessor.h"
+#include "DatabaseEnvFwd.h"
 
 #include <thread>
 #include <map>
@@ -48,11 +50,7 @@ union DevToolSettings;
 struct CliCommandHolder;
 
 class PreparedResultSet;
-//class SQLTransaction;
-class Transaction;
-typedef std::shared_ptr<Transaction> SQLTransaction;
 class Field;
-//class PreparedQueryResult;
 typedef std::shared_ptr<PreparedResultSet> PreparedQueryResult;
 
 // ServerMessages.dbc
@@ -1290,7 +1288,8 @@ class World
         std::map<uint32, AccountCacheData> _accountCacheData;
 
         void ProcessQueryCallbacks();
-        ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;
+        //ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;
+        QueryCallbackProcessor _queryProcessor;
 
         uint32 m_minDiff = 0;
         uint32 m_maxDiff = 0;

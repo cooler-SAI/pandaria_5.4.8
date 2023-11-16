@@ -23,14 +23,17 @@
 #include <openssl/crypto.h>
 
 #include "Common.h"
-#include "Database/DatabaseEnv.h"
+#include "Config.h"
+#include "DatabaseEnv.h"
+#include "DatabaseLoader.h"
 #include "DatabaseWorkerPool.h"
 #include "Implementation/LoginDatabase.h"
 #include "Implementation/CharacterDatabase.h"
 #include "Implementation/WorldDatabase.h"
 #include "Implementation/ArchiveDatabase.h"
 
-#include "Configuration/Config.h"
+#include "MySQLThreading.h"
+
 
 #include "Log.h"
 #include "Master.h"
@@ -56,10 +59,10 @@ char serviceDescription[] = "SkyFire World of Warcraft emulator world service";
 int m_ServiceStatus = -1;
 #endif
 
-WorldDatabaseWorkerPool WorldDatabase;                      ///< Accessor to the world database
-CharacterDatabaseWorkerPool CharacterDatabase;              ///< Accessor to the character database
-LoginDatabaseWorkerPool LoginDatabase;                      ///< Accessor to the realm/login database
-ArchiveDatabaseWorkerPool ArchiveDatabase;
+// WorldDatabaseWorkerPool WorldDatabase;                      ///< Accessor to the world database
+// CharacterDatabaseWorkerPool CharacterDatabase;              ///< Accessor to the character database
+// LoginDatabaseWorkerPool LoginDatabase;                      ///< Accessor to the realm/login database
+// ArchiveDatabaseWorkerPool ArchiveDatabase;
 
 RealmNameMap realmNameStore;
 uint32 realmID;                                             ///< Id of the realm

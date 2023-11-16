@@ -1285,7 +1285,7 @@ void Battleground::EndBattleground(uint32 winner)
 
             uint8 arenaType = IsRatedBG() ? 10 : ArenaTeam::GetTypeBySlot(at->GetSlot());
 
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ARENA_GAMES);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ARENA_GAMES);
             int32 index = 1;        // gameid is not known at this time.
             stmt->setInt64(  index, (at->GetSlot() + 1) * 100000000000LL + GUID_LOPART(it.first));
             stmt->setInt32(++index, GUID_LOPART(it.first));

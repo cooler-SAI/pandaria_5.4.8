@@ -42,10 +42,9 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_SOURCE_DIR}/dep/g3dlite/include
     ${CMAKE_SOURCE_DIR}/dep/recastnavigation/Detour/Include
+    ${CMAKE_SOURCE_DIR}/src/server/database/Database    
     ${CMAKE_SOURCE_DIR}/src/server/shared
-    #${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Database
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic/LinkedReference

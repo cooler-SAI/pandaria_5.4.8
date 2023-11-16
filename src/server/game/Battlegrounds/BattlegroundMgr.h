@@ -62,7 +62,7 @@ struct BattlegroundData
 struct ArenaGameStatistic
 {
     uint32 ArenaType;
-    std::vector<PreparedStatement*> Data;
+    std::vector<LoginDatabasePreparedStatement*> Data;
 };
 
 class BattlegroundMgr
@@ -142,7 +142,7 @@ class BattlegroundMgr
         void ApplyDeserter(uint64 guid, uint32 duration);
 
         void EnqueueNewGameStat(ArenaGameStatistic const& stat);
-        void PrepareNewGameStat(SQLTransaction& trans, ArenaGameStatistic const& stat, uint32 id);
+        void PrepareNewGameStat(LoginDatabaseTransaction trans, ArenaGameStatistic const& stat, uint32 id);
 
         SoloQueue& GetSoloQueue() const { return static_cast<SoloQueue&>(*m_battlegroundQueues[BATTLEGROUND_QUEUE_SOLO]); }
 
