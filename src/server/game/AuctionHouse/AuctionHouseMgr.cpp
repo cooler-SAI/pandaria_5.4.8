@@ -84,7 +84,8 @@ AuctionHouseMgr::AuctionHouseMgr()
     {
         while (true)
         {
-            ACE_Method_Request* request = searchQueries.dequeue();
+            AuctionQueryContext* request = nullptr;
+            searchQueries.WaitAndPop(request);
             if (!request)
                 break;
 
@@ -108,7 +109,7 @@ AuctionHouseMgr* AuctionHouseMgr::instance()
 
 void AuctionHouseMgr::Unload()
 {
-    searchQueries.queue()->close();
+    searchQueries.Cancel();
     if (searchThread.joinable())
         searchThread.join();
 }
@@ -551,7 +552,7 @@ void AuctionHouseMgr::QueryAuctionItems(uint32 auctioneerFaction, Player* player
         {
             player->m_activeAuctionQueries.insert(context);
         }
-        searchQueries.enqueue(context);
+        searchQueries.Push(context);
     }
 }
 

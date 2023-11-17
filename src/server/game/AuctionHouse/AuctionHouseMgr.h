@@ -21,9 +21,7 @@
 #include "Common.h"
 #include "DBCStructure.h"
 #include "DatabaseEnv.h"
-
-#include <ace/Method_Request.h>
-#include <ace/Activation_Queue.h>
+#include "ProducerConsumerQueue.h"
 
 class Item;
 class Player;
@@ -103,7 +101,7 @@ struct AuctionEntry
     std::string BuildAuctionMailBody(MailAuctionAnswers response) const;
 };
 
-struct AuctionQueryContext : public ACE_Method_Request
+struct AuctionQueryContext
 {
     ~AuctionQueryContext();
 
@@ -233,7 +231,7 @@ class AuctionHouseMgr
 
         ItemMap mAitems;
         std::thread searchThread;
-        ACE_Activation_Queue searchQueries;
+        ProducerConsumerQueue<AuctionQueryContext*> searchQueries;
 };
 
 #define sAuctionMgr AuctionHouseMgr::instance()
