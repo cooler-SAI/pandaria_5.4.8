@@ -22,7 +22,6 @@
 #include "Chat.h"
 #include "AchievementMgr.h"
 #include "Config.h"
-#include "CustomLogs.h"
 #include "Guild.h"
 
 ServiceMgr::ServiceHandler ServiceMgr::_serviceMethods[ISERVICE_END] = 

@@ -33,7 +33,6 @@
 #include "ScriptMgr.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
-#include "CustomLogs.h"
 #ifdef ELUNA
 #include "HookMgr.h"
 #endif
@@ -163,7 +162,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_LOOT_MONEY");
 
-    CurrencyOperation operation = CurrencyOperation::Null;
     uint32 param = 0;
 
     Player* player = GetPlayer();
@@ -207,7 +205,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                     loot = &item->loot;
                     shareMoney = false;
 
-                    operation = CurrencyOperation::LootItem;
                     param = item->GetEntry();
                 }
                 break;
@@ -223,7 +220,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                     loot = &creature->loot;
                     if (creature->IsAlive())
                         shareMoney = false;
-                    operation = CurrencyOperation::LootMob;
                     param = creature->GetEntry();
                 }
                 break;
@@ -258,8 +254,8 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 
             for (auto&& groupMember : playersNear)
             {
-                if (groupMember->ModifyMoney(goldPerPlayer))
-                    logs::CurrencyTransaction(groupMember, operation, param, int64(goldPerPlayer));
+                groupMember->ModifyMoney(goldPerPlayer);
+
                 groupMember->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, goldPerPlayer);
 
                 if (Guild* guild = sGuildMgr->GetGuildById(groupMember->GetGuildId()))
@@ -272,16 +268,12 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                 data << uint32(goldPerPlayer);
                 groupMember->GetSession()->SendPacket(&data);
 
-                if (group->IsLogging())
-                    playerNames << (playerNamesStarted ? ", " : (playerNamesStarted = true, "")) << Group::Format(groupMember);
             }
-            if (group->IsLogging())
-                group->LogEvent("Money looted: %s split to %s for %s", Group::FormatMoney(loot->gold).c_str(), Group::FormatMoney(goldPerPlayer).c_str(), playerNames.str().c_str());
         }
         else
         {
-            if (player->ModifyMoney(loot->gold))
-                logs::CurrencyTransaction(player, operation, param, int64(loot->gold));
+            player->ModifyMoney(loot->gold);
+
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, loot->gold);
 
             if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
@@ -294,9 +286,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
             data << uint32(loot->gold);
             SendPacket(&data);
 
-            if (Group* group = player->GetGroup())
-                if (group->IsLogging())
-                    group->LogEvent("Money looted: %s by %s", Group::FormatMoney(loot->gold).c_str(), Group::Format(player).c_str());
         }
 
 #ifdef ELUNA
@@ -707,10 +696,6 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
 
         if (target->HasPendingBind())
             target->BindToInstance();
-
-        if (Group* group = target->GetGroup())
-            if (group->IsLogging() && newitem)
-                group->LogEvent("Master looter gave item: %s to %s", Group::Format(newitem).c_str(), Group::Format(target).c_str());
 
         sScriptMgr->OnItemPickup(target, newitem, loot->GetItemPickupSourceType(), loot->sourceEntry);
 #ifdef ELUNA

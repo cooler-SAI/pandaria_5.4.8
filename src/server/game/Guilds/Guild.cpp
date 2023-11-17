@@ -31,7 +31,6 @@
 #include "SocialMgr.h"
 #include "Opcodes.h"
 #include "ReputationMgr.h"
-#include "CustomLogs.h"
 
 #define MAX_GUILD_BANK_TAB_TEXT_LEN 500
 #define EMBLEM_PRICE 10 * GOLD
@@ -1126,8 +1125,7 @@ void Guild::PlayerMoveItemData::LogBankEvent(CharacterDatabaseTransaction trans,
 
 void Guild::PlayerMoveItemData::LogAction(MoveItemData* from, bool split) const
 {
-    if (m_pPlayer->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-        logs::ItemLog(m_pPlayer, from->GetItem(split), from->GetItem(split)->GetCount(), "Take from guild bank (guild: %u)", m_pGuild->GetId());
+
 }
 
 inline InventoryResult Guild::PlayerMoveItemData::CanStore(Item* pItem, bool swap)
@@ -1230,8 +1228,6 @@ void Guild::BankMoveItemData::LogAction(MoveItemData* pFrom, bool split) const
             m_pPlayer->GetName().c_str(), m_pPlayer->GetGUIDLow(), m_pPlayer->GetSession()->GetAccountId(),
             pFrom->GetItem()->GetTemplate()->Name1.c_str(), pFrom->GetItem()->GetEntry(), pFrom->GetItem()->GetCount(),
             m_pGuild->GetName().c_str(), m_pGuild->GetId());
-        if (m_pPlayer->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(m_pPlayer, pFrom->GetItem(split), pFrom->GetItem(split)->GetCount(), "Put to guild bank (guild: %u)", m_pGuild->GetId());
     }
 }
 
@@ -2444,7 +2440,6 @@ void Guild::HandleMemberDepositMoney(WorldSession* session, uint64 amount, bool 
     {
         player->ModifyMoney(-int64(amount));
         player->SaveGoldToDB(trans);
-        logs::CurrencyTransaction(player, CurrencyOperation::GuildBank, GetId(), -int64(amount));
     }
 
     LogBankEvent(trans, cashFlow ? GUILD_BANK_LOG_CASH_FLOW_DEPOSIT : GUILD_BANK_LOG_DEPOSIT_MONEY, uint8(0), player->GetGUIDLow(), amount);
@@ -2487,7 +2482,6 @@ bool Guild::HandleMemberWithdrawMoney(WorldSession* session, uint64 amount, bool
         if (!player->ModifyMoney(amount))
             return false;
 
-        logs::CurrencyTransaction(player, CurrencyOperation::GuildBank, GetId(), int64(amount));
         player->SaveGoldToDB(trans);
     }
 

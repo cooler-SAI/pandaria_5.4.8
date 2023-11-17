@@ -22,7 +22,6 @@
 #include "DBCEnums.h"
 #include "Battleground.h"
 #include "EventProcessor.h"
-#include "CustomLogs.h"
 #include <deque>
 
 //this container can't be deque, because deque doesn't like removing the last element - if you remove it, it invalidates next iterator and crash appears
@@ -257,7 +256,6 @@ public:
     static BattlegroundBracketId GetSoloQueueBracketId();
 
 private:
-    LogFile m_log;
     std::ostringstream m_buff;
     uint32 m_dynamicUpdateCount = 0;
     std::vector<SoloGroup>  m_all;

@@ -24,7 +24,6 @@
 #include "LootMgr.h"
 #include "QueryResult.h"
 #include "SharedDefines.h"
-#include "CustomLogs.h"
 #include "World.h"
 
 class Battlefield;
@@ -441,12 +440,8 @@ class Group
 
         uint32 GetCounter() const { return m_counter; }
 
-        template<class... Args>
-        void LogEvent(char const* format, Args... args);
-        void LogChat(ChatMsg channel, uint64 sender, std::string const& message);
-        bool StartLog();
         void ResumeLoggingIfNeeded();
-        bool IsLogging() const { return m_logger != NULL && sWorld->getBoolConfig(CONFIG_GROUP_LOG_ENABLED); }
+
         char const* GetPlayerName(uint64 guid) const;
         std::string FormatPlayer(uint64 guid);
         std::string FormatLeader();
@@ -500,16 +495,8 @@ class Group
         uint32              m_dbStoreId;                    // Represents the ID used in database (Can be reused by other groups if group was disbanded)
         uint64              m_readyCheckGuid = 0;
         bool                m_logResumeOnLogin = false;
-        std::unique_ptr<LogFile> m_logger;
         GroupSlot           m_slot;
         bool                m_flex = false;
 };
-
-template<class... Args>
-void Group::LogEvent(char const* format, Args... args)
-{
-    if (m_logger)
-        m_logger->Write(format, args...);
-}
 
 #endif

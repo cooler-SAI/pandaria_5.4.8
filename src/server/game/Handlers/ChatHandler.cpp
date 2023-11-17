@@ -320,11 +320,6 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
     }
 
-    if (type != CHAT_MSG_WHISPER && lang != LANG_ADDON && sender->IsInWorld() && (!(type == CHAT_MSG_SAY || type == CHAT_MSG_YELL || type == CHAT_MSG_EMOTE || type == CHAT_MSG_TEXT_EMOTE) || sender->GetMap()->Instanceable()))
-        if (Group* group = sender->GetGroup() ? sender->GetGroup() : sender->GetMap()->GetInstanceGroup())
-            if (group->IsLogging())
-                group->LogChat(ChatMsg(type), sender->GetGUID(), msg);
-
     /// filtering of bad words
     if(sWorld->getBoolConfig(CONFIG_WORD_FILTER_ENABLE))
     {

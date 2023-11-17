@@ -29,7 +29,6 @@
 #include "SpellInfo.h"
 #include "DB2Stores.h"
 #include "GuildMgr.h"
-#include "CustomLogs.h"
 #include "ServiceMgr.h"
 #include <vector>
 
@@ -538,8 +537,6 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
                     _player->AddItemToBuyBackSlot(pNewItem);
                     if (_player->IsInWorld())
                         pNewItem->SendUpdateToPlayer(_player);
-                    if (HasFlag(ACC_FLAG_ITEM_LOG))
-                        logs::ItemLog(_player, pNewItem, pNewItem->GetCount(), "Sell to vendor for %u money", money);
                 }
                 else
                 {
@@ -547,12 +544,8 @@ void WorldSession::HandleSellItemOpcode(WorldPacket& recvData)
                     _player->RemoveItem(pItem->GetBagSlot(), pItem->GetSlot(), true);
                     pItem->RemoveFromUpdateQueueOf(_player);
                     _player->AddItemToBuyBackSlot(pItem);
-                    if (HasFlag(ACC_FLAG_ITEM_LOG))
-                        logs::ItemLog(_player, pItem, pItem->GetCount(), "Sell to vendor for %u money", money);
                 }
-
-                if (_player->ModifyMoney(money))
-                    logs::CurrencyTransaction(_player, CurrencyOperation::SellItem, pProto->ItemId, money);
+                _player->ModifyMoney(money);
                 _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_MONEY_FROM_VENDORS, money);
             }
             else
@@ -621,8 +614,7 @@ void WorldSession::HandleBuybackItem(WorldPacket& recvData)
             _player->RemoveItemFromBuyBackSlot(slot, false);
             _player->ItemAddedQuestCheck(pItem->GetEntry(), pItem->GetCount());
             _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_RECEIVE_EPIC_ITEM, pItem->GetEntry(), pItem->GetCount());
-            if (HasFlag(ACC_FLAG_ITEM_LOG))
-                logs::ItemLog(_player, pItem, pItem->GetCount(), "Buy from buyback slot for %u money", price);
+
             _player->StoreItem(dest, pItem, true);
         }
         else
@@ -1102,9 +1094,6 @@ void WorldSession::HandleAutoBankItemOpcode(WorldPacket& recvPacket)
         return;
     }
 
-    if (HasFlag(ACC_FLAG_ITEM_LOG))
-        logs::ItemLog(_player, pItem, pItem->GetCount(), "Put to bank");
-
     _player->RemoveItem(srcBag, srcSlot, true);
     _player->ItemRemovedQuestCheck(pItem->GetEntry(), pItem->GetCount());
     _player->BankItem(dest, pItem, true);
@@ -1132,8 +1121,6 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
             return;
         }
 
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, pItem, pItem->GetCount(), "Take from bank");     // before StoreItem
         _player->RemoveItem(srcBag, srcSlot, true);
         if (Item const* storedItem = _player->StoreItem(dest, pItem, true))
             _player->ItemAddedQuestCheck(storedItem->GetEntry(), storedItem->GetCount());
@@ -1148,8 +1135,6 @@ void WorldSession::HandleAutoStoreBankItemOpcode(WorldPacket& recvPacket)
             return;
         }
 
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, pItem, pItem->GetCount(), "Put to bank");     // before StoreItem
         _player->RemoveItem(srcBag, srcSlot, true);
         _player->BankItem(dest, pItem, true);
     }

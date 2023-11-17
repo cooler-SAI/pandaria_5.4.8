@@ -16061,9 +16061,6 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
                                 creditedPlayer->AddLootLockout(LootLockoutType::PersonalLoot, creature->GetEntry(), instanceMap->GetDifficulty());
                         }
 
-                        if (Group* group = creditedPlayer->GetGroup())
-                            if (group->IsLogging())
-                                group->LogEvent("Boss killed: %s(%u) (Instance %u)", creature->GetName().c_str(), creature->GetEntry(), instanceMap->GetInstanceId());
                     }
                 }
                 else

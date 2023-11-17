@@ -89,7 +89,6 @@
 #include "AnticheatMgr.h"
 #include "SpellHistory.h"
 #include "RatedPvp.h"
-#include "CustomLogs.h"
 #include "PoolMgr.h"
 #include "Vignette.h"
 #include "LootLockoutMap.h"
@@ -7597,9 +7596,6 @@ void Player::ModifyCurrency(uint32 id, int32 count, bool printLog/* = true*/, bo
     if (id == CURRENCY_TYPE_VALOR_POINTS)
         UpdateValorOfTheAncients();
 
-    if (Group* group = GetGroup())
-        if (countBeforCap> 0 && group->IsLogging())
-            group->LogEvent("Currency recieved: %s, currency: %s, count: %i, count received: %i", Group::Format(this).c_str(), currency->Name[DEFAULT_LOCALE], countBeforCap, count);
 }
 
 void Player::SetCurrency(uint32 id, uint32 count, bool /*printLog*/ /*= true*/)
@@ -13721,10 +13717,6 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
         return;
     }
 
-    bool needLog = GetSession()->HasFlag(ACC_FLAG_ITEM_LOG);
-    bool logFromBank = needLog && IsBankPos(src);
-    bool logToBank = needLog && !IsBankPos(src);
-
     if (IsInventoryPos(dst))
     {
         // change item amount before check (for unique max count check)
@@ -13740,8 +13732,6 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
             return;
         }
 
-        if (logFromBank)
-            logs::ItemLog(this, pNewItem, pNewItem->GetCount(), "Take from bank");
         if (IsInWorld())
             pSrcItem->SendUpdateToPlayer(this);
         pSrcItem->SetState(ITEM_CHANGED, this);
@@ -13762,8 +13752,6 @@ void Player::SplitItem(uint16 src, uint16 dst, uint32 count)
             return;
         }
 
-        if (logToBank)
-            logs::ItemLog(this, pNewItem, pNewItem->GetCount(), "Put to bank");
         if (IsInWorld())
             pSrcItem->SendUpdateToPlayer(this);
         pSrcItem->SetState(ITEM_CHANGED, this);
@@ -13873,10 +13861,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
         }
     }
 
-    bool needLog = GetSession()->HasFlag(ACC_FLAG_ITEM_LOG);
-    bool logFromBank = needLog && IsBankPos(src);
-    bool logToBank = needLog && !IsBankPos(src);
-
     // NOW this is or item move (swap with empty), or swap with another item (including bags in bag possitions)
     // or swap empty bag with another empty or not empty bag (with items exchange)
 
@@ -13893,8 +13877,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 return;
             }
 
-            if (logFromBank)
-                logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Take from bank");
             RemoveItem(srcbag, srcslot, true);
             StoreItem(dest, pSrcItem, true);
             if (IsBankPos(src))
@@ -13910,8 +13892,6 @@ void Player::SwapItem(uint16 src, uint16 dst)
                 return;
             }
 
-            if (logToBank)
-                logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Put to bank");
             RemoveItem(srcbag, srcslot, true);
             BankItem(dest, pSrcItem, true);
             ItemRemovedQuestCheck(pSrcItem->GetEntry(), pSrcItem->GetCount());
@@ -13958,14 +13938,10 @@ void Player::SwapItem(uint16 src, uint16 dst)
 
                 if (IsInventoryPos(dst))
                 {
-                    if (logFromBank)
-                        logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Take from bank");
                     StoreItem(sDest, pSrcItem, true);
                 }
                 else if (IsBankPos(dst))
                 {
-                    if (logToBank)
-                        logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Put to bank");
                     BankItem(sDest, pSrcItem, true);
                 }
                 else if (IsEquipmentPos(dst))
@@ -14108,14 +14084,10 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // add to dest
     if (IsInventoryPos(dst))
     {
-        if (logFromBank)
-            logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Take from bank");
         StoreItem(sDest, pSrcItem, true);
     }
     else if (IsBankPos(dst))
     {
-        if (logToBank)
-            logs::ItemLog(this, pSrcItem, pSrcItem->GetCount(), "Put to bank");
         BankItem(sDest, pSrcItem, true);
     }
     else if (IsEquipmentPos(dst))
@@ -14124,14 +14096,10 @@ void Player::SwapItem(uint16 src, uint16 dst)
     // add to src
     if (IsInventoryPos(src))
     {
-        if (logFromBank)
-            logs::ItemLog(this, pDstItem, pSrcItem->GetCount(), "Take from bank");
         StoreItem(sDest2, pDstItem, true);
     }
     else if (IsBankPos(src))
     {
-        if (logToBank)
-            logs::ItemLog(this, pDstItem, pSrcItem->GetCount(), "Put to bank");
         BankItem(sDest2, pDstItem, true);
     }
     else if (IsEquipmentPos(src))
@@ -16643,7 +16611,6 @@ void Player::RewardQuest(Quest const* quest, uint32 reward, Object* questGiver, 
     if (moneyRew)
     {
         ModifyMoney(moneyRew);
-        logs::CurrencyTransaction(this, CurrencyOperation::QuerstReward, quest_id, moneyRew);
     }
 
     if (moneyRew > 0)
@@ -23593,8 +23560,6 @@ inline bool Player::_StoreOrEquipNewItem(uint32 vendorslot, uint32 item, uint8 c
             it->SaveRefundDataToDB();
             AddRefundReference(it->GetGUIDLow());
         }
-        if (GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(this, it, it->GetCount(), "Buy at vendor %u (GUID: %u)", pVendor->GetEntry(), pVendor->GetGUIDLow());
 
         sScriptMgr->OnItemPickup(this, it, ItemPickupSourceType::Vendor, pVendor->GetEntry());
     }
@@ -27482,30 +27447,6 @@ void Player::StoreLootItem(uint8 lootSlot, Loot* loot, Object* src, AELootResult
         if (loot->containerID > 0)
             loot->DeleteLootItemFromContainerItemDB(item->itemid);
 
-        if (Group* group = GetGroup())
-            if (group->IsLogging() && newitem)
-                group->LogEvent("Item looted: %s by %s", Group::Format(newitem).c_str(), Group::Format(this).c_str());
-
-        if (newitem && GetSession()->HasFlag(ACC_FLAG_ITEM_LOG) && src)
-        {
-            std::string str;
-            switch (src->GetTypeId())
-            {
-                case TYPEID_CONTAINER:
-                case TYPEID_ITEM:
-                    str = "item";
-                    break;
-                case TYPEID_GAMEOBJECT:
-                    str = "game object";
-                    break;
-                case TYPEID_UNIT:
-                    str = "creature";
-                    break;
-            }
-
-            logs::ItemLog(this, newitem, item->count, "Loot from %s: %u (GUID: %u)", str.c_str(), src->GetEntry(), src->GetGUIDLow());
-        }
-
         ItemPickupSourceType sourceType = ItemPickupSourceType::Unknown;
         uint32 sourceId = 0;
         if (src)
@@ -28638,9 +28579,6 @@ void Player::ActivateSpec(uint8 spec)
     // Needs for some trinkets which depends on spec
     ReapplyItemsBonuses();
 
-    if (Group* group = GetGroup())
-        if (group->IsLogging())
-            group->LogEvent("Member changed spec: %s is now %s", Group::Format(this).c_str(), Group::GetPlayerTalentString(this).c_str());
 }
 
 void Player::ResetTimeSync()
@@ -29018,9 +28956,6 @@ void Player::RefundItem(Item* item)
         SendItemRefundResult(item, iece, 10);
         return;
     }
-
-    if (GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-        logs::ItemLog(this, item, item->GetCount(), "Refund");
 
     SendItemRefundResult(item, iece, 0);
 
@@ -31215,9 +31150,6 @@ void Player::ResetBothSpec(bool disable, bool allTalents)
     // send update packet to client
     SendTalentsInfoData();
 
-    if (Group* group = GetGroup())
-        if (group->IsLogging())
-            group->LogEvent("Member changed talents: %s is now %s", Group::Format(this).c_str(), Group::GetPlayerTalentString(this).c_str());
 }
 
 void Player::CleanNotForMyClass(bool talents, bool common)

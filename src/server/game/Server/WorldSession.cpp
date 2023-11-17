@@ -136,8 +136,6 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8
         LoginDatabase.PExecute("UPDATE account SET online = 1 WHERE id = %u;", GetAccountId());     // One-time query
     }
 
-    InitializeQueryCallbackParameters();
-
     // At current time it will never be removed from container, so pointer must be valid all of the session life time.
 
     _compressionStream = new z_stream();
@@ -1209,13 +1207,6 @@ void WorldSession::SetPlayer(Player* player)
     if (_player)
         m_GUIDLow = _player->GetGUIDLow();
     GetAchievementMgr().SetCurrentPlayer(player);
-}
-
-void WorldSession::InitializeQueryCallbackParameters()
-{
-    // Callback parameters that have pointers in them should be properly
-    // initialized to NULL here.
-    // _charCreateCallback.SetParam(NULL);
 }
 
 void WorldSession::ProcessQueryCallbacks()

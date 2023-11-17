@@ -68,7 +68,6 @@
 #include "BattlePetMgr.h"
 #include "PetBattle.h"
 #include "UpdateFieldFlags.h"
-#include "CustomLogs.h"
 #include "ServiceMgr.h"
 
 pEffect SpellEffects[TOTAL_SPELL_EFFECTS]=
@@ -1737,9 +1736,6 @@ void Spell::DoCreateItem(uint32 /*i*/, uint32 itemtype)
             player->SendEquipError(EQUIP_ERR_ITEM_NOT_FOUND, NULL, NULL);
             return;
         }
-
-        if (player->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(player, pItem, num_to_add, "Created");
 
         // set the "Crafted by ..." property of the item
         if (pItem->GetTemplate()->Class != ITEM_CLASS_CONSUMABLE && pItem->GetTemplate()->Class != ITEM_CLASS_QUEST && newitemid != 6265 && newitemid != 6948)

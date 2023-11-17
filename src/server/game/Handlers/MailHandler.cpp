@@ -30,7 +30,6 @@
 #include "AccountMgr.h"
 #include "GuildMgr.h"
 #include "AuctionHouseMgr.h"
-#include "CustomLogs.h"
 #include "Chat.h"
 #include "WordFilterMgr.h"
 
@@ -357,8 +356,6 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
                 item->DeleteFromInventoryDB(trans);     // deletes item from character's inventory
                 item->SetOwnerGUID(receiverGuid);
                 item->SaveToDB(trans);                  // recursive and not have transaction guard into self, item not in inventory and can be save standalone
-                if (HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(_player, item, item->GetCount(), "Send by mail to %u", GUID_LOPART(receiverGuid));
                 draft.AddItem(item);
             }
 
@@ -655,40 +652,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
 
         uint32 count = it->GetCount();                      // save counts before store and possible merge with deleting
         it->SetState(ITEM_UNCHANGED);                       // need to set this state, otherwise item cannot be removed later, if neccessary
-        if (player->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-        {
-            if (m->stationery == MAIL_STATIONERY_AUCTION)
-            {
-                Tokenizer tok(m->subject, ':');
-                Tokenizer tok2(m->body, ':');
-                std::ostringstream subj;
-                if (tok.size() == 5)
-                {
-                    uint32 subjID = atol(tok[2]);
-                    switch (subjID)
-                    {
-                        case AUCTION_WON:
-                            if (tok2.size() == 3)
-                                subj << "Buy at auction " << strtoul(tok2[0], NULL, 16);
-                            else
-                                subj << "Unexpected mail body \"" << m->body << '\"';
-                            break;
-                        case AUCTION_EXPIRED:
-                        case AUCTION_CANCELED:
-                            subj << "Returned from auction ";
-                            subj << (subjID == AUCTION_EXPIRED ? "(expired)" : "(canceled)");
-                            break;
-                        default:
-                            subj << "Unexpected mail header " << subjID;
-                            break;
-                    }
-                }
 
-                logs::ItemLog(player, it, it->GetCount(), subj.str().c_str());
-            }
-            else
-                logs::ItemLog(player, it, it->GetCount(), "Take mail item, sender: %u", m->sender);
-        }
         player->MoveItemToInventory(dest, it, true);
 
         player->SaveInventoryAndGoldToDB(trans);
@@ -782,11 +746,8 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
                     break;
             }
         }
-
-        logs::CurrencyTransaction(_player, CurrencyOperation::Auction, guid, m->money, attachments.str().c_str());
     }
-    else
-        logs::CurrencyTransaction(_player, CurrencyOperation::Mail, m->sender, m->money);
+
 
     m->money = 0;
     m->state = MAIL_STATE_CHANGED;

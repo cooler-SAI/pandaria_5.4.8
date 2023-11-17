@@ -477,9 +477,6 @@ void WorldSession::HandleGroupSetLeaderOpcode(WorldPacket& recvData)
     if (!group->IsLeader(GetPlayer()->GetGUID()) || player->GetGroup(group->GetGroupSlot()) != group)
         return;
 
-    if (group->IsLogging())
-        group->LogEvent("%s changes group leader to %s", group->FormatLeader().c_str(), group->FormatPlayer(guid).c_str());
-
     // Everything's fine, accepted.
     group->ChangeLeader(guid);
     group->SendUpdate();
@@ -760,9 +757,6 @@ void WorldSession::HandleRandomRollOpcode(WorldPacket& recvData)
     else
         SendPacket(&data);
 
-    if (Group* group = GetPlayer()->GetGroup())
-        if (group->IsLogging())
-            group->LogEvent("[/roll %u-%u] %s: %u", minimum, maximum, Group::Format(GetPlayer()).c_str(), roll);
 }
 
 void WorldSession::HandleRaidTargetUpdateOpcode(WorldPacket& recvData)
@@ -921,8 +915,6 @@ void WorldSession::HandleGroupAssistantLeaderOpcode(WorldPacket& recvData)
 
     group->SendUpdate();
 
-    if (group->IsLogging())
-        group->LogEvent("Assistant flag %s %s", apply ? "set on" : "removed from", group->FormatPlayer(guid).c_str());
 }
 
 void WorldSession::HandleGroupEveryoneIsAssistantOpcode(WorldPacket& recvData)

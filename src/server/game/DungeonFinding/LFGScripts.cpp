@@ -60,9 +60,6 @@ void LFGPlayerScript::OnQuestRewarded(Player* player, const Quest* /*quest*/)
 
 void LFGPlayerScript::OnLogout(Player* player)
 {
-    if (Group* group = player->GetGroup())
-        if (group->IsLogging())
-            group->LogEvent("%s logs out", Group::Format(player).c_str());
 
     if (!sLFGMgr->isOptionEnabled(LFG_OPTION_ENABLE_DUNGEON_FINDER | LFG_OPTION_ENABLE_RAID_BROWSER))
         return;
@@ -79,9 +76,6 @@ void LFGPlayerScript::OnLogout(Player* player)
 
 void LFGPlayerScript::OnLogin(Player* player)
 {
-    if (Group* group = player->GetGroup())
-        if (group->IsLogging())
-            group->LogEvent("%s logs in (%s)", Group::Format(player).c_str(), Group::GetPlayerTalentString(player).c_str());
 
     if (!sLFGMgr->isOptionEnabled(LFG_OPTION_ENABLE_DUNGEON_FINDER | LFG_OPTION_ENABLE_RAID_BROWSER))
         return;

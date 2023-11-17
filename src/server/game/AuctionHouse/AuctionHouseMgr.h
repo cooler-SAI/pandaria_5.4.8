@@ -225,8 +225,6 @@ class AuctionHouseMgr
             uint32 inventoryType, uint32 itemClass, uint32 itemSubClass, uint32 quality,
             bool getAll, std::vector<int8> const& sortOrder);
 
-        LogFile* GetLogger() const { return logger.get(); }
-
     private:
 
         AuctionHouseObject mHordeAuctions;
@@ -236,7 +234,6 @@ class AuctionHouseMgr
         ItemMap mAitems;
         std::thread searchThread;
         ACE_Activation_Queue searchQueries;
-        std::unique_ptr<LogFile> logger;
 };
 
 #define sAuctionMgr AuctionHouseMgr::instance()

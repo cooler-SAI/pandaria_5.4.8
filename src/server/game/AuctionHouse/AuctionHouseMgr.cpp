@@ -31,7 +31,6 @@
 #include "Log.h"
 #include "Config.h"
 #include <vector>
-#include "CustomLogs.h"
 #include "DatabaseEnv.h"
 
 enum eAuctionHouse
@@ -81,12 +80,6 @@ int AuctionQueryContext::call()
 
 AuctionHouseMgr::AuctionHouseMgr()
 {
-    std::stringstream dir, path;
-    path << sConfigMgr->GetStringDefault("LogsDir", "") << "/auction.log";
-
-    logger.reset(new LogFile());
-    logger->Open(path.str().c_str(), "a");
-
     searchThread = std::thread([this]()
     {
         while (true)
@@ -922,8 +915,6 @@ bool AuctionHouseObject::BuildListAuctionItems(WorldPacket& data, Player* player
         for (auto&& order : sortOrder)
             ss << int32(order) << ",";
 
-        aucMgr->GetLogger()->Write("AuctionHouseObject::BuildListAuctionItems: Query took too long to execute (%u ms): player: %s (%u), wsearchedname: \"%s\", listfrom: %u, levelmin: %u, levelmax: %u, usable: %u, inventoryType: %d, itemClass: %d, itemSubClass: %d, quality: %d, getAll: %s, sortOrder: %s returned %u results out of %u",
-            diff, player ? player->GetName().c_str() : "<optimized>", GUID_LOPART(playerGuid), searchedname.c_str(), listfrom, uint32(levelmin), uint32(levelmax), uint32(usable), inventoryType, itemClass, itemSubClass, quality, getAll ? "true" : "false", ss.str().c_str(), count, totalcount);
     }
 
     if (isExecutedInMainThread && diff >= sWorld->getIntConfig(CONFIG_AUCTIONHOUSE_MIN_DIFF_FOR_THROTTLE))

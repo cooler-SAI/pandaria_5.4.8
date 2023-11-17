@@ -28,7 +28,6 @@
 #include "UpdateMask.h"
 #include "Util.h"
 #include "AccountMgr.h"
-#include "CustomLogs.h"
 #include "ServiceMgr.h"
 
 //void called when player click on auctioneer npc
@@ -448,9 +447,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         AH->deposit = deposit;
         AH->auctionHouseEntry = auctionHouseEntry;
 
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, item, item->GetCount(), "To auction");
-
         TC_LOG_INFO("network", "CMSG_AUCTION_SELL_ITEM: Player %s (guid %d) is selling item %s entry %u (guid %d) "
             "to auctioneer %u with count %u with initial bid " UI64FMTD " with buyout " UI64FMTD " and with time %u (in sec) in auctionhouse %u",
             _player->GetName().c_str(), _player->GetGUIDLow(), item->GetTemplate()->Name1.c_str(), item->GetEntry(), item->GetGUIDLow(),
@@ -500,9 +496,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         AH->expire_time = time(NULL) + auctionTime;
         AH->deposit = deposit;
         AH->auctionHouseEntry = auctionHouseEntry;
-
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, newItem, newItem->GetCount(), "To auction");
 
         TC_LOG_INFO("network", "CMSG_AUCTION_SELL_ITEM: Player %s (guid %d) is selling item %s entry %u (guid %d) to "
              "auctioneer %u with count %u with initial bid " UI64FMTD " with buyout " UI64FMTD " and with time %u (in sec) in auctionhouse %u",

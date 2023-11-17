@@ -94,8 +94,6 @@ Group::~Group()
     // Sub group counters clean up
     delete [] m_subGroupsCounts;
 
-    if (m_logger)
-        LogEvent("Group deleted");
 }
 
 bool Group::Create(Player* leader)
@@ -309,8 +307,6 @@ void Group::ConvertToRaid()
         if (Player* player = ObjectAccessor::FindPlayer(citr->guid))
             player->UpdateForQuestWorldObjects();
 
-    if (!isBGGroup())
-        StartLog();
 }
 
 void Group::ConvertToGroup()
@@ -564,9 +560,6 @@ bool Group::AddMember(Player* player)
     for (auto&& player : *this)
         sBattlegroundMgr->RemovePlayerFromArenaQeueus(player);
 
-    if (IsLogging())
-        LogEvent("Member added: %s %s", Format(player).c_str(), GetPlayerTalentString(player).c_str());
-
     return true;
 }
 
@@ -579,14 +572,6 @@ bool Group::RemoveMember(uint64 guid, const RemoveMethod& method /*= GROUP_REMOV
     // LFG group vote kick handled in scripts
     if (isLFGGroup() && method == GROUP_REMOVEMETHOD_KICK && !IsFlex())
         return m_memberSlots.size();
-
-    if (IsLogging())
-    {
-        if (method == GROUP_REMOVEMETHOD_KICK && kicker)
-            LogEvent("Member removed: %s (kicked by %s)", FormatPlayer(guid).c_str(), FormatPlayer(kicker).c_str());
-        else
-            LogEvent("Member removed: %s%s", FormatPlayer(guid).c_str(), method == GROUP_REMOVEMETHOD_KICK ? " (kicked by system)" : "");
-    }
 
     for (auto&& player : *this)
         sBattlegroundMgr->RemovePlayerFromArenaQeueus(player);
@@ -782,8 +767,6 @@ void Group::ChangeLeader(uint64 newLeaderGuid)
 
     BroadcastPacket(&data, true);
 
-    if (IsLogging())
-        LogEvent("Leader switched from %s to %s", FormatPlayer(oldLeaderGuid).c_str(), FormatLeader().c_str());
 }
 
 void Group::Disband(bool hideDestroy /* = false */)
@@ -1687,10 +1670,6 @@ void Group::CountTheRoll(Rolls::iterator rollI)
         return;
     }
 
-    if (IsLogging())
-        for (auto&& vote : roll->playerVote)
-            LogEvent("Roll on item %s: %s chooses %s", Format(roll).c_str(), FormatPlayer(vote.first).c_str(), Format(vote.second));
-
     //end of the roll
     if (roll->totalNeed > 0)
     {
@@ -1713,8 +1692,6 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                     maxresul = randomN;
                 }
 
-                if (IsLogging())
-                    LogEvent("Roll on item %s: %s rolls %u (%s)", Format(roll).c_str(), FormatPlayer(itr->first).c_str(), uint32(randomN), Format(itr->second));
             }
             SendLootRollWon(maxguid, maxresul, ROLL_NEED, *roll);
             player = ObjectAccessor::FindPlayer(maxguid);
@@ -1734,8 +1711,6 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                     Item* newitem = player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId, item->GetAllowedLooters());
                     if (newitem)
                         player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_ITEM, item->itemid, item->count);
-                    if (IsLogging() && newitem)
-                        LogEvent("Won item: %s to %s", Format(newitem).c_str(), Format(player).c_str());
 
                     sScriptMgr->OnItemPickup(player, newitem, roll->getLoot()->GetItemPickupSourceType(), roll->getLoot()->sourceEntry);
                 }
@@ -1771,8 +1746,6 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                     rollvote = itr->second;
                 }
 
-                if (IsLogging())
-                    LogEvent("Roll on item %s: %s rolls %u (%s)", Format(roll).c_str(), FormatPlayer(itr->first).c_str(), uint32(randomN), Format(itr->second));
             }
             SendLootRollWon(maxguid, maxresul, rollvote, *roll);
             player = ObjectAccessor::FindPlayer(maxguid);
@@ -1793,9 +1766,6 @@ void Group::CountTheRoll(Rolls::iterator rollI)
                         roll->getLoot()->NotifyItemRemoved(roll->itemSlot);
                         roll->getLoot()->unlootedCount--;
                         Item* newitem = player->StoreNewItem(dest, roll->itemid, true, item->randomPropertyId, item->GetAllowedLooters());
-
-                        if (IsLogging() && newitem)
-                            LogEvent("Won item: %s to %s", Format(newitem).c_str(), Format(player).c_str());
 
                         sScriptMgr->OnItemPickup(player, newitem, roll->getLoot()->GetItemPickupSourceType(), roll->getLoot()->sourceEntry);
                     }
@@ -2857,9 +2827,6 @@ InstanceGroupBind* Group::BindToInstance(InstanceSave* save, bool permanent, boo
         TC_LOG_DEBUG("maps", "Group::BindToInstance: Group (guid: %u, storage id: %u) is now bound to map %d, instance %d, difficulty %d",
         GUID_LOPART(GetGUID()), m_dbStoreId, save->GetMapId(), save->GetInstanceId(), save->GetDifficulty());
 
-    if (IsLogging() && newBind)
-        LogEvent("Instance bound: Map %s[%u] - %s - Instance %u%s", GetMapName(save->GetMapId()), save->GetMapId(), Format(save->GetDifficulty()), save->GetInstanceId(), permanent ? " (permanent)" : "");
-
     return &bind;
 }
 
@@ -2925,9 +2892,6 @@ void Group::ResetMaxEnchantingLevel()
 
 void Group::SetLootMethod(LootMethod method)
 {
-    if (IsLogging() && m_lootMethod != method)
-        LogEvent("Loot method changed from %s to %s", Format(m_lootMethod), Format(method));
-
     m_lootMethod = method;
 }
 
@@ -2938,17 +2902,11 @@ void Group::SetLooterGuid(uint64 guid)
 
 void Group::SetMasterLooterGuid(uint64 guid)
 {
-    if (IsLogging() && m_looterGuid != guid)
-        LogEvent("Master looter changed from %s to %s", FormatPlayer(m_looterGuid).c_str(), FormatPlayer(guid).c_str());
-
     m_looterGuid = guid;
 }
 
 void Group::SetLootThreshold(ItemQualities threshold)
 {
-    if (IsLogging() && m_lootThreshold != threshold)
-        LogEvent("Loot threshold changed from %s to %s", Format(m_lootThreshold), Format(threshold));
-
     m_lootThreshold = threshold;
 }
 
@@ -3641,91 +3599,11 @@ void Group::FindNewLeader(uint64 exceptGuid)
     }
 }
 
-void Group::LogChat(ChatMsg channel, uint64 sender, std::string const& message)
-{
-    char const* prefix;
-    switch (channel)
-    {
-        case CHAT_MSG_SAY:                  prefix = "[S]";     break;
-        case CHAT_MSG_YELL:                 prefix = "[Y]";     break;
-        case CHAT_MSG_EMOTE:                prefix = "[EM]";    break;
-        case CHAT_MSG_TEXT_EMOTE:           prefix = "[TEM]";   break;
-        case CHAT_MSG_PARTY:                prefix = "[P]";     break;
-        case CHAT_MSG_PARTY_LEADER:         prefix = "[PL]";    break;
-        case CHAT_MSG_RAID:                 prefix = "[R]";     break;
-        case CHAT_MSG_RAID_LEADER:          prefix = "[RL]";    break;
-        case CHAT_MSG_RAID_WARNING:         prefix = "[RW]";    break;
-        case CHAT_MSG_INSTANCE_CHAT:        prefix = "[I]";     break;
-        case CHAT_MSG_INSTANCE_CHAT_LEADER: prefix = "[IL]";    break;
-        default: return;
-    }
-
-    LogEvent("%s %s: %s", prefix, FormatPlayer(sender).c_str(), message.c_str());
-}
-
-bool Group::StartLog()
-{
-    if (m_logger)
-    {
-        TC_LOG_ERROR("group", "Group %u (Leader: %s) tried to start a new log file, but the log was already started", GetDbStoreId(), FormatLeader().c_str());
-        return true;
-    }
-
-    if (!sWorld->getBoolConfig(CONFIG_GROUP_LOG_ENABLED))
-        return false;
-
-    time_t now = time(NULL);
-    std::string timestamp = TimeToTimestampStr(now);
-    std::string timestampDate = timestamp.substr(0, timestamp.find('_'));
-    std::stringstream dir, path;
-    dir << sConfigMgr->GetStringDefault("LogsDir", "") << "/groups/" << timestampDate;
-    path << sConfigMgr->GetStringDefault("LogsDir", "") << "/groups/" << timestampDate << "/" << timestamp << " - " << GetLeaderName() << " - " << GetDbStoreId() << ".log";
-
-    std::filesystem::path p{ dir.str() };
-    std::error_code c;
-    if (!std::filesystem::create_directories(p, c) && c.value() != 0)
-    {
-        TC_LOG_ERROR("server", "Group::StartLog - Couldn't create directory %s, errno %u", p.string().c_str(), c.value());
-        return false;
-    }
-    m_logger.reset(new LogFile());
-    m_logger->Open(path.str().c_str(), "a");
-    LogEvent("Logging started on %s", timestamp.c_str());
-
-    LogEvent("Group was converted to raid");
-    LogEvent("Group leader: %s", FormatLeader().c_str());
-    LogEvent("Group members:");
-    for (auto&& member : m_memberSlots)
-    {
-        std::string talentString;
-        if (Player* player = ObjectAccessor::FindPlayerInOrOutOfWorld(member.guid))
-            talentString = GetPlayerTalentString(player);
-        else
-            talentString = "(offline)";
-
-        LogEvent("- %s(%u) %s%s%s%s", member.name.c_str(), GUID_LOPART(member.guid), member.flags & MEMBER_FLAG_ASSISTANT ? "assistant " : "", member.flags & MEMBER_FLAG_MAINTANK ? "maintank " : "", member.flags & MEMBER_FLAG_MAINASSIST ? "mainassist " : "", talentString.c_str());
-    }
-    LogEvent("Dungeon difficulty: %s", Format(m_dungeonDifficulty));
-    LogEvent("Raid difficulty: %s", Format(m_raidDifficulty));
-    LogEvent("Loot method: %s", Format(m_lootMethod));
-    LogEvent("Loot threshold: %s", Format(m_lootThreshold));
-    LogEvent("Current looter: %s", FormatPlayer(m_looterGuid).c_str());
-    LogEvent("Master looter: %s", FormatPlayer(m_looterGuid).c_str());
-    LogEvent("Bound instances:");
-    for (auto&& difficulty : m_boundInstances)
-        for (auto&& bind : difficulty)
-            if (bind.second.save)
-                LogEvent(" - Map %s[%u] - %s - Instance %u%s", GetMapName(bind.first), bind.first, Format(bind.second.save->GetDifficulty()), bind.second.save->GetInstanceId(), bind.second.perm ? " (permanent)" : "");
-
-    return true;
-}
-
 void Group::ResumeLoggingIfNeeded()
 {
     if (m_logResumeOnLogin)
     {
         m_logResumeOnLogin = false;
-        StartLog();
     }
 }
 

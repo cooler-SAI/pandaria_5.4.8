@@ -511,11 +511,8 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
         }
     }
 
-    //delete _charCreateCallback.GetParam();  // Delete existing if any, to make the callback chain reset to stage 0
-    //_charCreateCallback.SetParam(new CharacterCreateInfo(name, race_, class_, gender, skin, face, hairStyle, hairColor, facialHair, outfitId, recvData));
     CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHECK_NAME);
     stmt->setString(0, name);
-    //_charCreateCallback.SetFutureResult(CharacterDatabase.AsyncQuery(stmt));
 
     CharacterCreateInfo* createInfo = new CharacterCreateInfo(name, race_, class_, gender, skin, face, hairStyle, hairColor, facialHair, outfitId, recvData);
     _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
@@ -528,7 +525,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             data << uint8(CHAR_CREATE_NAME_IN_USE);
             SendPacket(&data);
             delete createInfo;
-            //_charCreateCallback.Reset();
             return;
         }
 
@@ -619,7 +615,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
                             data << uint8(CHAR_CREATE_UNIQUE_CLASS_LIMIT);
                             SendPacket(&data);
                             delete createInfo;
-                            //_charCreateCallback.Reset();
                             return;
                         }
                     }
@@ -646,7 +641,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
                         data << uint8(CHAR_CREATE_PVP_TEAMS_VIOLATION);
                         SendPacket(&data);
                         delete createInfo;
-                        //_charCreateCallback.Reset();
                         return;
                     }
                 }
@@ -678,7 +672,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
                                 data << uint8(CHAR_CREATE_UNIQUE_CLASS_LIMIT);
                                 SendPacket(&data);
                                 delete createInfo;
-                                //_charCreateCallback.Reset();
                                 return;
                             }
                         }
@@ -699,7 +692,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
                 data << uint8(CHAR_CREATE_LEVEL_REQUIREMENT);
                 SendPacket(&data);
                 delete createInfo;
-                //_charCreateCallback.Reset();
                 return;
             }
 
@@ -721,8 +713,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
                 data << uint8(CHAR_CREATE_ERROR);
                 SendPacket(&data);
                 delete createInfo;
-                //_charCreateCallback.Reset();
-                return;
+                 return;
             }
             SetPlayer(&newChar);
 
@@ -762,7 +753,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
             newChar.CleanupsBeforeDelete();
             delete createInfo;
-            //_charCreateCallback.Reset();
             SetPlayer(nullptr);
 
         };
@@ -783,10 +773,6 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
 }
 
-void WorldSession::HandleCharCreateCallback(PreparedQueryResult result, CharacterCreateInfo* createInfo)
-{
-
-}
 
 void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
 {

@@ -121,7 +121,6 @@ LogsDir = "Logs"
 LoginDatabaseInfo     = "127.0.0.1;3306;root;root;auth"
 WorldDatabaseInfo     = "127.0.0.1;3306;root;root;world"
 CharacterDatabaseInfo = "127.0.0.1;3306;root;root;characters"
-ArchiveDatabaseInfo   = "127.0.0.1;3306;root;root;archive"
 
 #
 #    LoginDatabase.WorkerThreads
@@ -137,7 +136,6 @@ ArchiveDatabaseInfo   = "127.0.0.1;3306;root;root;archive"
 LoginDatabase.WorkerThreads     = 1
 WorldDatabase.WorkerThreads     = 1
 CharacterDatabase.WorkerThreads = 1
-ArchiveDatabase.WorkerThreads   = 1
 
 #
 #    LoginDatabase.SynchThreads
@@ -151,7 +149,6 @@ ArchiveDatabase.WorkerThreads   = 1
 LoginDatabase.SynchThreads     = 1
 WorldDatabase.SynchThreads     = 1
 CharacterDatabase.SynchThreads = 2
-ArchiveDatabase.SynchThreads   = 1
 
 #
 #    MaxPingTime

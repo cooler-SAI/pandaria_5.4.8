@@ -162,7 +162,6 @@ enum DB2Types : uint32
 
 enum AccountFlags
 {
-    ACC_FLAG_ITEM_LOG            = 0x00000001,
     ACC_FLAG_TOURNAMENT_OBSERVER = 0x00000002, // not used, just for compatibility with wotlk
     ACC_FLAG_VALOR_CAP_REACHED   = 0x00000004,
 };
@@ -477,7 +476,6 @@ class TC_GAME_API WorldSession
         void HandleCharEnumOpcode(WorldPacket& recvPacket);
         void HandleCharDeleteOpcode(WorldPacket& recvPacket);
         void HandleCharCreateOpcode(WorldPacket& recvPacket);
-        void HandleCharCreateCallback(PreparedQueryResult result, CharacterCreateInfo* createInfo);
         void HandlePlayerLoginOpcode(WorldPacket& recvPacket);
         void HandleLoadScreenOpcode(WorldPacket& recvPacket);
         void HandleCharEnum(PreparedQueryResult result);
@@ -1150,7 +1148,6 @@ class TC_GAME_API WorldSession
         SQLQueryHolderCallback& AddQueryHolderCallback(SQLQueryHolderCallback&& callback);
 
     private:
-        void InitializeQueryCallbackParameters();
         void ProcessQueryCallbacks();
 
         QueryCallbackProcessor _queryProcessor;

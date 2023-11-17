@@ -73,7 +73,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/game/Conditions
     ${CMAKE_SOURCE_DIR}/src/server/shared/Configuration
     ${CMAKE_SOURCE_DIR}/src/server/game/Combat
-    ${CMAKE_SOURCE_DIR}/src/server/game/CustomLogs
     ${CMAKE_SOURCE_DIR}/src/server/game/DataStores
     ${CMAKE_SOURCE_DIR}/src/server/game/DungeonFinding
     ${CMAKE_SOURCE_DIR}/src/server/game/Entities/Corpse

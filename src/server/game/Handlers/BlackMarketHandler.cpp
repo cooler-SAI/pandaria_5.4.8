@@ -23,7 +23,6 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "BlackMarketMgr.h"
-#include "CustomLogs.h"
 
 void WorldSession::HandleBlackMarketHelloOpcode(WorldPacket& recvData)
 {
@@ -124,7 +123,6 @@ void WorldSession::HandleBlackMarketBidOnItem(WorldPacket& recvData)
     else
     {
         GetPlayer()->ModifyMoney(-int64(bidAmount));
-        logs::CurrencyTransaction(GetPlayer(), CurrencyOperation::BlackMarket, itemId, -int64(bidAmount));
     }
 
     sBlackMarketMgr->UpdateAuction(auction, currentRequiredIncrement, newIncrement, GetPlayer());

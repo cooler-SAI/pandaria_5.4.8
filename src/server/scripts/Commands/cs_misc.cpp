@@ -37,7 +37,6 @@
 #include "MMapFactory.h"
 #include "DevTool.h"
 #include "BattlegroundMgr.h"
-#include "CustomLogs.h"
 #include "ServiceMgr.h"
 #include "Config.h"
 #include "ServiceMgr.h"
@@ -184,7 +183,6 @@ public:
                 } },
             } },
             { "bg",             SEC_ADMINISTRATOR,  false,  bgCommandTable              },
-            { "itemlog",        SEC_GAMEMASTER, true,   &HandleItemLogCommand       },
             { "itemdelete",     SEC_GAMEMASTER, true,   &HandleItemDeleteCommand    },
             { "removeitem",     SEC_GAMEMASTER, false,  &HandleRemoveItemCommand    },
             { "visibility",     SEC_ADMINISTRATOR,  true,   visibilityCommandTable      },
@@ -3548,59 +3546,6 @@ public:
     {
         WorldPacket data;
         handler->GetSession()->HandleBattlemasterJoinRated(data);
-        return true;
-    }
-
-    static bool HandleItemLogCommand(ChatHandler* handler, const char* args)
-    {
-        if (!*args)
-            return false;
-
-        Tokenizer tok(args, ' ');
-        if (tok.size() != 2)
-            return false;
-
-        std::string username = tok[0];
-        uint32 acc = sAccountMgr->GetId(username.c_str());
-        if (!acc)
-            return handler->SendError(LANG_ACCOUNT_NOT_EXIST, tok[0]);
-
-        bool on = false;
-        if (strncmp(tok[1], "on", 2) == 0)
-            on = true;
-        else if (strncmp(tok[1], "off", 3) != 0)
-            return handler->SendError(LANG_USE_BOL);
-
-        if (WorldSession* ws = sWorld->FindSession(acc))
-        {
-            if (on)
-                ws->AddFlag(ACC_FLAG_ITEM_LOG);
-            else
-            {
-                ws->RemoveFlag(ACC_FLAG_ITEM_LOG);
-                QueryResult res = CharacterDatabase.PQuery("SELECT `guid` FROM `characters` WHERE `account` = %u", acc);
-                if (res)
-                {
-                    do
-                    {
-                        logs::StopItemLogging((*res)[0].GetUInt32());
-                    } while (res->NextRow());
-                }
-            }
-        }
-        else
-        {
-            if (on)
-            {
-                LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
-            }
-            else
-            {
-                LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
-            }
-        }
-
-        handler->PSendSysMessage("Item log for account \"%s\" %s", username.c_str(), on ? "enabled" : "disabled");
         return true;
     }
 

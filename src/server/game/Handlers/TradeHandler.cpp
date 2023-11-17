@@ -28,7 +28,6 @@
 #include "SocialMgr.h"
 #include "Language.h"
 #include "AccountMgr.h"
-#include "CustomLogs.h"
 #include "Group.h"
 #include "TradeData.h"
 
@@ -230,10 +229,6 @@ void WorldSession::moveItems(Item* myItems[], Item* hisItems[])
                         timer = trader->GetTotalPlayedTime();
                     myItems[i]->SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, trader->GetTotalPlayedTime() - timer);
                 }
-                if (trader->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(trader, myItems[i], myItems[i]->GetCount(), "Take from player %u", _player->GetGUIDLow());
-                if (HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(_player, myItems[i], myItems[i]->GetCount(), "Give to player %u", trader->GetGUIDLow());
                 // store
                 trader->MoveItemToInventory(traderDst, myItems[i], true, true);
             }
@@ -257,10 +252,6 @@ void WorldSession::moveItems(Item* myItems[], Item* hisItems[])
                         timer = _player->GetTotalPlayedTime();
                     hisItems[i]->SetUInt32Value(ITEM_FIELD_CREATE_PLAYED_TIME, _player->GetTotalPlayedTime() - timer);
                 }
-                if (HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(_player, hisItems[i], hisItems[i]->GetCount(), "Take from player %u", trader->GetGUIDLow());
-                if (trader->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(trader, hisItems[i], hisItems[i]->GetCount(), "Give to player %u", _player->GetGUIDLow());
 
                 // store
                 _player->MoveItemToInventory(playerDst, hisItems[i], true, true);
@@ -550,40 +541,6 @@ void WorldSession::HandleAcceptTradeOpcode(WorldPacket& /*recvPacket*/)
             }
         }
 
-        bool groupLog = _player->GetGroup() && _player->GetGroup()->IsLogging() || trader->GetGroup() && trader->GetGroup()->IsLogging();
-        std::stringstream myItemsLog, hisItemsLog;
-        if (groupLog)
-        {
-            if (my_trade->GetMoney())
-                myItemsLog << (myItemsLog.rdbuf()->in_avail() ? ", " : "") << Group::FormatMoney(my_trade->GetMoney());
-            if (his_trade->GetMoney())
-                hisItemsLog << (hisItemsLog.rdbuf()->in_avail() ? ", " : "") << Group::FormatMoney(his_trade->GetMoney());
-        }
-
-        std::ostringstream myItemsStream, hisItemsStream;
-        for (uint8 i = 0; i < TRADE_SLOT_TRADED_COUNT; ++i)
-        {
-            if (myItems[i])
-            {
-                myItemsStream << myItems[i]->GetEntry() << ":" << myItems[i]->GetCount() << " ";
-                if (groupLog)
-                    myItemsLog << (myItemsLog.rdbuf()->in_avail() ? ", " : "") << Group::Format(myItems[i]);
-            }
-            if (hisItems[i])
-            {
-                hisItemsStream << hisItems[i]->GetEntry() << ":" << hisItems[i]->GetCount() << " ";
-                if (groupLog)
-                    hisItemsLog << (hisItemsLog.rdbuf()->in_avail() ? ", " : "") << Group::Format(hisItems[i]);
-            }
-        }
-
-        std::string myItemsStr = myItemsStream.str();
-        if (!myItemsStr.empty())
-            myItemsStr.pop_back();
-        std::string hisItemsStr = hisItemsStream.str();
-        if (!hisItemsStr.empty())
-            hisItemsStr.pop_back();
-
         // execute trade: 2. store
         moveItems(myItems, hisItems);
 
@@ -615,27 +572,6 @@ void WorldSession::HandleAcceptTradeOpcode(WorldPacket& /*recvPacket*/)
         _player->ModifyMoney(his_trade->GetMoney());
         trader->ModifyMoney(-int64(his_trade->GetMoney()));
         trader->ModifyMoney(my_trade->GetMoney());
-
-        logs::CurrencyTransaction(_player, CurrencyOperation::Trade, trader->GetGUIDLow(), mySum, myItemsStr.c_str());
-        logs::CurrencyTransaction(trader,  CurrencyOperation::Trade, _player->GetGUIDLow(), hisSum, hisItemsStr.c_str());
-
-        if (groupLog)
-        {
-            Group* myGroup = _player->GetGroup();
-            Group* hisGroup = trader->GetGroup();
-            Player* initiator = my_trade->IsInitiator(_player) ? _player : trader;
-            Player* other = my_trade->IsInitiator(_player) ? trader : _player;
-            if (!myItemsLog.rdbuf()->in_avail())
-                myItemsLog << "<nothing>";
-            if (!hisItemsLog.rdbuf()->in_avail())
-                hisItemsLog << "<nothing>";
-            std::string initiatorLog = (my_trade->IsInitiator(_player) ? myItemsLog : hisItemsLog).str();
-            std::string otherLog = (my_trade->IsInitiator(_player) ? hisItemsLog : myItemsLog).str();
-            if (myGroup && myGroup->IsLogging())
-                myGroup->LogEvent("%s trades with %s: %s traded for %s", Group::Format(initiator).c_str(), Group::Format(other).c_str(), initiatorLog.c_str(), otherLog.c_str());
-            if (hisGroup && hisGroup->IsLogging() && hisGroup != myGroup)
-                hisGroup->LogEvent("%s trades with %s: %s traded for %s", Group::Format(initiator).c_str(), Group::Format(other).c_str(), initiatorLog.c_str(), otherLog.c_str());
-        }
 
         if (my_spell)
             my_spell->prepare(&my_targets);

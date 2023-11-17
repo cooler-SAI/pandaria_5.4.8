@@ -150,34 +150,6 @@ bool DBUpdater<CharacterDatabaseConnection>::IsEnabled(uint32 const updateMask)
     return (updateMask & DatabaseLoader::DATABASE_CHARACTER) ? true : false;
 }
 
-// Archive Database
-template<>
-std::string DBUpdater<ArchiveDatabaseConnection>::GetConfigEntry()
-{
-    return "Updates.Archive";
-}
-
-template<>
-std::string DBUpdater<ArchiveDatabaseConnection>::GetTableName()
-{
-    return "Archive";
-}
-
-template<>
-std::string DBUpdater<ArchiveDatabaseConnection>::GetBaseFile()
-{
-    return BuiltInConfig::GetSourceDirectory() +
-        "/sql/base/archive_database.sql";
-}
-
-template<>
-bool DBUpdater<ArchiveDatabaseConnection>::IsEnabled(uint32 const updateMask)
-{
-    // This way silences warnings under msvc
-    return false;
-    //return (updateMask & DatabaseLoader::DATABASE_LOGIN) ? true : false;
-}
-
 // All
 template<class T>
 BaseLocation DBUpdater<T>::GetBaseLocationType()
@@ -438,4 +410,3 @@ void DBUpdater<T>::ApplyFile(DatabaseWorkerPool<T>& pool, std::string const& hos
 template class TC_DATABASE_API DBUpdater<LoginDatabaseConnection>;
 template class TC_DATABASE_API DBUpdater<WorldDatabaseConnection>;
 template class TC_DATABASE_API DBUpdater<CharacterDatabaseConnection>;
-template class TC_DATABASE_API DBUpdater<ArchiveDatabaseConnection>;

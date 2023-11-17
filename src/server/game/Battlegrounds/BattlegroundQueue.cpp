@@ -1205,10 +1205,6 @@ void SoloGroup::AddPlayer(SoloPlayer const& p)
 SoloQueue::SoloQueue()
 {
     m_isSolo = true;
-    std::string str = sConfigMgr->GetStringDefault("LogsDir", "");
-    if (!str.empty())
-        str += '/';
-    m_log.Open(str + "solo_queue.log", "a");
 }
 
 bool SoloQueue::IsCompatible(SoloGroup const* lhs, SoloGroup const* rhs, bool strong)
@@ -1512,14 +1508,6 @@ void SoloQueue::DoMatchmaking(GroupQueueInfo* ginfo, uint32 extraDiff, bool stro
     });
 
     uint32 now = getMSTime();
-    m_log.Write("%u - %u rating", lower, upper);
-    for (auto&& it : m_selection)
-    {
-        auto& i = it->Current.front();
-        m_log.Write("%u (%s) - %u rating (%u in queue)", i.Target->GetGUIDLow(),
-            i.Role == SoloQueueRole::Healer ? "healer" : "damager", i.Info->ArenaMatchmakerRating, (now - i.Info->JoinTime) / IN_MILLISECONDS);
-    }
-    m_log.Write("Total queued: %u", uint32(m_selection.size()));
 
     if (m_selection.size() < sWorld->getIntConfig(CONFIG_SOLO_QUEUE_MIN_QUEUE_SIZE))
         return;
@@ -1601,7 +1589,7 @@ void SoloQueue::DoMatchmaking(GroupQueueInfo* ginfo, uint32 extraDiff, bool stro
     m_buff << "vs ";
     for (auto&& it : hTeam->Current)
         m_buff << it.Target->GetGUIDLow() << ' ';
-    m_log.Write(m_buff.str().c_str());
+
     m_buff.str(std::string());
 
     // Invite to arena

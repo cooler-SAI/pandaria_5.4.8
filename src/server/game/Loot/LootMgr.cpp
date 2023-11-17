@@ -2775,9 +2775,7 @@ void PersonalLoot::Reward(Player* player)
         Item* item = Item::CreateItem(itemId, 1, player);
         player->SendDisplayToast(item, 0, 0, TOAST_TYPE_ITEM, TOAST_DISPLAY_TYPE_ITEM);
         player->StoreNewItem(item);
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Personal loot: %s by %s", Group::Format(item).c_str(), Group::Format(player).c_str());
+
         uint32 questId = m_loot->QuestTracker ? m_loot->QuestTracker : 0;
         if (questId)
             if (player->GetQuestStatus(questId) != QUEST_STATUS_REWARDED)
@@ -2881,10 +2879,6 @@ void BonusLoot::Reward(Player* player)
         player->StoreNewItem(item);
         player->SetBonusRollExtraChance(0.0f);
 
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Bonus roll loot: %s by %s", Group::Format(item).c_str(), Group::Format(player).c_str());
-
         if (Guild* guild = player->GetGuild())
             guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CRAFT_ITEMS_GUILD, newItem->ItemId, 1, 0, nullptr, player);
     }
@@ -2897,9 +2891,6 @@ void BonusLoot::Reward(Player* player)
         player->ModifyMoney(money);
         player->SendDisplayToast(nullptr, 0, money, TOAST_TYPE_MONEY, TOAST_DISPLAY_TYPE_ITEM, bonusLoot);
 
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Bonus roll failed, gold reward: %s by %s", Group::FormatMoney(money).c_str(), Group::Format(player).c_str());
     }
 }
 
