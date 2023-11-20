@@ -51,7 +51,6 @@ class AreaTrigger;
 class Item;
 class PhaseMgr;
 struct AccessRequirement;
-struct PlayerInfo;
 struct PlayerLevelInfo;
 struct DeclinedName;
 
@@ -638,6 +637,73 @@ struct QuestPOI
 
 typedef std::vector<QuestPOI> QuestPOIVector;
 typedef std::unordered_map<uint32, QuestPOIVector> QuestPOIContainer;
+
+struct PlayerCreateInfoItem
+{
+    PlayerCreateInfoItem(uint32 id, uint32 amount) : item_id(id), item_amount(amount)
+    { }
+
+    uint32 item_id;
+    uint32 item_amount;
+};
+
+typedef std::list<PlayerCreateInfoItem> PlayerCreateInfoItems;
+
+struct PlayerLevelInfo
+{
+    PlayerLevelInfo()
+    {
+        for (uint8 i = 0; i < MAX_STATS; ++i) stats [i] = 0;
+    }
+
+    uint8 stats [MAX_STATS];
+};
+
+struct PlayerCreateInfoSkill
+{
+    uint16 SkillId;
+    uint16 Rank;
+};
+
+typedef std::vector<PlayerCreateInfoSkill> PlayerCreateInfoSkills;
+
+typedef std::list<uint32> PlayerCreateSkillRaceClassList;
+
+struct PlayerCreateInfoAction
+{
+    PlayerCreateInfoAction() : button(0), type(0), action(0)
+    { }
+    PlayerCreateInfoAction(uint8 _button, uint32 _action, uint8 _type) : button(_button), type(_type), action(_action)
+    { }
+
+    uint8 button;
+    uint8 type;
+    uint32 action;
+};
+
+typedef std::list<PlayerCreateInfoAction> PlayerCreateInfoActions;
+
+struct PlayerInfo
+{
+    // existence checked by displayId != 0
+    PlayerInfo() : displayId_m(0), displayId_f(0), levelInfo(NULL)
+    { }
+
+    uint32 mapId;
+    uint32 areaId;
+    float positionX;
+    float positionY;
+    float positionZ;
+    float orientation;
+    uint16 displayId_m;
+    uint16 displayId_f;
+    PlayerCreateInfoItems item;
+    //PlayerCreateInfoSkills skills;      // Not skill id - index from SkillRaceClassInfo.dbc 
+    PlayerCreateSkillRaceClassList skills;
+    PlayerCreateInfoActions action;
+
+    PlayerLevelInfo* levelInfo;                             //[level-1] 0..MaxPlayerLevel-1
+};
 
 struct GraveYardData
 {

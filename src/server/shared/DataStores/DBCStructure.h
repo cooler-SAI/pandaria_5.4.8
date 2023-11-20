@@ -2051,10 +2051,12 @@ struct SkillRaceClassInfoEntry
     uint32    SkillTierId;
 };
 
+#define MAX_SKILL_STEP 16
+
 struct SkillTiersEntry
 {
     uint32 Id;                                              // 0
-    uint32 MaxSkillValue[16];                               // 1-16
+    uint32 MaxSkillValue[MAX_SKILL_STEP];                   // 1-16
 };
 
 struct SkillLineEntry
