@@ -73,7 +73,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/database/Database
     ${CMAKE_SOURCE_DIR}/src/server/database/Logging    
     ${CMAKE_SOURCE_DIR}/src/server/shared/DataStores
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic/LinkedReference
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic
     ${CMAKE_SOURCE_DIR}/src/server/shared/Networking

@@ -29,11 +29,6 @@ source_group(Threading FILES ${sources_Threading})
 source_group(Utilities FILES ${sources_Utilities})
 source_group(localdir FILES ${sources_localdir})
 
-# Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in shared project
-# It needs to be included both in authserver and worldserver for the static global variable to be properly initialized
-# and to handle crash logs on windows
-#set(sources_Debugging Debugging/Errors.cpp Debugging/Errors.h)
-
 #
 # Build shared sourcelist
 #
@@ -45,7 +40,6 @@ endif()
 set(shared_STAT_SRCS
   ${shared_STAT_SRCS}
   ${sources_DataStores}
-  #${sources_Debugging}
   ${sources_Dynamic}
   ${sources_Networking}
   ${sources_Packets}

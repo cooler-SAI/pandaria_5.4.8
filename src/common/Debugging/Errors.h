@@ -55,6 +55,7 @@ TC_COMMON_API std::string GetDebugInfo();
 #define WPError(cond, msg) do { if (!(cond)) Trinity::Error(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)
 #define WPWarning(cond, msg) do { if (!(cond)) Trinity::Warning(__FILE__, __LINE__, __FUNCTION__, (msg)); } while (0)
 #define WPAbort() do { Trinity::Abort(__FILE__, __LINE__, __FUNCTION__); } while(0)
+#define WPAbort_MSG(msg, ...) ASSERT_BEGIN do { Trinity::Abort(__FILE__, __LINE__, __FUNCTION__, (msg), ##__VA_ARGS__); } while(0) ASSERT_END
 
 #define STR(x) #x
 #define STR_(x) STR(x)
@@ -67,6 +68,7 @@ __declspec(noreturn)
 
 #define ASSERT WPAssert
 #define ABORT WPAbort
+#define ABORT_MSG WPAbort_MSG
 
 void LogNotImplementedCall(char const* name);
 

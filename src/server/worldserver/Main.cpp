@@ -39,6 +39,7 @@
 #include "World.h"
 
 #include "AsyncAcceptor.h"
+#include "DeadlineTimer.h"
 #include "IoContext.h"
 #include "ThreadPool.h"
 #include "RASession.h"
@@ -63,6 +64,30 @@ int m_ServiceStatus = -1;
 
 RealmNameMap realmNameStore;
 uint32 realmID;                                             ///< Id of the realm
+
+class FreezeDetector
+{
+    public:
+    FreezeDetector(Trinity::Asio::IoContext& ioContext, uint32 maxCoreStuckTime)
+        : _timer(ioContext), _worldLoopCounter(0), _lastChangeMsTime(getMSTime()), _maxCoreStuckTimeInMs(maxCoreStuckTime) { }
+
+        static void Start(std::shared_ptr<FreezeDetector> const& freezeDetector)
+        {
+            freezeDetector->_timer.expires_from_now(boost::posix_time::seconds(5));
+            freezeDetector->_timer.async_wait([freezeDetectorRef = std::weak_ptr<FreezeDetector>(freezeDetector)](boost::system::error_code const& error)
+            {
+                return Handler(freezeDetectorRef, error);
+            });
+        }
+
+        static void Handler(std::weak_ptr<FreezeDetector> freezeDetectorRef, boost::system::error_code const& error);
+
+    private:
+        Trinity::Asio::DeadlineTimer _timer;
+        uint32 _worldLoopCounter;
+        uint32 _lastChangeMsTime;
+        uint32 _maxCoreStuckTimeInMs;
+};
 
 AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext);
 
@@ -169,6 +194,16 @@ extern int main(int argc, char** argv)
         raAcceptor.reset(StartRaSocketAcceptor(*ioContext));
 
 
+    // Start the freeze check callback cycle in 5 seconds (cycle itself is 1 sec)
+    std::shared_ptr<FreezeDetector> freezeDetector;
+    if (int coreStuckTime = sConfigMgr->GetIntDefault("MaxCoreStuckTime", 60))
+    {
+        freezeDetector = std::make_shared<FreezeDetector>(*ioContext, coreStuckTime * 1000);
+        FreezeDetector::Start(freezeDetector);
+        TC_LOG_INFO("server.worldserver", "Starting up anti-freeze thread (%u seconds max stuck time)...", coreStuckTime);
+    }
+
+
     ///- and run the 'Master'
     /// @todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
     int ret = sMaster->Run();
@@ -182,6 +217,40 @@ extern int main(int argc, char** argv)
 }
 
 /// @}
+
+void FreezeDetector::Handler(std::weak_ptr<FreezeDetector> freezeDetectorRef, boost::system::error_code const& error)
+{
+    if (!error)
+    {
+        if (std::shared_ptr<FreezeDetector> freezeDetector = freezeDetectorRef.lock())
+        {
+            uint32 curtime = getMSTime();
+
+            uint32 worldLoopCounter = World::m_worldLoopCounter;
+            if (freezeDetector->_worldLoopCounter != worldLoopCounter)
+            {
+                freezeDetector->_lastChangeMsTime = curtime;
+                freezeDetector->_worldLoopCounter = worldLoopCounter;
+            }
+            // possible freeze
+            else
+            {
+                uint32 msTimeDiff = getMSTimeDiff(freezeDetector->_lastChangeMsTime, curtime);
+                if (msTimeDiff > freezeDetector->_maxCoreStuckTimeInMs)
+                {
+                    TC_LOG_ERROR("server.worldserver", "World Thread hangs for %u ms, forcing a crash!", msTimeDiff);
+                    ABORT_MSG("World Thread hangs for %u ms, forcing a crash!", msTimeDiff);
+                }
+            }
+
+            freezeDetector->_timer.expires_from_now(boost::posix_time::seconds(1));
+            freezeDetector->_timer.async_wait([freezeDetectorRef](boost::system::error_code const& timerError)
+            {
+                return Handler(freezeDetectorRef, timerError);
+            });
+        }
+    }
+}
 
 AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext)
 {

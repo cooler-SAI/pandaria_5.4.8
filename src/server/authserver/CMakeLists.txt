@@ -64,7 +64,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/database/Database
     ${CMAKE_SOURCE_DIR}/src/server/database/Logging
     ${CMAKE_SOURCE_DIR}/src/server/shared
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities

@@ -85,47 +85,6 @@ void HandleSignal(int sigNum)
     }
 }
 
-class FreezeDetectorRunnable : public MopCore::Runnable
-{
-private:
-    uint32 _loops;
-    uint32 _lastChange;
-    uint32 _delaytime;
-public:
-    FreezeDetectorRunnable() { _delaytime = 0; }
-
-    void SetDelayTime(uint32 t) { _delaytime = t; }
-
-    void run() override
-    {
-        if (!_delaytime)
-            return;
-
-        TC_LOG_INFO("server.worldserver", "Starting up anti-freeze thread (%u seconds max stuck time)...", _delaytime/1000);
-        _loops = 0;
-        _lastChange = 0;
-        while (!World::IsStopped())
-        {
-            MopCore::Thread::Sleep(1000);
-            uint32 curtime = getMSTime();
-            // normal work
-            uint32 worldLoopCounter = World::m_worldLoopCounter;
-            if (_loops != worldLoopCounter)
-            {
-                _lastChange = curtime;
-                _loops = worldLoopCounter;
-            }
-            // possible freeze
-            else if (getMSTimeDiff(_lastChange, curtime) > _delaytime)
-            {
-                TC_LOG_ERROR("server.worldserver", "World Thread hangs, kicking out server!");
-                ASSERT(false);
-            }
-        }
-        TC_LOG_INFO("server.worldserver", "Anti-freeze thread exiting without problems.");
-    }
-};
-
 void RunAuthserverIfNeed()
 {
 #ifdef _WIN32
@@ -309,15 +268,6 @@ int Master::Run()
     SoapService soap;
     if (sConfigMgr->GetBoolDefault("SOAP.Enabled", false))
         soap.Run(sConfigMgr->GetStringDefault("SOAP.IP", "127.0.0.1"), uint16(sConfigMgr->GetIntDefault("SOAP.Port", 7878)));
-
-    ///- Start up freeze catcher thread
-    if (uint32 freezeDelay = sConfigMgr->GetIntDefault("MaxCoreStuckTime", 0))
-    {
-        FreezeDetectorRunnable* fdr = new FreezeDetectorRunnable();
-        fdr->SetDelayTime(freezeDelay * 1000);
-        MopCore::Thread freezeThread(fdr);
-        freezeThread.setPriority(MopCore::Priority_Highest);
-    }
 
     ///- Launch the world listener socket
     uint16 worldPort = uint16(sWorld->getIntConfig(CONFIG_PORT_WORLD));
