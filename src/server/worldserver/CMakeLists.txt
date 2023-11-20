@@ -76,6 +76,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic/LinkedReference
     ${CMAKE_SOURCE_DIR}/src/server/shared/Dynamic
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Networking
     ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
     ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
     ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
@@ -128,6 +129,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/game/Mails
     ${CMAKE_SOURCE_DIR}/src/server/game/Maps
     ${CMAKE_SOURCE_DIR}/src/server/game/Miscellaneous
+    ${CMAKE_SOURCE_DIR}/src/server/game/Motd
     ${CMAKE_SOURCE_DIR}/src/server/game/Movement
     ${CMAKE_SOURCE_DIR}/src/server/game/Movement/MovementGenerators
     ${CMAKE_SOURCE_DIR}/src/server/game/Movement/Spline

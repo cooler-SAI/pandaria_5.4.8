@@ -39,6 +39,7 @@ file(GLOB_RECURSE sources_Loot Loot/*.cpp Loot/*.h)
 file(GLOB_RECURSE sources_Mails Mails/*.cpp Mails/*.h)
 file(GLOB_RECURSE sources_Maps Maps/*.cpp Maps/*.h)
 file(GLOB_RECURSE sources_Miscellaneous Miscellaneous/*.cpp Miscellaneous/*.h)
+file(GLOB_RECURSE sources_Motd Motd/*.cpp Motd/*.h)
 file(GLOB_RECURSE sources_Movement Movement/*.cpp Movement/*.h)
 file(GLOB_RECURSE sources_OutdoorPvP OutdoorPvP/*.cpp OutdoorPvP/*.h)
 file(GLOB_RECURSE sources_Pools Pools/*.cpp Pools/*.h)
@@ -92,6 +93,7 @@ source_group(Loot FILES ${sources_Loot})
 source_group(Mails FILES ${sources_Mails})
 source_group(Maps FILES ${sources_Maps})
 source_group(Miscellaneous FILES ${sources_Miscellaneous})
+source_group(Motd FILES ${sources_Motd})
 source_group(Movement FILES ${sources_Movement})
 source_group(OutdoorPvP FILES ${sources_OutdoorPvP})
 source_group(Pools FILES ${sources_Pools})
@@ -150,6 +152,7 @@ set(game_STAT_SRCS
   ${sources_Mails}
   ${sources_Maps}
   ${sources_Miscellaneous}
+  ${sources_Motd}
   ${sources_Movement}
   ${sources_OutdoorPvP}
   ${sources_Pools}

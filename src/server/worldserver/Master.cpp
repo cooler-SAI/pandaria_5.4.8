@@ -35,7 +35,6 @@
 #include "CliRunnable.h"
 #include "Log.h"
 #include "Master.h"
-#include "RARunnable.h"
 #include "TCSoap.h"
 #include "Timer.h"
 #include "Util.h"
@@ -240,8 +239,6 @@ int Master::Run()
         cliThread = new MopCore::Thread(new CliRunnable);
     }
 
-    MopCore::Thread rarThread(new RARunnable);
-
 #if defined(_WIN32) || defined(__linux__)
     ///- Handle affinity for multiple processors and process priority
     uint32 affinity = sConfigMgr->GetIntDefault("UseProcessors", 0);
@@ -341,7 +338,6 @@ int Master::Run()
     // when the main thread closes the singletons get unloaded
     // since worldrunnable uses them, it will crash if unloaded after master
     worldThread.wait();
-    rarThread.wait();
 
     // set server offline
     LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realmID);

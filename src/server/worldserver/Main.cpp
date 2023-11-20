@@ -38,7 +38,10 @@
 #include "Master.h"
 #include "World.h"
 
+#include "AsyncAcceptor.h"
 #include "IoContext.h"
+#include "ThreadPool.h"
+#include "RASession.h"
 
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
@@ -60,6 +63,8 @@ int m_ServiceStatus = -1;
 
 RealmNameMap realmNameStore;
 uint32 realmID;                                             ///< Id of the realm
+
+AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext);
 
 /// Print out the usage string for this program on the console.
 void usage(const char* prog)
@@ -148,6 +153,22 @@ extern int main(int argc, char** argv)
 
     TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
 
+    // Start the Boost based thread pool
+    int numThreads = sConfigMgr->GetIntDefault("ThreadPool", 1);
+    if (numThreads < 1)
+        numThreads = 1;
+
+    std::shared_ptr<Trinity::ThreadPool> threadPool = std::make_shared<Trinity::ThreadPool>(numThreads);
+
+    for (int i = 0; i < numThreads; ++i)
+        threadPool->PostWork([ioContext]() { ioContext->run(); });
+
+    // Start the Remote Access port (acceptor) if enabled
+    std::unique_ptr<AsyncAcceptor> raAcceptor;
+    if (sConfigMgr->GetBoolDefault("Ra.Enable", false))
+        raAcceptor.reset(StartRaSocketAcceptor(*ioContext));
+
+
     ///- and run the 'Master'
     /// @todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
     int ret = sMaster->Run();
@@ -161,3 +182,20 @@ extern int main(int argc, char** argv)
 }
 
 /// @}
+
+AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext)
+{
+    uint16 raPort = uint16(sConfigMgr->GetIntDefault("Ra.Port", 3443));
+    std::string raListener = sConfigMgr->GetStringDefault("Ra.IP", "0.0.0.0");
+
+    AsyncAcceptor* acceptor = new AsyncAcceptor(ioContext, raListener, raPort);
+    if (!acceptor->Bind())
+    {
+        TC_LOG_ERROR("server.worldserver", "Failed to bind RA socket acceptor");
+        delete acceptor;
+        return nullptr;
+    }
+
+    acceptor->AsyncAccept<RASession>();
+    return acceptor;
+}

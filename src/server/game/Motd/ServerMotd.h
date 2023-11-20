@@ -15,30 +15,24 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-/// \addtogroup Trinityd
-/// @{
-/// \file
+#ifndef ServerMotd_h__
+#define ServerMotd_h__
 
-#ifndef _TRINITY_RARUNNABLE_H_
-#define _TRINITY_RARUNNABLE_H_
+#include "Define.h"
+#include <string>
 
-#include "Common.h"
-#include "Threading/Threading.h"
+class WorldPacket;
 
-#include <ace/Reactor.h>
-
-class RARunnable : public MopCore::Runnable
+namespace Motd
 {
-public:
-    RARunnable();
-    virtual ~RARunnable();
-    void run() override;
+    /// Set a new Message of the Day
+    TC_GAME_API void SetMotd(std::string motd);
 
-private:
-    ACE_Reactor* m_Reactor;
+    /// Get the current Message of the Day
+    TC_GAME_API char const* GetMotd();
 
-};
+    /// Get the motd packet to send at login
+    TC_GAME_API WorldPacket const* GetMotdPacket();
+}
 
-#endif /* _TRINITY_RARUNNABLE_H_ */
-
-/// @}
+#endif //ServerMotd_h__
