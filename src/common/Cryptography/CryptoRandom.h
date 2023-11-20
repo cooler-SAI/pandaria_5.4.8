@@ -15,20 +15,29 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-//add here most rarely modified headers to speed up debug build compilation
+#ifndef TRINITY_CRYPTORANDOM_H
+#define TRINITY_CRYPTORANDOM_H
 
-//#include "WorldSocket.h"        // must be first to make ACE happy with ACE includes in it
-
-//#include "Common.h"
-#include <ace/Basic_Types.h>
-#include <ace/Guard_T.h>
-#include "MapManager.h"
-#include "Log.h"
-#include "ObjectAccessor.h"
-#include "ObjectDefines.h"
-#include "Opcodes.h"
-#include "SharedDefines.h"
-#include "ObjectMgr.h"
-#include "Player.h"
 #include "Define.h"
-#include "Random.h"
+#include <array>
+
+namespace Trinity::Crypto
+{
+    void TC_COMMON_API GetRandomBytes(uint8* buf, size_t len);
+
+    template <typename Container>
+    void GetRandomBytes(Container& c)
+    {
+        GetRandomBytes(std::data(c), std::size(c));
+    }
+
+    template <size_t S>
+    std::array<uint8, S> GetRandomBytes()
+    {
+        std::array<uint8, S> arr;
+        GetRandomBytes(arr);
+        return arr;
+    }
+}
+
+#endif

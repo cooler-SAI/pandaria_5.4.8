@@ -22,6 +22,7 @@
 #include "icecrown_citadel.h"
 #include "PlayerAI.h"
 #include "Transport.h"
+#include "Random.h"
 
 enum Yells
 {

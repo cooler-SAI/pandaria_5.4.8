@@ -41,6 +41,7 @@
 #include "SpellHistory.h"
 #include "Vehicle.h"
 #include "CreatureTextMgr.h"
+#include "Random.h"
 
 class spell_gen_absorb0_hitlimit1 : public AuraScript
 {

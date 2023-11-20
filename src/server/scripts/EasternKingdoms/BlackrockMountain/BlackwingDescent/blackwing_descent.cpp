@@ -17,6 +17,7 @@
 
 #include"ScriptPCH.h"
 #include "blackwing_descent.h"
+#include "Random.h"
 
 enum ScriptTexts
 {

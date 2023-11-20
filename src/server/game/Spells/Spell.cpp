@@ -61,6 +61,7 @@
 #include "LootLockoutMap.h"
 #include "BattlePetMgr.h"
 #include "TradeData.h"
+#include "Random.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 

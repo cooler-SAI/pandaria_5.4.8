@@ -29,6 +29,7 @@
 #include "Item.h"
 #include "Language.h"
 #include "Log.h"
+#include "Random.h"
 #include <vector>
 
 BlackMarketMgr::~BlackMarketMgr()

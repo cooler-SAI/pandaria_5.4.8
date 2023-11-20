@@ -15,20 +15,12 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-//add here most rarely modified headers to speed up debug build compilation
+#include "CryptoRandom.h"
+#include "Errors.h"
+#include <openssl/rand.h>
 
-//#include "WorldSocket.h"        // must be first to make ACE happy with ACE includes in it
-
-//#include "Common.h"
-#include <ace/Basic_Types.h>
-#include <ace/Guard_T.h>
-#include "MapManager.h"
-#include "Log.h"
-#include "ObjectAccessor.h"
-#include "ObjectDefines.h"
-#include "Opcodes.h"
-#include "SharedDefines.h"
-#include "ObjectMgr.h"
-#include "Player.h"
-#include "Define.h"
-#include "Random.h"
+void Trinity::Crypto::GetRandomBytes(uint8* buf, size_t len)
+{
+    int result = RAND_bytes(buf, len);
+    ASSERT(result == 1, "Not enough randomness in OpenSSL's entropy pool. What in the world are you running on?");
+}

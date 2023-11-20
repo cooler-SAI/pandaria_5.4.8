@@ -18,6 +18,7 @@
 #include "ScriptPCH.h"
 #include "CreatureTextMgr.h"
 #include "dragon_soul.h"
+#include "Random.h"
 
 enum ScriptedTexts
 {

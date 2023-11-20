@@ -17,6 +17,7 @@
 
 #include "ScriptPCH.h"
 #include "../AI/SmartScripts/SmartAI.h"
+#include "Random.h"
 
 enum ElwynnForest
 {

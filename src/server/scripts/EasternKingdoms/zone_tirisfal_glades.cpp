@@ -19,6 +19,7 @@
 #include "ScriptedCreature.h"
 #include "Object.h"
 #include "Player.h"
+#include "Random.h"
 
 enum TirisfalGlades
 {

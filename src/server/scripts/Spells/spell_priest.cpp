@@ -30,6 +30,7 @@
 #include "Group.h"
 #include "BattlePetMgr.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum PriestSpells
 {

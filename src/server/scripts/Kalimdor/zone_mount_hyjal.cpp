@@ -19,6 +19,7 @@
 #include "Vehicle.h"
 #include "AchievementMgr.h"
 #include "CombatAI.h"
+#include "Random.h"
 
 enum Spells
 {

@@ -28,6 +28,7 @@
 #include "Containers.h"
 #include "LootLockoutMap.h"
 #include "Guild.h"
+#include "Random.h"
 
 static Rates const qualityToRate[MAX_ITEM_QUALITY] =
 {

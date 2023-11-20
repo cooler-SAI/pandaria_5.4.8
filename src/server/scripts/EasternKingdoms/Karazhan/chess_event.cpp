@@ -24,6 +24,7 @@ EndScriptData */
 
 #include "ScriptPCH.h"
 #include "karazhan.h"
+#include "Random.h"
 
 enum
 {

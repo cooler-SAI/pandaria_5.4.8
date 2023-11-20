@@ -30,6 +30,7 @@
 #include "spell_common.h"
 #include "Battleground.h"
 #include "Unit.h"
+#include "Random.h"
 
 enum MonkSpells
 {

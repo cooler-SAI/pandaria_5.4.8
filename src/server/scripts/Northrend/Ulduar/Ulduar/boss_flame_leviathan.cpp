@@ -40,6 +40,7 @@
 #include "ulduar.h"
 #include "Spell.h"
 #include "GameObject.h"
+#include "Random.h"
 
 enum Spells
 {

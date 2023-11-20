@@ -17,6 +17,7 @@
 
 #include "ScriptPCH.h"
 #include "scholomance.h"
+#include "Random.h"
 
 #define MAX_ENCOUNTER 5
 

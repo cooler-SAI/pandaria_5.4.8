@@ -20,6 +20,7 @@
 #include "Vehicle.h"
 #include "Creature.h"
 #include "brawlers_guild.h"
+#include "Random.h"
 
 /* @Note:
  In Patch 5.1 was added brawlers guild with 7 ranks.

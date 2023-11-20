@@ -24,6 +24,7 @@
 #include "Config.h"
 #include "AchievementMgr.h"
 #include "Language.h"
+#include "Random.h"
 #include <filesystem>
 #include <fstream>
 

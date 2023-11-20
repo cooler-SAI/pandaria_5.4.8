@@ -34,6 +34,7 @@
 #include "PassiveAI.h"
 #include "TotemAI.h"
 #include "Pet.h"
+#include "Random.h"
 
 enum ShamanSpells
 {

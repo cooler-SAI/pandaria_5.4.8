@@ -22,6 +22,7 @@
 #include "Chat.h"
 #include "Object.h"
 #include "PassiveAI.h"
+#include "Random.h"
 
 namespace AFDRoyale {
 WorldLocation const DropCenter { 37, 179.298798f, 11.457070f, 600.0f };

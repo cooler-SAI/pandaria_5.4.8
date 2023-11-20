@@ -20,6 +20,7 @@
 #include "BattlePetMgr.h"
 #include "BattlePetSpawnMgr.h"
 #include "Player.h"
+#include "Random.h"
 
 void PetBattleTeam::AddPlayer(Player* player)
 {

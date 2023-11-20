@@ -17,6 +17,7 @@
 
 #include "ScriptPCH.h"
 #include "ahnkahet.h"
+#include "Random.h"
 
 enum Spells
 {

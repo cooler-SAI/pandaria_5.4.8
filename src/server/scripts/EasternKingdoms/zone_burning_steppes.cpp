@@ -22,6 +22,8 @@ SDComment:
 SDCategory: Burning Steppes
 EndScriptData */
 
+#include "Random.h"
+
 enum ScrappedGolemsType
 {
     SPELL_CREATE_WAR_REAVER_PARTS_AB = 89413, // Sieve & Piston

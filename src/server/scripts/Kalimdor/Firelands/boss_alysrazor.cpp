@@ -18,6 +18,7 @@
 #include "ScriptPCH.h"
 #include "firelands.h"
 #include "MoveSplineInit.h"
+#include "Random.h"
 
 enum ScriptTexts
 {

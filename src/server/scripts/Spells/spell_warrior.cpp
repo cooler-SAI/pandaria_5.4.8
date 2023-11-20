@@ -29,7 +29,7 @@
 #include "GridNotifiers.h"
 #include "MoveSpline.h"
 #include "Player.h"
-
+#include "Random.h"
 
 enum WarriorSpells
 {

@@ -23,6 +23,7 @@
 #include "CreatureTextMgr.h"
 #include "ulduar.h"
 #include "Group.h"
+#include "Random.h"
 
 enum Yells
 {

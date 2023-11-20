@@ -25,6 +25,7 @@
 #include "Transport.h"
 #include "Group.h"
 #include "Player.h"
+#include "Random.h"
 
 enum Spells
 {

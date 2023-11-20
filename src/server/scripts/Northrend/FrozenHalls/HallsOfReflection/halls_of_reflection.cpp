@@ -21,6 +21,7 @@
 #include "GameObjectAI.h"
 #include "Transport.h"
 #include "../AI/SmartScripts/SmartAI.h"
+#include "Random.h"
 
 enum Yells
 {

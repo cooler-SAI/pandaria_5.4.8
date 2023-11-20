@@ -32,6 +32,7 @@
 #include "Containers.h"
 #include "Pet.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum MageSpells
 {

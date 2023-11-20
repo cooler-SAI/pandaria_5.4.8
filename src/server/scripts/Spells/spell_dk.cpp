@@ -28,6 +28,7 @@
 #include "Pet.h"
 #include "Battleground.h"
 #include "SpellHistory.h"
+#include "Random.h"
 
 enum DeathKnightSpells
 {

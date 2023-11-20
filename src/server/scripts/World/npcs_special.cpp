@@ -58,6 +58,7 @@ EndContentData */
 #include "Pet.h"
 #include "BlackMarketMgr.h"
 #include "CombatAI.h"
+#include "Random.h"
 
 /*########
 # npc_air_force_bots

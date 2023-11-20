@@ -29,6 +29,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
+#include "Random.h"
 
 // 45102 Romantic Picnic
 enum SpellsPicnic

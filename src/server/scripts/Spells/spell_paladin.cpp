@@ -27,6 +27,7 @@
 #include "GridNotifiers.h"
 #include "spell_common.h"
 #include "PetAI.h"
+#include "Random.h"
 
 enum PaladinSpells
 {

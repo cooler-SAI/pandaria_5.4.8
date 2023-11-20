@@ -18,6 +18,7 @@
 #include "throne_of_thunder.h"
 #include "GridNotifiers.h"
 #include "Vehicle.h"
+#include "Random.h"
 
 enum eSpells
 {

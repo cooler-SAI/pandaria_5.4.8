@@ -20,6 +20,7 @@
 #include "Player.h"
 #include "GameEventMgr.h"
 #include "Vehicle.h"
+#include "Random.h"
 
 struct PostionEventoHallowend
 {

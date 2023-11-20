@@ -39,9 +39,9 @@
 #include "BattlefieldMgr.h"
 #include "WeatherMgr.h"
 #include "Pet.h"
+#include "Random.h"
 #include "ReputationMgr.h"
 #include "InstanceScript.h"
-#include "ace/Stack_Trace.h"
 
 class Aura;
 //

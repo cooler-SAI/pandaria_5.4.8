@@ -20,6 +20,7 @@
 #include "SpellScript.h"
 #include "Player.h"
 #include "naxxramas.h"
+#include "Random.h"
 
 //Stalagg
 enum StalaggYells

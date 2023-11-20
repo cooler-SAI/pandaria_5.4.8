@@ -30,3 +30,4 @@
 #include "SpellScript.h"
 #include "TemporarySummon.h"
 #include "Chat.h"
+#include "Random.h"

@@ -18,6 +18,7 @@
 #include "ScriptMgr.h"
 #include "GameEventMgr.h"
 #include "Transport.h"
+#include "Random.h"
 
 // Darkmoon Deathmatch
 enum DarkmoonDeathmatchData

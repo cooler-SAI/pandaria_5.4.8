@@ -32,6 +32,7 @@
 #include "Vehicle.h"
 #include "Language.h"
 #include "Guild.h"
+#include "Random.h"
 
 enum TimeLostShrine
 {

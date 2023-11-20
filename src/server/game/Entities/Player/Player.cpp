@@ -63,6 +63,7 @@
 #include "Pet.h"
 #include "QueryHolder.h"
 #include "QuestDef.h"
+#include "Random.h"
 #include "ReputationMgr.h"
 #include "SkillDiscovery.h"
 #include "SocialMgr.h"

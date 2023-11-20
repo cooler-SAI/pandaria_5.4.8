@@ -19,6 +19,7 @@
 #include "CreatureTextMgr.h"
 #include "Vehicle.h"
 #include "LFGMgr.h"
+#include "Random.h"
 
 enum Spells
 {

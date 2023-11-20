@@ -26,6 +26,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellHistory.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum RogueSpells
 {

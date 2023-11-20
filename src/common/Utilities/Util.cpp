@@ -18,26 +18,12 @@
 #include "Util.h"
 #include "Common.h"
 #include "utf8.h"
-//#include "SFMT.h"
 #include "Errors.h" // for ASSERT
-//#include "Random.h"
-#include "SFMTRand.h"
 #include <memory>
 #include <random>
 #include <cstring>
 #include <sstream>
 #include <cstdarg>
-
-static thread_local std::unique_ptr<SFMTRand> sfmtRand;
-static SFMTEngine engine;
-
-static SFMTRand* GetRng()
-{
-    if (!sfmtRand)
-        sfmtRand = std::make_unique<SFMTRand>();
-
-    return sfmtRand.get();
-}
 
 std::vector<std::string_view> Trinity::Tokenize(std::string_view str, char sep, bool keepEmpty)
 {
@@ -64,58 +50,6 @@ struct tm* localtime_r(time_t const* time, struct tm *result)
     return result;
 }
 #endif
-
-int32 irand(int32 min, int32 max)
-{
-    ASSERT(max >= min);
-    std::uniform_int_distribution<int32> uid(min, max);
-    return uid(engine);
-}
-
-uint32 urand(uint32 min, uint32 max)
-{
-    ASSERT(max >= min);
-    std::uniform_int_distribution<uint32> uid(min, max);
-    return uid(engine);
-}
-
-float frand(float min, float max)
-{
-    ASSERT(max >= min);
-    std::uniform_real_distribution<float> urd(min, max);
-    return urd(engine);
-}
-
-int32 rand32()
-{
-    return GetRng()->RandomUInt32();
-}
-
-Milliseconds randtime(Milliseconds const& min, Milliseconds const& max)
-{
-    long long diff = max.count() - min.count();
-    ASSERT(diff >= 0);
-    ASSERT(diff <= (uint32)-1);
-    return min + Milliseconds(urand(0, diff));
-}
-
-double rand_norm()
-{
-    std::uniform_real_distribution<double> urd;
-    return urd(engine);
-}
-
-double rand_chance()
-{
-    std::uniform_real_distribution<double> urd(0.0, 100.0);
-    return urd(engine);
-}
-
-SFMTEngine& SFMTEngine::Instance()
-{
-    //static SFMTEngine engine;
-    return engine;
-}
 
 Tokenizer::Tokenizer(const std::string &src, const char sep, uint32 vectorReserve)
 {

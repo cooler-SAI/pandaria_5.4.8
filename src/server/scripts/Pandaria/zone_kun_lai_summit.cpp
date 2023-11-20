@@ -21,6 +21,7 @@
 #include "ScriptedEscortAI.h"
 #include "Vehicle.h"
 #include "CombatAI.h"
+#include "Random.h"
 
 enum ZoneKunLaiSummitSpellData
 {

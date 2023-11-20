@@ -19,6 +19,7 @@
 #include "CreatureTextMgr.h"
 #include "Pet.h"
 #include <array>
+#include "Random.h"
 
 enum Spells
 {

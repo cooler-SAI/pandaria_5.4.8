@@ -25,6 +25,7 @@
 #include "SpellScript.h"
 #include "Vehicle.h"
 #include "LFGMgr.h"
+#include "Random.h"
 
 // Sungshin Ironpaw 73316
 struct npc_secret_ing_sungshin_iron_paw : public ScriptedAI
