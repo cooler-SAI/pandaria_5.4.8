@@ -21,9 +21,8 @@
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Util.h"
-#include "SHA1.h"
 #include "WorldSession.h"
-#include "SHA256.h"
+#include "CryptoHash.h"
 
 AccountMgr::AccountMgr() { }
 
@@ -342,14 +341,13 @@ bool AccountMgr::normalizeString(std::string& utf8String)
 
 std::string AccountMgr::CalculateShaPassHash(std::string const& name, std::string const& password)
 {
-    SHA1Hash sha;
-    sha.Initialize();
+    Trinity::Crypto::SHA1 sha;
     sha.UpdateData(name);
     sha.UpdateData(":");
     sha.UpdateData(password);
     sha.Finalize();
 
-    return Trinity::Impl::ByteArrayToHexStr(sha.GetDigest(), sha.GetLength());
+    return ByteArrayToHexStr(sha.GetDigest());
 }
 
 bool AccountMgr::IsPlayerAccount(uint32 gmlevel)
@@ -545,15 +543,16 @@ uint8 Battlenet::AccountMgr::GetMaxIndex(uint32 accountId)
 
 std::string Battlenet::AccountMgr::CalculateShaPassHash(std::string const& name, std::string const& password)
 {
-    SHA256Hash email;
+
+    Trinity::Crypto::SHA256 email;
     email.UpdateData(name);
     email.Finalize();
 
-    SHA256Hash sha;
-    sha.UpdateData(Trinity::Impl::ByteArrayToHexStr(email.GetDigest(), email.GetLength()));
+    Trinity::Crypto::SHA256 sha;
+    sha.UpdateData(ByteArrayToHexStr(email.GetDigest()));
     sha.UpdateData(":");
     sha.UpdateData(password);
     sha.Finalize();
 
-    return Trinity::Impl::ByteArrayToHexStr(sha.GetDigest(), sha.GetLength(), true);
+    return ByteArrayToHexStr(sha.GetDigest(), true);
 }
