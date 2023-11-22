@@ -15,7 +15,8 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Cryptography/HMACSHA1.h"
+#include "Cryptography/HMAC.h"
+#include "Cryptography/CryptoRandom.h"
 #include "Cryptography/WardenKeyGeneration.h"
 #include "Common.h"
 #include "WorldPacket.h"
@@ -115,8 +116,8 @@ void WardenWin::HandleHashResult(ByteBuffer &buff)
     TC_LOG_DEBUG("warden", "%u - Request hash reply: succeed", _session->GetAccountId());
 
     // reinit crypto keys
-    _inputCrypto.Init(_module.clientKeySeed.first);
-    _outputCrypto.Init(_module.serverKeySeed.first);
+    _inputCrypto.Init(_module.clientKeySeed.first, _module.clientKeySeed.second);
+    _outputCrypto.Init(_module.serverKeySeed.first, _module.serverKeySeed.second);
 
     _initialized = true;
     _previousTimestamp = getMSTime();
@@ -303,14 +304,10 @@ void WardenWin::RequestData(WardenRequestContext* context)
             }*/
             case MODULE_CHECK:
             {
-                buff << uint8(type ^ xorByte);
-                uint32 seed = rand32();
-                buff << uint32(seed);
-                HmacHash hmac(4, (uint8*)&seed);
-                hmac.UpdateData(wd->Str);
-                hmac.Finalize();
-                buff.append(hmac.GetDigest(), hmac.GetLength());
-                break;
+                std::array<uint8, 4> seed = Trinity::Crypto::GetRandomBytes<4>();
+                buff.append(seed);
+                buff.append(Trinity::Crypto::HMAC_SHA1::GetDigestOf(seed, wd->Str));
+                break;                
             }
             /*case PROC_CHECK:
             {

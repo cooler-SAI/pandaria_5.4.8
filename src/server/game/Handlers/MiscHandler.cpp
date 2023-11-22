@@ -29,7 +29,6 @@
 #include "GuildMgr.h"
 #include "WorldSession.h"
 #include "BigNumber.h"
-#include "SHA1.h"
 #include "UpdateData.h"
 #include "LootMgr.h"
 #include "Chat.h"
