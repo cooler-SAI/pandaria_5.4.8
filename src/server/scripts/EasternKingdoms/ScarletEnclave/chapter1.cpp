@@ -25,6 +25,7 @@
 #include "PassiveAI.h"
 #include "Player.h"
 #include "SpellInfo.h"
+#include "SpellScript.h"
 #include "CreatureTextMgr.h"
 #include "MoveSplineInit.h"
 #include <G3D/Vector3.h>
