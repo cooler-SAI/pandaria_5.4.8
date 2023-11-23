@@ -481,7 +481,7 @@ namespace LuaItem
 
     int SaveToDB(lua_State* L, Item* item)
     {
-        SQLTransaction trans = SQLTransaction(NULL);
+        CharacterDatabaseTransaction trans = CharacterDatabaseTransaction(nullptr);
         item->SaveToDB(trans);
         return 0;
     }

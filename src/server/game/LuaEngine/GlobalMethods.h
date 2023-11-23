@@ -816,7 +816,7 @@ namespace LuaGlobalFunctions
         MailSender sender(MAIL_NORMAL, senderPlayer ? senderPlayer->GetGUIDLow() : 0, (MailStationery)stationary);
         MailDraft draft(subject, text);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         uint8 addedItems = 0;
         while (addedItems <= MAX_MAIL_ITEMS && i+2 <= argAmount)
         {
