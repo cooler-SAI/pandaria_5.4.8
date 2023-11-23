@@ -2,7 +2,12 @@
 #   Pandaria Auth Server configuration file   #
 ###############################################
 [authserver]
-
+Updates.AutoSetup = 1
+Updates.EnableDatabases = 1
+Updates.CleanDeadRefMaxCount = 3
+Updates.ArchivedRedundancy = 0
+Updates.AllowRehash = 1
+Updates.Redundancy = 1
 ###################################################################################################
 # SECTION INDEX
 #

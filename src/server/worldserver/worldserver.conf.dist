@@ -49,7 +49,7 @@ Arena.BonusReward.Item.2v2 = 0
 Arena.BonusReward.MailTitle.2v2 = 
 Arena.BonusReward.MailText.2v2 =
 Arena.BonusReward.GamesCount.3v3 = 0
-Arena.BonusReward.Item.3v3 = 
+Arena.BonusReward.Item.3v3 = 0
 Arena.BonusReward.MailTitle.3v3 = 
 Arena.BonusReward.MailText.3v3 =
 Arena.BonusReward.GamesCount.5v5 = 0
@@ -60,6 +60,21 @@ Arena.BonusReward.GamesCount.RBG = 0
 Arena.BonusReward.Item.RBG = 0 
 Arena.BonusReward.MailTitle.RBG = 
 Arena.BonusReward.MailText.RBG = 
+Arena.SeasonReward.Cleanup.KeepWithAchievements = 2091
+Arena.SeasonReward.Cleanup.Achievements = 2093 2092 2090
+Arena.SeasonReward.Cleanup.Titles = 44 43 45
+Arena.SeasonReward.RatingThreshold.3x3 = -1
+Arena.SeasonReward.RatingThreshold.5x5 = -1
+Arena.SeasonReward.RatingThreshold.2x2 = -1
+Updates.AutoSetup = 1
+Updates.EnableDatabases = 1
+MySQLExecutable = "C:/Program Files/MySQL/MySQL Server 8.0/bin/mysql.exe"
+SourceDirectory = sql
+Updates.CleanDeadRefMaxCount = 3
+Updates.ArchivedRedundancy = 0
+Updates.AllowRehash = 1
+Updates.Redundancy = 1
+ThreadPool = 1
 ###################################################################################################
 # EXAMPLE CONFIG
 #
