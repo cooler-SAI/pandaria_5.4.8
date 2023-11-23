@@ -130,35 +130,8 @@ Master* Master::instance()
 /// Main function
 int Master::Run()
 {
-    OpenSSLCrypto::threadsSetup();
-    BigNumber seed1;
-    seed1.SetRand(16 * 8);
 
-    Trinity::Banner::Show("worldserver-daemon",
-        [](char const* text)
-        {
-            TC_LOG_INFO("server.worldserver", "%s", text);
-        },
-        []()
-        {
-            TC_LOG_INFO("server.worldserver", "Using configuration file %s.", sConfigMgr->GetFilename().c_str());
-            TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
-            TC_LOG_INFO("server.worldserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
-        }
-    );
 
-    /// worldserver PID file creation
-    std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
-    if (!pidFile.empty())
-    {
-        if (uint32 pid = CreatePIDFile(pidFile))
-            TC_LOG_INFO("server.worldserver", "Daemon PID: %u\n", pid);
-        else
-        {
-            TC_LOG_ERROR("server.worldserver", "Cannot create PID file %s.\n", pidFile.c_str());
-            return 1;
-        }
-    }
 
     ///- Start the databases
     if (!_StartDB())

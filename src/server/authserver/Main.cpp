@@ -43,6 +43,9 @@
 #include "RealmAcceptor.h"
 #include "AppenderDB.h"
 #include "MySQLThreading.h"
+#include "OpenSSLCrypto.h"
+
+#include <boost/dll/runtime_symbol_info.hpp>
 
 #ifdef __linux__
 #include <sched.h>
@@ -131,6 +134,10 @@ int main(int argc, char** argv)
             TC_LOG_INFO("server.authserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
         }
     );
+
+    OpenSSLCrypto::threadsSetup(boost::dll::program_location().remove_filename());
+
+    std::shared_ptr<void> opensslHandle(nullptr, [](void*) { OpenSSLCrypto::threadsCleanup(); });
 
 #if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
     ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);

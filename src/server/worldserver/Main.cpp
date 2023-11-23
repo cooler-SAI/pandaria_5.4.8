@@ -38,11 +38,18 @@
 #include "Master.h"
 #include "World.h"
 
+#include "AppenderDB.h"
 #include "AsyncAcceptor.h"
+#include "Banner.h"
+#include "BigNumber.h"
 #include "DeadlineTimer.h"
 #include "IoContext.h"
 #include "ThreadPool.h"
+#include "OpenSSLCrypto.h"
 #include "RASession.h"
+
+#include <boost/dll/runtime_symbol_info.hpp>
+
 
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
@@ -172,11 +179,44 @@ extern int main(int argc, char** argv)
     
     std::shared_ptr<Trinity::Asio::IoContext> ioContext = std::make_shared<Trinity::Asio::IoContext>();
 
+    sLog->RegisterAppender<AppenderDB>();
+    // If logs are supposed to be handled async then we need to pass the IoContext into the Log singleton
     sLog->Initialize(sConfigMgr->GetBoolDefault("Log.Async.Enable", false) ? ioContext.get() : nullptr);
 
-    TC_LOG_INFO("server.worldserver", "Using configuration file %s.", cfg_file);
+    Trinity::Banner::Show("worldserver-daemon",
+        [](char const* text)
+        {
+            TC_LOG_INFO("server.worldserver", "%s", text);
+        },
+        []()
+        {
+            TC_LOG_INFO("server.worldserver", "Using configuration file %s.", sConfigMgr->GetFilename().c_str());
+            TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
+            TC_LOG_INFO("server.worldserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
+        }
+    );
 
-    TC_LOG_INFO("server.worldserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    OpenSSLCrypto::threadsSetup(boost::dll::program_location().remove_filename());
+
+    std::shared_ptr<void> opensslHandle(nullptr, [](void*) { OpenSSLCrypto::threadsCleanup(); });
+
+    // Seed the OpenSSL's PRNG here.
+    // That way it won't auto-seed when calling BigNumber::SetRand and slow down the first world login
+    BigNumber seed1;
+    seed1.SetRand(16 * 8);
+
+    /// worldserver PID file creation
+    std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
+    if (!pidFile.empty())
+    {
+        if (uint32 pid = CreatePIDFile(pidFile))
+            TC_LOG_INFO("server.worldserver", "Daemon PID: %u\n", pid);
+        else
+        {
+            TC_LOG_ERROR("server.worldserver", "Cannot create PID file %s.\n", pidFile.c_str());
+            return 1;
+        }
+    }
 
     // Start the Boost based thread pool
     int numThreads = sConfigMgr->GetIntDefault("ThreadPool", 1);
