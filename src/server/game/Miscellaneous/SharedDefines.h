@@ -885,7 +885,7 @@ enum Team
 {
     HORDE               = 67,
     ALLIANCE            = 469,
-	PANDAREN_NEUTRAL    = 1249,                              // Pandaren is neutral
+    PANDAREN_NEUTRAL    = 1249,                              // Pandaren is neutral
     //TEAM_STEAMWHEEDLE_CARTEL = 169,                       // not used in code
     //TEAM_ALLIANCE_FORCES     = 891,
     //TEAM_HORDE_FORCES        = 892,
@@ -3863,6 +3863,7 @@ enum ChatMsg : uint8
 };
 
 #define MSG_NULL_ACTION 0x34
+#define MAX_CHAT_MSG_TYPE 0x41
 
 enum ChatLinkColors
 {
