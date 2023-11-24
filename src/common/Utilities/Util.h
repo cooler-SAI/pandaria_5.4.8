@@ -20,6 +20,7 @@
 
 #include "Duration.h"
 #include "Errors.h"
+#include "Optional.h"
 
 #include <algorithm>
 #include <string>
@@ -339,6 +340,8 @@ void vutf8printf(FILE* out, const char *str, va_list* ap);
 TC_COMMON_API bool ReadWinConsole(std::string& str, size_t size = 256);
 TC_COMMON_API bool WriteWinConsole(std::string_view str, bool error = false);
 #endif
+
+TC_COMMON_API Optional<std::size_t> RemoveCRLF(std::string& str);
 
 uint32 CreatePIDFile(const std::string& filename);
 

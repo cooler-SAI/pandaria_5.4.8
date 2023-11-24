@@ -33,6 +33,8 @@ namespace Trinity
 
     TC_COMMON_API void Warning(char const* file, int line, char const* function, char const* message);
 
+    DECLSPEC_NORETURN TC_COMMON_API void AbortHandler(int sigval);
+
 } // namespace Trinity
 
 TC_COMMON_API std::string GetDebugInfo();

@@ -61,30 +61,6 @@ extern int m_ServiceStatus;
 #define PROCESS_HIGH_PRIORITY -15 // [-20, 19], default is 0
 #endif
 
-/// Handle worldservers's termination signals
-void HandleSignal(int sigNum)
-{
-    switch (sigNum)
-    {
-        case SIGINT:
-            World::StopNow(RESTART_EXIT_CODE);
-            break;
-        case SIGTERM:
-#ifdef _WIN32
-        case SIGBREAK:
-            if (m_ServiceStatus != 1)
-#endif
-                World::StopNow(SHUTDOWN_EXIT_CODE);
-            break;
-            /*case SIGSEGV:
-                sLog->outString("ZOMG! SIGSEGV handled!");
-                World::StopNow(SHUTDOWN_EXIT_CODE);
-                break;*/
-        default:
-            break;
-    }
-}
-
 void RunAuthserverIfNeed()
 {
 #ifdef _WIN32
@@ -131,45 +107,13 @@ Master* Master::instance()
 int Master::Run()
 {
 
-
-
-    ///- Start the databases
-    if (!_StartDB())
-        return 1;
-
-    // set server offline (not connectable)
-    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = (flag & ~%u) | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, REALM_FLAG_INVALID, realmID);
-
-    sScriptMgr->SetLoader(AddScripts);
-    ///- Initialize the World
-    sWorld->SetInitialWorldSettings();
-
     // After loadeding comfig from DB
     RunAuthserverIfNeed();
-
-    ///- Initialize the signal handlers
-    Trinity::SignalHandler signalHandler;
-    signalHandler.handle_signal(SIGINT, &HandleSignal);
-    signalHandler.handle_signal(SIGTERM, &HandleSignal);
-#if defined(_WIN32)
-    signalHandler.handle_signal(SIGBREAK, &HandleSignal);
-#endif
 
     ///- Launch WorldRunnable thread
     MopCore::Thread worldThread(new WorldRunnable);
     worldThread.setPriority(MopCore::Priority_Highest);
 
-    MopCore::Thread* cliThread = NULL;
-
-#ifdef _WIN32
-    if (sConfigMgr->GetBoolDefault("Console.Enable", true) && (m_ServiceStatus == -1)/* need disable console in service mode*/)
-#else
-    if (sConfigMgr->GetBoolDefault("Console.Enable", true))
-#endif
-    {
-        ///- Launch CliRunnable thread
-        cliThread = new MopCore::Thread(new CliRunnable);
-    }
 
 #if defined(_WIN32) || defined(__linux__)
     ///- Handle affinity for multiple processors and process priority
@@ -237,11 +181,6 @@ int Master::Run()
 #endif
 #endif
 
-    //Start soap serving thread
-    SoapService soap;
-    if (sConfigMgr->GetBoolDefault("SOAP.Enabled", false))
-        soap.Run(sConfigMgr->GetStringDefault("SOAP.IP", "127.0.0.1"), uint16(sConfigMgr->GetIntDefault("SOAP.Port", 7878)));
-
     ///- Launch the world listener socket
     uint16 worldPort = uint16(sWorld->getIntConfig(CONFIG_PORT_WORLD));
     std::string bindIp = sConfigMgr->GetStringDefault("BindIP", "0.0.0.0");
@@ -268,126 +207,14 @@ int Master::Run()
     ///- Clean database before leaving
     ClearOnlineAccounts();
 
-    _StopDB();
-
     TC_LOG_INFO("server.worldserver", "Halting process...");
-
-    if (cliThread)
-    {
-        #ifdef _WIN32
-
-        // this only way to terminate CLI thread exist at Win32 (alt. way exist only in Windows Vista API)
-        //_exit(1);
-        // send keyboard input to safely unblock the CLI thread
-        INPUT_RECORD b[4];
-        HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
-        b[0].EventType = KEY_EVENT;
-        b[0].Event.KeyEvent.bKeyDown = TRUE;
-        b[0].Event.KeyEvent.uChar.AsciiChar = 'X';
-        b[0].Event.KeyEvent.wVirtualKeyCode = 'X';
-        b[0].Event.KeyEvent.wRepeatCount = 1;
-
-        b[1].EventType = KEY_EVENT;
-        b[1].Event.KeyEvent.bKeyDown = FALSE;
-        b[1].Event.KeyEvent.uChar.AsciiChar = 'X';
-        b[1].Event.KeyEvent.wVirtualKeyCode = 'X';
-        b[1].Event.KeyEvent.wRepeatCount = 1;
-
-        b[2].EventType = KEY_EVENT;
-        b[2].Event.KeyEvent.bKeyDown = TRUE;
-        b[2].Event.KeyEvent.dwControlKeyState = 0;
-        b[2].Event.KeyEvent.uChar.AsciiChar = '\r';
-        b[2].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
-        b[2].Event.KeyEvent.wRepeatCount = 1;
-        b[2].Event.KeyEvent.wVirtualScanCode = 0x1c;
-
-        b[3].EventType = KEY_EVENT;
-        b[3].Event.KeyEvent.bKeyDown = FALSE;
-        b[3].Event.KeyEvent.dwControlKeyState = 0;
-        b[3].Event.KeyEvent.uChar.AsciiChar = '\r';
-        b[3].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
-        b[3].Event.KeyEvent.wVirtualScanCode = 0x1c;
-        b[3].Event.KeyEvent.wRepeatCount = 1;
-        DWORD numb;
-        WriteConsoleInput(hStdIn, b, 4, &numb);
-
-        cliThread->wait();
-
-        #else
-
-        cliThread->destroy();
-
-        #endif
-
-        delete cliThread;
-    }
 
     // for some unknown reason, unloading scripts here and not in worldrunnable
     // fixes a memory leak related to detaching threads from the module
     //UnloadScriptingModule();
 
-    OpenSSLCrypto::threadsCleanup();
     // Exit the process with specified return value
     return World::GetExitCode();
-}
-
-/// Initialize connection to the databases
-bool Master::_StartDB()
-{
-    MySQL::Library_Init();
-
-    // Load databases
-    DatabaseLoader loader("server.worldserver", DatabaseLoader::DATABASE_NONE);
-    loader
-        .AddDatabase(LoginDatabase, "Login")
-        .AddDatabase(CharacterDatabase, "Character")
-        .AddDatabase(WorldDatabase, "World");
-        
-    if (!loader.Load())
-        return false;
-
-    ///- Get the realm Id from the configuration file
-    realmID = sConfigMgr->GetIntDefault("RealmID", 0);
-    if (!realmID)
-    {
-        TC_LOG_ERROR("server.worldserver", "Realm ID not defined in configuration file");
-        return false;
-    }
-
-    // Load realm names into a store
-    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST);
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            realmNameStore[fields[0].GetUInt32()] = fields[1].GetString(); // Store the realm name into the store
-        }
-        while (result->NextRow());
-    }
-
-    TC_LOG_INFO("server.worldserver", "Realm running as realm ID %d", realmID);
-
-    ///- Clean the database before starting
-    ClearOnlineAccounts();
-
-    ///- Insert version info into DB
-    WorldDatabase.PExecute("UPDATE version SET core_version = '%s', core_revision = '%s'", _FULLVERSION, _HASH);        // One-time query
-
-    sWorld->LoadDBVersion();
-
-    TC_LOG_INFO("server.worldserver", "Using World DB: %s", sWorld->GetDBVersion());
-    return true;
-}
-
-void Master::_StopDB()
-{
-    CharacterDatabase.Close();
-    WorldDatabase.Close();
-    LoginDatabase.Close();
-
-    MySQL::Library_End();
 }
 
 /// Clear 'online' status for all accounts with characters in this realm

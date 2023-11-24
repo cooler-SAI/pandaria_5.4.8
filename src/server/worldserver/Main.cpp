@@ -42,14 +42,23 @@
 #include "AsyncAcceptor.h"
 #include "Banner.h"
 #include "BigNumber.h"
+#include "CliRunnable.h"
 #include "DeadlineTimer.h"
+#include "GitRevision.h"
 #include "IoContext.h"
 #include "ThreadPool.h"
 #include "OpenSSLCrypto.h"
 #include "RASession.h"
+#include "RealmList.h"
+#include "ScriptLoader.h"
+#include "ScriptMgr.h"
+#include "TCSoap.h"
 
 #include <boost/dll/runtime_symbol_info.hpp>
-
+#include <boost/asio/signal_set.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <boost/program_options.hpp>
 
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
@@ -96,7 +105,13 @@ class FreezeDetector
         uint32 _maxCoreStuckTimeInMs;
 };
 
+void SignalHandler(boost::system::error_code const& error, int signalNumber);
 AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext);
+bool StartDB();
+void StopDB();
+void WorldUpdateLoop();
+void ClearOnlineAccounts();
+void ShutdownCLIThread(std::thread* cliThread);
 
 /// Print out the usage string for this program on the console.
 void usage(const char* prog)
@@ -115,6 +130,9 @@ void usage(const char* prog)
 /// Launch the Trinity server
 extern int main(int argc, char** argv)
 {
+    // Trinity::Impl::CurrentServerProcessHolder::_type = SERVER_PROCESS_WORLDSERVER;
+    signal(SIGABRT, &Trinity::AbortHandler);    
+
     ///- Command line parsing to get the configuration file name
     char const* cfg_file = _TRINITY_CORE_CONFIG;
     int c = 1;
@@ -177,6 +195,8 @@ extern int main(int argc, char** argv)
         return 1;
     }
     
+    //std::vector<std::string> overriddenKeys = sConfigMgr->OverrideWithEnvVariablesIfAny();
+
     std::shared_ptr<Trinity::Asio::IoContext> ioContext = std::make_shared<Trinity::Asio::IoContext>();
 
     sLog->RegisterAppender<AppenderDB>();
@@ -218,6 +238,13 @@ extern int main(int argc, char** argv)
         }
     }
 
+    // Set signal handlers (this must be done before starting IoContext threads, because otherwise they would unblock and exit)
+    boost::asio::signal_set signals(*ioContext, SIGINT, SIGTERM);
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+    signals.add(SIGBREAK);
+#endif
+    signals.async_wait(SignalHandler);
+
     // Start the Boost based thread pool
     int numThreads = sConfigMgr->GetIntDefault("ThreadPool", 1);
     if (numThreads < 1)
@@ -228,11 +255,45 @@ extern int main(int argc, char** argv)
     for (int i = 0; i < numThreads; ++i)
         threadPool->PostWork([ioContext]() { ioContext->run(); });
 
+    std::shared_ptr<void> ioContextStopHandle(nullptr, [ioContext](void*) { ioContext->stop(); });
+
+    // Start the databases
+    if (!StartDB())
+        return 1;
+
+    std::shared_ptr<void> dbHandle(nullptr, [](void*) { StopDB(); });
+
+    // set server offline (not connectable)
+    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = (flag & ~%u) | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, REALM_FLAG_INVALID, realmID);
+
+    //sScriptMgr->SetScriptLoader(AddScripts);
+    sScriptMgr->SetLoader(AddScripts);
+    std::shared_ptr<void> sScriptMgrHandle(nullptr, [](void*)
+    {
+        sScriptMgr->Unload();
+        //sScriptReloadMgr->Unload();
+    });
+
+    // Initialize the World
+    //sSecretMgr->Initialize();
+    sWorld->SetInitialWorldSettings();
+
     // Start the Remote Access port (acceptor) if enabled
     std::unique_ptr<AsyncAcceptor> raAcceptor;
     if (sConfigMgr->GetBoolDefault("Ra.Enable", false))
         raAcceptor.reset(StartRaSocketAcceptor(*ioContext));
 
+    // Start soap serving thread if enabled
+    std::shared_ptr<std::thread> soapThread;
+    if (sConfigMgr->GetBoolDefault("SOAP.Enabled", false))
+    {
+        soapThread.reset(new std::thread(TCSoapThread, sConfigMgr->GetStringDefault("SOAP.IP", "127.0.0.1"), uint16(sConfigMgr->GetIntDefault("SOAP.Port", 7878))),
+            [](std::thread* thr)
+        {
+            thr->join();
+            delete thr;
+        });
+    }
 
     // Start the freeze check callback cycle in 5 seconds (cycle itself is 1 sec)
     std::shared_ptr<FreezeDetector> freezeDetector;
@@ -243,6 +304,18 @@ extern int main(int argc, char** argv)
         TC_LOG_INFO("server.worldserver", "Starting up anti-freeze thread (%u seconds max stuck time)...", coreStuckTime);
     }
 
+    // Launch CliRunnable thread
+    std::shared_ptr<std::thread> cliThread;
+#ifdef _WIN32
+    if (sConfigMgr->GetBoolDefault("Console.Enable", true) && (m_ServiceStatus == -1)/* need disable console in service mode*/)
+#else
+    if (sConfigMgr->GetBoolDefault("Console.Enable", true))
+#endif
+    {
+        cliThread.reset(new std::thread(CliThread), &ShutdownCLIThread);
+    }
+
+    //WorldUpdateLoop();
 
     ///- and run the 'Master'
     /// @todo Why do we need this 'Master'? Can't all of this be in the Main as for Realmd?
@@ -253,10 +326,140 @@ extern int main(int argc, char** argv)
     // 1 - shutdown at error
     // 2 - restart command used, this code can be used by restarter for restart Trinityd
 
+    // Shutdown starts here
+    ioContextStopHandle.reset();
+
+    threadPool.reset();
+
+    sLog->SetSynchronous();
+
+    sScriptMgr->OnShutdown();
+
+    // set server offline
+    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realmID);
+
+    TC_LOG_INFO("server.worldserver", "Halting process...");
+
     return ret;
 }
 
 /// @}
+
+void ShutdownCLIThread(std::thread* cliThread)
+{
+    if (cliThread != nullptr)
+    {
+#ifdef _WIN32
+        // First try to cancel any I/O in the CLI thread
+        if (!CancelSynchronousIo(cliThread->native_handle()))
+        {
+            // if CancelSynchronousIo() fails, print the error and try with old way
+            DWORD errorCode = GetLastError();
+            LPCSTR errorBuffer;
+
+            DWORD formatReturnCode = FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                                   nullptr, errorCode, 0, (LPTSTR)&errorBuffer, 0, nullptr);
+            if (!formatReturnCode)
+                errorBuffer = "Unknown error";
+
+            TC_LOG_DEBUG("server.worldserver", "Error cancelling I/O of CliThread, error code %u, detail: %s", uint32(errorCode), errorBuffer);
+
+            if (!formatReturnCode)
+                LocalFree((LPSTR)errorBuffer);
+
+            // send keyboard input to safely unblock the CLI thread
+            INPUT_RECORD b[4];
+            HANDLE hStdIn = GetStdHandle(STD_INPUT_HANDLE);
+            b[0].EventType = KEY_EVENT;
+            b[0].Event.KeyEvent.bKeyDown = TRUE;
+            b[0].Event.KeyEvent.uChar.AsciiChar = 'X';
+            b[0].Event.KeyEvent.wVirtualKeyCode = 'X';
+            b[0].Event.KeyEvent.wRepeatCount = 1;
+
+            b[1].EventType = KEY_EVENT;
+            b[1].Event.KeyEvent.bKeyDown = FALSE;
+            b[1].Event.KeyEvent.uChar.AsciiChar = 'X';
+            b[1].Event.KeyEvent.wVirtualKeyCode = 'X';
+            b[1].Event.KeyEvent.wRepeatCount = 1;
+
+            b[2].EventType = KEY_EVENT;
+            b[2].Event.KeyEvent.bKeyDown = TRUE;
+            b[2].Event.KeyEvent.dwControlKeyState = 0;
+            b[2].Event.KeyEvent.uChar.AsciiChar = '\r';
+            b[2].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+            b[2].Event.KeyEvent.wRepeatCount = 1;
+            b[2].Event.KeyEvent.wVirtualScanCode = 0x1c;
+
+            b[3].EventType = KEY_EVENT;
+            b[3].Event.KeyEvent.bKeyDown = FALSE;
+            b[3].Event.KeyEvent.dwControlKeyState = 0;
+            b[3].Event.KeyEvent.uChar.AsciiChar = '\r';
+            b[3].Event.KeyEvent.wVirtualKeyCode = VK_RETURN;
+            b[3].Event.KeyEvent.wVirtualScanCode = 0x1c;
+            b[3].Event.KeyEvent.wRepeatCount = 1;
+            DWORD numb;
+            WriteConsoleInput(hStdIn, b, 4, &numb);
+        }
+#endif
+        cliThread->join();
+        delete cliThread;
+    }
+}
+
+void WorldUpdateLoop()
+{
+    uint32 minUpdateDiff = uint32(sConfigMgr->GetIntDefault("MinWorldUpdateTime", 1));
+    uint32 realCurrTime = 0;
+    uint32 realPrevTime = getMSTime();
+
+    uint32 maxCoreStuckTime = uint32(sConfigMgr->GetIntDefault("MaxCoreStuckTime", 60)) * 1000;
+    uint32 halfMaxCoreStuckTime = maxCoreStuckTime / 2;
+    if (!halfMaxCoreStuckTime)
+        halfMaxCoreStuckTime = std::numeric_limits<uint32>::max();
+
+    LoginDatabase.WarnAboutSyncQueries(true);
+    CharacterDatabase.WarnAboutSyncQueries(true);
+    WorldDatabase.WarnAboutSyncQueries(true);
+
+    ///- While we have not World::m_stopEvent, update the world
+    while (!World::IsStopped())
+    {
+        ++World::m_worldLoopCounter;
+        realCurrTime = getMSTime();
+
+        uint32 diff = getMSTimeDiff(realPrevTime, realCurrTime);
+        if (diff < minUpdateDiff)
+        {
+            uint32 sleepTime = minUpdateDiff - diff;
+            if (sleepTime >= halfMaxCoreStuckTime)
+                TC_LOG_ERROR("server.worldserver", "WorldUpdateLoop() waiting for %u ms with MaxCoreStuckTime set to %u ms", sleepTime, maxCoreStuckTime);
+            // sleep until enough time passes that we can update all timers
+            std::this_thread::sleep_for(Milliseconds(sleepTime));
+            continue;
+        }
+
+        sWorld->Update(diff);
+        realPrevTime = realCurrTime;
+
+#ifdef _WIN32
+        if (m_ServiceStatus == 0)
+            World::StopNow(SHUTDOWN_EXIT_CODE);
+
+        while (m_ServiceStatus == 2)
+            Sleep(1000);
+#endif
+    }
+
+    LoginDatabase.WarnAboutSyncQueries(false);
+    CharacterDatabase.WarnAboutSyncQueries(false);
+    WorldDatabase.WarnAboutSyncQueries(false);
+}
+
+void SignalHandler(boost::system::error_code const& error, int /*signalNumber*/)
+{
+    if (!error)
+        World::StopNow(SHUTDOWN_EXIT_CODE);
+}
 
 void FreezeDetector::Handler(std::weak_ptr<FreezeDetector> freezeDetectorRef, boost::system::error_code const& error)
 {
@@ -307,4 +510,76 @@ AsyncAcceptor* StartRaSocketAcceptor(Trinity::Asio::IoContext& ioContext)
 
     acceptor->AsyncAccept<RASession>();
     return acceptor;
+}
+
+/// Initialize connection to the databases
+bool StartDB()
+{
+    MySQL::Library_Init();
+
+    // Load databases
+    DatabaseLoader loader("server.worldserver", DatabaseLoader::DATABASE_NONE);
+    loader
+        .AddDatabase(LoginDatabase, "Login")
+        .AddDatabase(CharacterDatabase, "Character")
+        .AddDatabase(WorldDatabase, "World");
+
+    if (!loader.Load())
+        return false;
+
+    ///- Get the realm Id from the configuration file
+    realmID = sConfigMgr->GetIntDefault("RealmID", 0);
+    if (!realmID)
+    {
+        TC_LOG_ERROR("server.worldserver", "Realm ID not defined in configuration file");
+        return false;
+    }
+
+    // Load realm names into a store
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST);
+    PreparedQueryResult result = LoginDatabase.Query(stmt);
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            realmNameStore[fields[0].GetUInt32()] = fields[1].GetString(); // Store the realm name into the store
+        }
+        while (result->NextRow());
+    }
+
+    TC_LOG_INFO("server.worldserver", "Realm running as realm ID %d", realmID);
+
+    ///- Clean the database before starting
+    ClearOnlineAccounts();
+
+    ///- Insert version info into DB
+    WorldDatabase.PExecute("UPDATE version SET core_version = '%s', core_revision = '%s'", GitRevision::GetFullVersion(), GitRevision::GetHash());        // One-time query
+
+    sWorld->LoadDBVersion();
+
+    TC_LOG_INFO("server.worldserver", "Using World DB: %s", sWorld->GetDBVersion());
+    return true;
+}
+
+void StopDB()
+{
+    CharacterDatabase.Close();
+    WorldDatabase.Close();
+    LoginDatabase.Close();
+
+    MySQL::Library_End();
+}
+
+/// Clear 'online' status for all accounts with characters in this realm
+void ClearOnlineAccounts()
+{
+    // Reset online status for all accounts with characters on the current realm
+    LoginDatabase.DirectPExecute("UPDATE account SET online = 0 WHERE online > 0 AND id IN (SELECT acctid FROM realmcharacters WHERE realmid = %d)", realmID);
+
+    // Reset online status for all characters
+    CharacterDatabase.DirectExecute("UPDATE characters SET online = 0 WHERE online <> 0");
+
+    // Battleground instance ids reset at server restart
+    CharacterDatabase.DirectExecute("UPDATE character_battleground_data SET instanceId = 0");
 }

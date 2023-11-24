@@ -101,9 +101,11 @@
 
 void AFDRoyaleUpdateHook(uint32 diff);
 
-std::atomic_long World::m_stopEvent = false;
 uint8 World::m_ExitCode = SHUTDOWN_EXIT_CODE;
-uint32 World::m_worldLoopCounter = 0;
+
+TC_GAME_API std::atomic<bool> World::m_stopEvent(false);
+
+TC_GAME_API std::atomic<uint32> World::m_worldLoopCounter(0);
 
 float World::m_MaxVisibleDistanceOnContinents = DEFAULT_VISIBILITY_DISTANCE;
 float World::m_MaxVisibleDistanceInInstances  = DEFAULT_VISIBILITY_INSTANCE;

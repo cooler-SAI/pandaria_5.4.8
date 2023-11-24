@@ -19,11 +19,9 @@
 /// @{
 /// \file
 
-#ifndef SF_WORLD_H
-#define SF_WORLD_H
+#ifndef __WORLD_H
+#define __WORLD_H
 
-#include <ace/Future.h>
-#include <ace/Future_Set.h>
 #include "Common.h"
 #include "Timer.h"
 #include "SharedDefines.h"
@@ -902,20 +900,18 @@ private:
 };
 
 /// The World
-class World
+class TC_GAME_API World
 {
 
     public:
-        static uint32 m_worldLoopCounter;
-
         static World* instance();
+
+        static std::atomic<uint32> m_worldLoopCounter;
 
         WorldSession* FindSession(uint32 id) const;
         void AddSession(WorldSession* s);
-        bool RemoveSession(uint32 id);
-
-        /// Autobroadcast
         void SendAutoBroadcast();
+        bool RemoveSession(uint32 id);
         /// Get the number of current active sessions
         void UpdateMaxSessionCounters();
         const SessionMap& GetAllSessions() const { return m_sessions; }
@@ -1196,7 +1192,7 @@ class World
         World();
         ~World();
 
-        static std::atomic_long m_stopEvent;
+        static std::atomic<bool> m_stopEvent;
         static uint8 m_ExitCode;
         uint32 m_ShutdownTimer;
         uint32 m_ShutdownMask;
@@ -1288,7 +1284,6 @@ class World
         std::map<uint32, AccountCacheData> _accountCacheData;
 
         void ProcessQueryCallbacks();
-        //ACE_Future_Set<PreparedQueryResult> m_realmCharCallbacks;
         QueryCallbackProcessor _queryProcessor;
 
         uint32 m_minDiff = 0;

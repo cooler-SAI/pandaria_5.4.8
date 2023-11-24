@@ -32,9 +32,6 @@ class Master
         int Run();
 
     private:
-        bool _StartDB();
-        void _StopDB();
-
         void ClearOnlineAccounts();
 };
 
