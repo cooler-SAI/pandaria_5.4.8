@@ -31,12 +31,9 @@
 #include "Implementation/CharacterDatabase.h"
 #include "Implementation/WorldDatabase.h"
 
-#include "MySQLThreading.h"
 
 
-#include "Log.h"
 #include "Master.h"
-#include "World.h"
 
 #include "AppenderDB.h"
 #include "AsyncAcceptor.h"
@@ -46,13 +43,17 @@
 #include "DeadlineTimer.h"
 #include "GitRevision.h"
 #include "IoContext.h"
-#include "ThreadPool.h"
+#include "Log.h"
+#include "MySQLThreading.h"
 #include "OpenSSLCrypto.h"
+#include "ProcessPriority.h"
 #include "RASession.h"
 #include "RealmList.h"
 #include "ScriptLoader.h"
 #include "ScriptMgr.h"
 #include "TCSoap.h"
+#include "ThreadPool.h"
+#include "World.h"
 
 #include <boost/dll/runtime_symbol_info.hpp>
 #include <boost/asio/signal_set.hpp>
@@ -256,6 +257,9 @@ extern int main(int argc, char** argv)
         threadPool->PostWork([ioContext]() { ioContext->run(); });
 
     std::shared_ptr<void> ioContextStopHandle(nullptr, [ioContext](void*) { ioContext->stop(); });
+
+    // Set process priority according to configuration settings
+    SetProcessPriority("server.worldserver", sConfigMgr->GetIntDefault(CONFIG_PROCESSOR_AFFINITY, 0), sConfigMgr->GetBoolDefault(CONFIG_HIGH_PRIORITY, false));
 
     // Start the databases
     if (!StartDB())

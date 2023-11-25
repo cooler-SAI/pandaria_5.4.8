@@ -18,6 +18,7 @@ file(GLOB_RECURSE sources_Cryptography Cryptography/*.cpp Cryptography/*.h Crypt
 file(GLOB_RECURSE sources_Hacks Hacks/*.cpp Hacks/*.h)
 file(GLOB_RECURSE sources_IPLocation IPLocation/*.cpp IPLocation/*.h)
 file(GLOB_RECURSE sources_Logging Logging/*.cpp Logging/*.h)
+file(GLOB_RECURSE sources_Threading Threading/*.cpp Threading/*.h)
 file(GLOB_RECURSE sources_Utilities Utilities/*.cpp Utilities/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
@@ -25,9 +26,10 @@ source_group(CMake FILES CMakeLists.txt)
 source_group(Asio FILES ${sources_Asio})
 source_group(Configuration FILES ${sources_Configuration})
 source_group(Cryptography FILES ${sources_Cryptography})
-source_group(Hacks FILES ${sources_IPLocation})
 source_group(Hacks FILES ${sources_Hacks})
+source_group(IPLocation FILES ${sources_IPLocation})
 source_group(Logging FILES ${sources_Logging})
+source_group(Threading FILES ${sources_Threading})
 source_group(Utilities FILES ${sources_Utilities})
 
 # Manually set sources for Debugging directory as we don't want to include WheatyExceptionReport in shared project
@@ -47,7 +49,8 @@ set(common_STAT_SRCS
   ${sources_Debugging}
   ${sources_Hacks}
   ${sources_IPLocation}
-  ${sources_Logging}  
+  ${sources_Logging} 
+  ${sources_Threading} 
   ${sources_Utilities}
   ${sources_localdir}
 )

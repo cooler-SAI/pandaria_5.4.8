@@ -65,6 +65,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/common/Asio
     ${CMAKE_SOURCE_DIR}/src/common/Debugging
     ${CMAKE_SOURCE_DIR}/src/common/Logging
+    ${CMAKE_SOURCE_DIR}/src/common/Threading
     ${CMAKE_SOURCE_DIR}/src/common/Utilities
     ${CMAKE_SOURCE_DIR}/src/server/database/Database
     ${CMAKE_CURRENT_SOURCE_DIR}
