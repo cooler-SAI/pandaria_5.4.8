@@ -50,6 +50,7 @@
 #include "DB2Stores.h"
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
+#include "IPLocation.h"
 #include "MapManager.h"
 #include "CreatureAIRegistry.h"
 #include "BattlegroundMgr.h"
@@ -1741,6 +1742,9 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Initialize data stores...");
     LoadDBCStores(m_dataPath, m_availableDbcLocaleMask);
     LoadDB2Stores(m_dataPath, m_availableDbcLocaleMask);
+
+    // Load IP Location Database
+    sIPLocation->Load();
 
     TC_LOG_INFO("server.loading", "Loading SpellInfo store...");
     sSpellMgr->LoadSpellInfoStore();

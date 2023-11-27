@@ -205,6 +205,8 @@ class WorldSocket : public WorldHandler
 
         uint32 m_Seed;
 
+        std::string _ipCountry;
+
 };
 
 #endif  /* _WORLDSOCKET_H */

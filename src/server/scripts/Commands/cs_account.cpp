@@ -25,6 +25,7 @@ EndScriptData */
 #include "AccountMgr.h"
 #include "Chat.h"
 #include "Language.h"
+#include "IPLocation.h"
 #include "Player.h"
 #include "Realm.h"
 #include "ScriptMgr.h"
@@ -43,6 +44,7 @@ public:
         };      
         static std::vector<ChatCommand> accountLockCommandTable =
         {
+            { "country",        SEC_ADMINISTRATOR,      true,   &HandleAccountLockCountryCommand    },
             { "ip",             SEC_ADMINISTRATOR,      true,   &HandleAccountLockIpCommand         },
         };
 
@@ -300,6 +302,53 @@ public:
         handler->SetSentErrorMessage(true);
         return false;
     }
+
+    static bool HandleAccountLockCountryCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+        {
+            handler->SendSysMessage(LANG_USE_BOL);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        std::string param = (char*)args;
+
+        if (!param.empty())
+        {
+            if (param == "on")
+            {
+                if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(handler->GetSession()->GetRemoteAddress()))
+                {
+                    auto* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_COUNTRY);
+                    stmt->setString(0, location->CountryCode);
+                    stmt->setUInt32(1, handler->GetSession()->GetAccountId());
+                    LoginDatabase.Execute(stmt);
+                    handler->PSendSysMessage(LANG_COMMAND_ACCLOCKLOCKED);
+                }
+                else
+                {
+                    handler->PSendSysMessage("No IP2Location information - account not locked");
+                    handler->SetSentErrorMessage(true);
+                    return false;
+                }
+            }
+            else if (param == "off")
+            {
+                auto* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_COUNTRY);
+                stmt->setString(0, "00");
+                stmt->setUInt32(1, handler->GetSession()->GetAccountId());
+                LoginDatabase.Execute(stmt);
+                handler->PSendSysMessage(LANG_COMMAND_ACCLOCKUNLOCKED);
+            }
+            return true;
+        }
+
+        handler->SendSysMessage(LANG_USE_BOL);
+        handler->SetSentErrorMessage(true);
+        return false;        
+    }
+
 
     static bool HandleAccountEmailCommand(ChatHandler* handler, char const* args)
     {

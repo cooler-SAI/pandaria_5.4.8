@@ -46,6 +46,7 @@
 #include "Chat.h"
 #include "Errors.h"
 #include "Realm.h"
+#include "IPLocation.h"
 
 #if defined(__GNUC__)
 #pragma pack(1)
@@ -1070,6 +1071,10 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
         TC_LOG_ERROR("network", "WorldSocket::HandleAuthSession: Authentication failed for account: %u ('%s') address: %s", id, account.c_str(), address.c_str());
         return -1;
     }
+
+    if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(address))
+        _ipCountry = location->CountryCode;
+
 
     TC_LOG_DEBUG("network", "WorldSocket::HandleAuthSession: Client '%s' authenticated successfully from %s.",
         account.c_str(),

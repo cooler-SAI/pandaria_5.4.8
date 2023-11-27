@@ -43,6 +43,7 @@
 #include "ServiceMgr.h"
 #include "SpellHistory.h"
 #include "WordFilterMgr.h"
+#include "IPLocation.h"
 #include <fstream>
 
 class misc_commandscript : public CommandScript
@@ -1859,6 +1860,13 @@ public:
             eMail         = fields[2].GetString();
             lastIp        = fields[3].GetString();
             lastLogin     = fields[4].GetString();
+
+            if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(lastIp))
+            {
+                lastIp.append(" (");
+                lastIp.append(location->CountryName);
+                lastIp.append(")");
+            }
 
             muteTime      = fields[5].GetUInt64();
             failedLogins  = fields[6].GetUInt32();

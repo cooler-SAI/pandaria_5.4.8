@@ -77,12 +77,70 @@ CREATE TABLE `account`  (
   INDEX `idx_session`(`sessionkey` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 CHARACTER SET = utf8mb3 COLLATE = utf8mb3_general_ci COMMENT = 'Account System' ROW_FORMAT = Dynamic;
 
+
+CREATE TABLE `account` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT COMMENT 'Identifier',
+  `username` varchar(32) NOT NULL DEFAULT '',
+  `battlenet_account` varchar(32) NOT NULL DEFAULT '',
+  `sha_pass_hash` varchar(40) NOT NULL DEFAULT '',
+  `sessionkey` varchar(80) NOT NULL DEFAULT '',
+  `v` varchar(64) NOT NULL DEFAULT '',
+  `s` varchar(64) NOT NULL DEFAULT '',
+  `token_key` varchar(100) NOT NULL DEFAULT '',
+  `totp_secret` varbinary(128) DEFAULT NULL,
+  `email` varchar(255) NOT NULL DEFAULT '',
+  `reg_mail` varchar(255) NOT NULL DEFAULT '',
+  `joindate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_ip` varchar(15) NOT NULL DEFAULT '127.0.0.1',
+  `failed_logins` int unsigned NOT NULL DEFAULT '0',
+  `locked` tinyint unsigned NOT NULL DEFAULT '0',
+  `lock_country` varchar(2) CHARACTER SET utf8mb3 COLLATE utf8mb3_general_ci NOT NULL DEFAULT '00',
+  `last_login` timestamp NULL DEFAULT NULL,
+  `online` tinyint unsigned NOT NULL DEFAULT '0',
+  `expansion` tinyint unsigned NOT NULL DEFAULT '4',
+  `mutetime` bigint NOT NULL DEFAULT '0',
+  `mutereason` varchar(255) NOT NULL DEFAULT '',
+  `muteby` varchar(50) NOT NULL DEFAULT '',
+  `locale` tinyint unsigned NOT NULL DEFAULT '0',
+  `os` varchar(4) NOT NULL DEFAULT '',
+  `recruiter` int unsigned NOT NULL DEFAULT '0',
+  `project_member_id` int unsigned NOT NULL DEFAULT '0',
+  `rank` int DEFAULT NULL,
+  `staff_id` int DEFAULT NULL,
+  `vp` int DEFAULT NULL,
+  `dp` int NOT NULL DEFAULT '0',
+  `isactive` varchar(50) DEFAULT NULL,
+  `activation` varchar(256) DEFAULT NULL,
+  `invited_by` varchar(32) NOT NULL DEFAULT '',
+  `inv_friend_acc` varchar(32) NOT NULL DEFAULT '',
+  `rewarded` int NOT NULL DEFAULT '0',
+  `flags` int NOT NULL DEFAULT '0',
+  `gmlevel` tinyint unsigned NOT NULL DEFAULT '0',
+  `active_realm_id` int unsigned NOT NULL DEFAULT '0',
+  `online_mute_timer` bigint unsigned NOT NULL DEFAULT '0',
+  `active_mute_id` int unsigned NOT NULL DEFAULT '0',
+  `project_verified` tinyint(1) NOT NULL DEFAULT '0',
+  `cash` int NOT NULL DEFAULT '0',
+  `project_is_free` tinyint(1) NOT NULL DEFAULT '0',
+  `project_is_temp` tinyint(1) NOT NULL DEFAULT '0',
+  `project_unban_count` tinyint NOT NULL DEFAULT '0',
+  `project_antierror` int unsigned DEFAULT NULL,
+  `project_attached` int unsigned DEFAULT NULL,
+  `project_passchange` int unsigned NOT NULL DEFAULT '0',
+  `project_vote_time` bigint NOT NULL DEFAULT '0',
+  `project_hwid` varchar(40) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `idx_username` (`username`),
+  KEY `idx_id` (`id`) USING BTREE,
+  KEY `idx_sha` (`sha_pass_hash`) USING BTREE,
+  KEY `idx_session` (`sessionkey`) USING BTREE
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb3 COMMENT='Account System'
+
 -- ----------------------------
 -- Records of account
 -- ----------------------------
-INSERT INTO `account` VALUES (1, 'TEST', '', '3D0D99423E31FCC67A6745EC89D70D700344BC76', 'A4BEAD4BBD62A0C1F5C1BA3CE857C7E587B1AFD1EBF2543F4EAFFC87EC09DE8EF51AA142D04ED259', '77733268AF0D167253BC9097A6BDDAA4E55B66EBFBC5432350DF549084F29D75', 'CC28EADCB56862623B8211A43B96F5FD1B8667464349816AE225487CC0425AB1', '', '', '', '2021-11-03 17:57:54', '25.90.193.232', 0, 0, '2021-11-04 20:22:34', 0, 4, 0, '', '', 6, 'Win', 0, 0, NULL, NULL, NULL, 0, NULL, NULL, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, '');
-INSERT INTO `account` VALUES (2, 'TEST1', '', '313262BAA8B8DFB82560FD58042EC344A357CAA7', '75F3AE12338B032C8660A64E1635105578CD62FC3D89C594EBD98488F3F093E673BCEA40EC192124', '3DD16E9E1162FAF647FAE01723410DA6EA2CB8172A2A69AE53500C4CD5892CD3', 'EEA92B1355C099AEC89918A1F73F1CF9568F910ABF986AF4DA9B2D1D94E99229', '', '', '', '2021-11-04 19:30:35', '25.90.193.232', 0, 0, '2021-11-04 19:31:00', 0, 4, 0, '', '', 6, 'Win', 0, 0, NULL, NULL, NULL, 0, NULL, NULL, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, '');
-INSERT INTO `account` VALUES (3, 'Torvalds', '', '2313a37f05ff70fa636762036325914bacdd3de7', '', '', '', '', '', '', '2023-11-19 18:28:30', '127.0.0.1', 0, 0, NULL, 0, 4, 0, '', '', 0, '', 0, 0, NULL, NULL, NULL, 0, NULL, NULL, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, '');
+INSERT INTO `account` (`id`, `username`, `battlenet_account`, `sha_pass_hash`, `sessionkey`, `v`, `s`, `token_key`, `totp_secret`, `email`, `reg_mail`, `joindate`, `last_ip`, `failed_logins`, `locked`, `lock_country`, `last_login`, `online`, `expansion`, `mutetime`, `mutereason`, `muteby`, `locale`, `os`, `recruiter`, `project_member_id`, `rank`, `staff_id`, `vp`, `dp`, `isactive`, `activation`, `invited_by`, `inv_friend_acc`, `rewarded`, `flags`, `gmlevel`, `active_realm_id`, `online_mute_timer`, `active_mute_id`, `project_verified`, `cash`, `project_is_free`, `project_is_temp`, `project_unban_count`, `project_antierror`, `project_attached`, `project_passchange`, `project_vote_time`, `project_hwid`) 
+VALUES (1, 'TEST', '', '3D0D99423E31FCC67A6745EC89D70D700344BC76', 'A4BEAD4BBD62A0C1F5C1BA3CE857C7E587B1AFD1EBF2543F4EAFFC87EC09DE8EF51AA142D04ED259', '77733268AF0D167253BC9097A6BDDAA4E55B66EBFBC5432350DF549084F29D75', 'CC28EADCB56862623B8211A43B96F5FD1B8667464349816AE225487CC0425AB1', '', NULL, '', '', '2021-11-03 17:57:54', '25.90.193.232', 0, 0, '00', '2021-11-04 20:22:34', 0, 4, 0, '', '', 6, 'Win', 0, 0, NULL, NULL, NULL, 0, NULL, NULL, '', '', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL, NULL, 0, 0, '');
 
 -- ----------------------------
 -- Table structure for account_access

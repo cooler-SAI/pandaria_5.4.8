@@ -32,6 +32,7 @@
 #include "openssl/crypto.h"
 #include "UtilACE.h"
 #include "Threading/Threading.h"
+#include "IPLocation.h"
 
 #define ChunkSize 2048
 
@@ -423,6 +424,25 @@ bool AuthSocket::_HandleLogonChallenge()
                     
                 }
                     
+            }
+            else
+            {
+                std::string LockCountry(fields[7].GetCString()); 
+                if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(ip_address))
+                    _ipCountry = location->CountryCode;
+                TC_LOG_DEBUG("server.authserver", "[AuthChallenge] Account '%s' is not locked to ip", _login.c_str());
+                if (LockCountry.empty() || LockCountry == "00")
+                    TC_LOG_DEBUG("server.authserver", "[AuthChallenge] Account '%s' is not locked to country", _login.c_str());
+                else if (!_ipCountry.empty())
+                {
+                    TC_LOG_DEBUG("server.authserver", "[AuthChallenge] Account '%s' is locked to country: '%s' Player country is '%s'", _login.c_str(), LockCountry.c_str(), _ipCountry.c_str());
+                    if (_ipCountry != LockCountry)
+                    {
+                        pkt << uint8(WOW_FAIL_UNLOCKABLE_LOCK);
+                        socket().send((char const*)pkt.contents(), pkt.size());
+                        return true;
+                    }
+                }
             }
             if (!locked)
             {
