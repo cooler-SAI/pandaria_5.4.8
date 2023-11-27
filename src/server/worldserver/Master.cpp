@@ -39,7 +39,7 @@
 #include "Timer.h"
 #include "Util.h"
 #include "AuthSocket.h"
-#include "RealmList.h"
+#include "Realm.h"
 #include "ScriptLoader.h"
 #include "ScriptMgr.h"
 
@@ -48,6 +48,7 @@
 
 #include "Banner.h"
 #include "MySQLThreading.h"
+#include "Optional.h"
 
 #ifdef _WIN32
 #include <TlHelp32.h>
@@ -120,7 +121,7 @@ int Master::Run()
     }
 
     // set server online (allow connecting now)
-    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag & ~%u, population = 0 WHERE id = '%u'", REALM_FLAG_INVALID, realmID);
+    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag & ~%u, population = 0 WHERE id = '%u'", REALM_FLAG_INVALID, realm.Id.Realm);
 
     TC_LOG_INFO("server.worldserver", "%s (worldserver-daemon) ready...", _FULLVERSION);
 
@@ -129,7 +130,7 @@ int Master::Run()
     worldThread.wait();
 
     // set server offline
-    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realmID);
+    LoginDatabase.DirectPExecute("UPDATE realmlist SET flag = flag | %u WHERE id = '%d'", REALM_FLAG_OFFLINE, realm.Id.Realm);
 
     ///- Clean database before leaving
     ClearOnlineAccounts();
@@ -148,11 +149,58 @@ int Master::Run()
 void Master::ClearOnlineAccounts()
 {
     // Reset online status for all accounts with characters on the current realm
-    LoginDatabase.DirectPExecute("UPDATE account SET online = 0 WHERE online > 0 AND id IN (SELECT acctid FROM realmcharacters WHERE realmid = %d)", realmID);
+    LoginDatabase.DirectPExecute("UPDATE account SET online = 0 WHERE online > 0 AND id IN (SELECT acctid FROM realmcharacters WHERE realmid = %d)", realm.Id.Realm);
 
     // Reset online status for all characters
     CharacterDatabase.DirectExecute("UPDATE characters SET online = 0 WHERE online <> 0");
 
     // Battleground instance ids reset at server restart
     CharacterDatabase.DirectExecute("UPDATE character_battleground_data SET instanceId = 0");
+}
+
+bool Master::LoadRealmInfo()
+{
+    QueryResult result = LoginDatabase.PQuery("SELECT id, name, address, localAddress, localSubnetMask, port, icon, flag, timezone, allowedSecurityLevel, population, gamebuild FROM realmlist WHERE id = %u", realm.Id.Realm);
+    if (!result)
+    {
+        TC_LOG_ERROR("server.worldserver", "> Not found realm with ID %u", realm.Id.Realm);
+        return false;
+    }
+
+    Field* fields = result->Fetch();
+    realm.Name = fields[1].GetString();
+    realm.Port = fields[5].GetUInt16();
+
+    Optional<ACE_INET_Addr> externalAddress = ACE_INET_Addr(realm.Port, fields[2].GetCString(), AF_INET);
+    if (!externalAddress)
+    {
+        TC_LOG_ERROR("server.worldserver", "Could not resolve address %s", fields[2].GetString().c_str());
+        return false;
+    }
+
+    Optional<ACE_INET_Addr> localAddress = ACE_INET_Addr(realm.Port, fields[3].GetCString(), AF_INET);
+    if (!localAddress)
+    {
+        TC_LOG_ERROR("server.worldserver", "Could not resolve address %s", fields[3].GetString().c_str());
+        return false;
+    }
+
+    Optional<ACE_INET_Addr> localSubmask = ACE_INET_Addr(0, fields[4].GetCString(), AF_INET);
+    if (!localSubmask)
+    {
+        TC_LOG_ERROR("server.worldserver", "Could not resolve address %s", fields[4].GetString().c_str());
+        return false;
+    }
+
+    realm.ExternalAddress = std::make_unique<ACE_INET_Addr>(*externalAddress);
+    realm.LocalAddress = std::make_unique<ACE_INET_Addr>(*localAddress);
+    realm.LocalSubnetMask = std::make_unique<ACE_INET_Addr>(*localSubmask);
+
+    realm.Type = fields[6].GetUInt8();
+    realm.Flags = RealmFlags(fields[7].GetUInt8());
+    realm.Timezone = fields[8].GetUInt8();
+    realm.AllowedSecurityLevel = AccountTypes(fields[9].GetUInt8());
+    realm.PopulationLevel = fields[10].GetFloat();
+    realm.Build = fields[11].GetUInt32();
+    return true;
 }

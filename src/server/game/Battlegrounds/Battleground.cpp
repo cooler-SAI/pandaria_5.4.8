@@ -40,6 +40,7 @@
 #include "Pet.h"
 #include "AchievementMgr.h"
 #include "BattlegroundTOK.h"
+#include "Realm.h"
 
 namespace Trinity
 {
@@ -1310,7 +1311,7 @@ void Battleground::EndBattleground(uint32 winner)
             stmt->setUInt8(++index, classID);
             stmt->setUInt16(++index, sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
             stmt->setUInt8(++index, arenaType);
-            stmt->setUInt8(++index, realmID);
+            stmt->setUInt8(++index, realm.Id.Realm);
             stmt->setUInt16(++index, mmr);
             stat.Data.push_back(stmt);
         }

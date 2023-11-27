@@ -58,6 +58,7 @@
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
 #include "LFGMgr.h"
+#include "Realm.h"
 
 bool AFDRoyaleRepopRequestHook(Player* player);
 
@@ -502,9 +503,9 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
         data.WriteBits(pname.size(), 6);
 
         bytesData.WriteByteSeq(playerGuid[1]);
-        bytesData << uint32(realmID);
+        bytesData << uint32(realm.Id.Realm);
         bytesData.WriteByteSeq(playerGuid[7]);
-        bytesData << uint32(realmID);
+        bytesData << uint32(realm.Id.Realm);
         bytesData.WriteByteSeq(playerGuid[4]);
         bytesData.WriteString(pname);
         bytesData.WriteByteSeq(guildGuid[1]);
@@ -803,7 +804,7 @@ void WorldSession::HandleAddFriendOpcode(WorldPacket& recvData)
             team = Player::TeamForRace(fields[1].GetUInt8());
             friendAccountId = fields[2].GetUInt32();
 
-            if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realmID) < SEC_MODERATOR)
+            if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realm.Id.Realm) < SEC_MODERATOR)
             {
                 if (friendGuid)
                 {
@@ -862,7 +863,7 @@ void WorldSession::HandleAddFriendOpcodeCallBack(PreparedQueryResult result, std
     //     team = Player::TeamForRace(fields[1].GetUInt8());
     //     friendAccountId = fields[2].GetUInt32();
 
-    //     if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realmID) < SEC_MODERATOR)
+    //     if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realm.Id.Realm) < SEC_MODERATOR)
     //     {
     //         if (friendGuid)
     //         {

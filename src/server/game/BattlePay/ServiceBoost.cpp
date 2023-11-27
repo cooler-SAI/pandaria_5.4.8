@@ -20,6 +20,7 @@
 #include "BattlePayMgr.h"
 #include "Player.h"
 #include "ServiceMgr.h"
+#include "Realm.h"
 
 void LoadBoostItems()
 {
@@ -75,7 +76,7 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
 
     LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BOOST);
     stmt->setUInt32(0, accountId);
-    stmt->setUInt32(1, realmID);
+    stmt->setUInt32(1, realm.Id.Realm);
     if (PreparedQueryResult result = LoginDatabase.Query(stmt))
     {
         Field* fields = result->Fetch();
@@ -100,14 +101,14 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
     {
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BOOST);
         stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realmID);
+        stmt->setUInt32(1, realm.Id.Realm);
         stmt->setUInt32(2, counter);
     }
     else
     {
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BOOST);
         stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realmID);
+        stmt->setUInt32(1, realm.Id.Realm);
     }
     LoginDatabase.Execute(stmt);
 }
@@ -637,7 +638,7 @@ void CharacterBooster::_HandleCharacterBoost() const
 
     if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION))
     {
-        auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realmID);
+        auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realm.Id.Realm);
         if (!paid)
             return;
     }

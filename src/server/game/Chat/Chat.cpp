@@ -31,6 +31,7 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "Player.h"
+#include "Realm.h"
 #include "UpdateMask.h"
 #include "SpellMgr.h"
 #include "ScriptMgr.h"
@@ -123,7 +124,7 @@ bool ChatHandler::HasLowerSecurityAccount(WorldSession* target, uint32 target_ac
     if (target)
         target_sec = target->GetSecurity();
     else if (target_account)
-        target_sec = AccountMgr::GetSecurity(target_account, realmID);
+        target_sec = AccountMgr::GetSecurity(target_account, realm.Id.Realm);
     else
         return true;                                        // caller must report error for (target == NULL && target_account == 0)
 
@@ -694,7 +695,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     ObjectGuid guildGUID = hasGuildGUID && sender && sender->GetGuildId() ? MAKE_NEW_GUID(sender->GetGuildId(), 0, HIGHGUID_GUILD) : 0;
     ObjectGuid groupGUID = hasGroupGUID && sender && sender->GetGroup() ? sender->GetGroup()->GetGUID() : 0;
 
-    uint32 realmId1 = realmID;
+    uint32 realmId1 = realm.Id.Realm;
     // uint32 realmId2 = realmID;
 
     data.Initialize(SMSG_MESSAGECHAT);

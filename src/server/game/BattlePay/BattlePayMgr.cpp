@@ -25,6 +25,8 @@
 #include "Player.h"
 #include "ServiceBoost.h"
 #include "BattlePetMgr.h"
+#include "Realm.h"
+
 #pragma execution_character_set("UTF-8")
 
 
@@ -512,7 +514,7 @@ bool BattlePayMgr::HasPointsBalance(WorldSession* session, uint64 points)
 void BattlePayMgr::RegisterPurchase(PurchaseInfo* purchase, uint32 item, uint64 price)
 {
   // Register Purchase
-    LoginDatabase.PExecute("INSERT INTO battlepay_log (accountId, characterGuid, realm, item, price) VALUES (%u, %u, %u, %u, %u);", purchase->GetSession()->GetAccountId(), GUID_LOPART(uint64(purchase->SelectedPlayer)), realmID, item, price);
+    LoginDatabase.PExecute("INSERT INTO battlepay_log (accountId, characterGuid, realm, item, price) VALUES (%u, %u, %u, %u, %u);", purchase->GetSession()->GetAccountId(), GUID_LOPART(uint64(purchase->SelectedPlayer)), realm.Id.Realm, item, price);
 }
 
 void BattlePayMgr::Update(uint32 diff)

@@ -45,6 +45,7 @@
 #include "AccountMgr.h"
 #include "Chat.h"
 #include "Errors.h"
+#include "Realm.h"
 
 #if defined(__GNUC__)
 #pragma pack(1)
@@ -989,7 +990,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     // get boost info
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BOOST);
     stmt->setUInt32(0, id);
-    stmt->setUInt32(1, realmID);
+    stmt->setUInt32(1, realm.Id.Realm);
 
     if (LoginDatabase.Query(stmt))
         hasBoost = true;
@@ -1000,7 +1001,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     bool mutedInPublicChannelsOnly = false;
     uint32 onlineMuteTimer = 0;
 
-    if (auto muteRes = LoginDatabase.PQuery("SELECT am.muted_by, am.mute_reason, am.public_channels_only, m.mute_timer FROM mute_active AS m, account_muted AS am WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id AND m.realmid = am.realmid", realmID, id))
+    if (auto muteRes = LoginDatabase.PQuery("SELECT am.muted_by, am.mute_reason, am.public_channels_only, m.mute_timer FROM mute_active AS m, account_muted AS am WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id AND m.realmid = am.realmid", realm.Id.Realm, id))
     {
         fields = muteRes->Fetch();
         mutedBy = fields[0].GetString();
@@ -1013,7 +1014,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_GET_GMLEVEL_BY_REALMID);
 
     stmt->setUInt32(0, id);
-    stmt->setInt32(1, int32(realmID));
+    stmt->setInt32(1, int32(realm.Id.Realm));
 
     result = LoginDatabase.Query(stmt);
 

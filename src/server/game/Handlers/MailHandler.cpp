@@ -32,6 +32,7 @@
 #include "AuctionHouseMgr.h"
 #include "Chat.h"
 #include "WordFilterMgr.h"
+#include "Realm.h"
 
 void WorldSession::HandleSendMail(WorldPacket& recvData)
 {
@@ -1052,12 +1053,12 @@ void WorldSession::HandleQueryNextMailTime(WorldPacket& /*recvData*/)
             dataBuffer.WriteByteSeq(senderGuid[0]);
             dataBuffer << float(m->deliver_time - now);
             if (hasNativeRealmAddress)
-                dataBuffer << uint32(realmID);
+                dataBuffer << uint32(realm.Id.Realm);
             dataBuffer << uint32(m->stationery);
             dataBuffer.WriteByteSeq(senderGuid[3]);
             dataBuffer.WriteByteSeq(senderGuid[2]);
             if (hasVirtualRealmAddress)
-                dataBuffer << uint32(realmID);
+                dataBuffer << uint32(realm.Id.Realm);
             dataBuffer.WriteByteSeq(senderGuid[7]);
 
             count++;

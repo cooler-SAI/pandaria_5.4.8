@@ -29,6 +29,7 @@
 #include "LockedQueue.h"
 #include "AsyncCallbackProcessor.h"
 #include "DatabaseEnvFwd.h"
+#include "Realm.h"
 
 #include <thread>
 #include <map>
@@ -46,6 +47,7 @@ class Quest;
 enum class DevToolType : uint8;
 union DevToolSettings;
 struct CliCommandHolder;
+struct Realm;
 
 class PreparedResultSet;
 class Field;
@@ -699,18 +701,6 @@ enum BillingPlanFlags
     SESSION_ENABLE_CAIS     = 0x80
 };
 
-/// Type of server, this is values from second column of Cfg_Configs.dbc
-enum RealmType
-{
-    REALM_TYPE_NORMAL       = 0,
-    REALM_TYPE_PVP          = 1,
-    REALM_TYPE_NORMAL2      = 4,
-    REALM_TYPE_RP           = 6,
-    REALM_TYPE_RPPVP        = 8,
-    REALM_TYPE_FFA_PVP      = 16                            // custom, free for all pvp mode like arena PvP in all zones except rest activated places and sanctuaries
-                                                            // replaced by REALM_PVP in realm list
-};
-
 enum RealmZone
 {
     REALM_ZONE_UNKNOWN       = 0,                           // any language
@@ -1299,11 +1289,10 @@ class TC_GAME_API World
 typedef std::map<uint32, std::string> RealmNameMap;
 
 extern RealmNameMap realmNameStore;
-extern uint32 realmID;
+
+TC_GAME_API extern Realm realm;
 
 #define sWorld World::instance()
-
-#define ENSURE_WORLD_THREAD() ASSERT(std::this_thread::get_id() == sWorld->GetThreadId())
 
 #endif
 /// @}

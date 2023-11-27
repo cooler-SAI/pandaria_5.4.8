@@ -32,6 +32,7 @@
 #include "Config.h"
 #include <vector>
 #include "DatabaseEnv.h"
+#include "Realm.h"
 
 enum eAuctionHouse
 {
@@ -176,7 +177,7 @@ void AuctionHouseMgr::SendAuctionWonMail(AuctionEntry* auction, CharacterDatabas
     else
     {
         bidderAccId = sObjectMgr->GetPlayerAccountIdByGUID(bidderGuid);
-        logGmTrade = AccountMgr::GetSecurity(bidderAccId, realmID) >= SEC_MODERATOR;
+        logGmTrade = AccountMgr::GetSecurity(bidderAccId, realm.Id.Realm) >= SEC_MODERATOR;
 
         if (logGmTrade && !sObjectMgr->GetPlayerNameByGUID(bidderGuid, bidderName))
             bidderName = sObjectMgr->GetTrinityStringForDBCLocale(LANG_UNKNOWN);

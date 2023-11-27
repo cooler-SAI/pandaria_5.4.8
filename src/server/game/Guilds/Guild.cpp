@@ -30,6 +30,7 @@
 #include "ScriptMgr.h"
 #include "SocialMgr.h"
 #include "Opcodes.h"
+#include "Realm.h"
 #include "ReputationMgr.h"
 
 #define MAX_GUILD_BANK_TAB_TEXT_LEN 500
@@ -1656,7 +1657,7 @@ void Guild::HandleRoster(WorldSession* session /*= NULL*/)
         memberData << float(member->IsOnline() ? 0.0f : float(::time(NULL) - member->GetLogoutTime()) / DAY);
         memberData << uint8(member->GetGender());
         memberData << uint32(member->GetRankId());
-        memberData << uint32(realmID);
+        memberData << uint32(realm.Id.Realm);
         memberData.WriteByteSeq(guid[5]);
         memberData.WriteByteSeq(guid[7]);
         memberData.WriteString(member->GetPublicNote());
@@ -1738,7 +1739,7 @@ void Guild::HandleQuery(WorldSession* session)
         data.WriteByteSeq(guid[7]);
 
         data << uint32(m_emblemInfo.GetColor());
-        data << uint32(realmID);
+        data << uint32(realm.Id.Realm);
 
         for (uint8 i = 0; i < m_ranks.size(); ++i)
         {
@@ -2168,18 +2169,18 @@ void Guild::HandleInviteMember(WorldSession* session, std::string const& name)
     data.WriteByteSeq(oldGuildGuid[2]);
     data.WriteByteSeq(oldGuildGuid[5]);
     data << uint32(GetLevel());
-    data << uint32(pInvitee->GetGuildId() ? realmID : 0);
+    data << uint32(pInvitee->GetGuildId() ? realm.Id.Realm : 0);
     data.WriteByteSeq(newGuildGuid[7]);
     data.WriteByteSeq(newGuildGuid[3]);
     data.WriteByteSeq(oldGuildGuid[4]);
     data << uint32(m_emblemInfo.GetBorderColor());
     data.WriteString(m_name);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data << uint32(m_emblemInfo.GetStyle());
     data.WriteByteSeq(oldGuildGuid[0]);
     data.WriteString(pInvitee->GetGuildName());
     data.WriteByteSeq(newGuildGuid[5]);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteByteSeq(oldGuildGuid[1]);
     data.WriteByteSeq(newGuildGuid[6]);
     data.WriteByteSeq(oldGuildGuid[3]);
@@ -2745,13 +2746,13 @@ void Guild::SendEventNewLeader(Member* newLeader, Member* oldLeader, bool isSelf
     data.WriteString(oldLeaderName);
     data.WriteString(newLeaderName);
     data.WriteGuidBytes(newLeaderGUID, 3, 4);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteByteSeq(oldLeaderGUID[6]);
     data.WriteByteSeq(newLeaderGUID[0]);
     data.WriteByteSeq(oldLeaderGUID[5]);
     data.WriteGuidBytes(newLeaderGUID, 2, 7);
     data.WriteGuidBytes(oldLeaderGUID, 7, 4);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteByteSeq(newLeaderGUID[1]);
     data.WriteGuidBytes(oldLeaderGUID, 2, 1, 3, 0);
 
@@ -2791,11 +2792,11 @@ void Guild::SendEventPlayerLeft(Member* leaver, Member* remover, bool isRemoved)
 
         data.WriteString(RemoverName);
         if (hasRemoverVirtualAdress)
-            data << uint32(realmID);
+            data << uint32(realm.Id.Realm);
     }
     data.WriteString(leaver->GetName());
     data.WriteGuidBytes(LeaverGUID, 1);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteGuidBytes(LeaverGUID, 0, 4, 2, 3, 6, 5, 7);
 
     BroadcastPacket(&data);
@@ -2817,7 +2818,7 @@ void Guild::SendEventPresenceChanged(WorldSession* session, bool loggedOn, bool 
     data.FlushBits();
 
     data.WriteGuidBytes(playerGuid, 3, 2, 0);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteGuidBytes(playerGuid, 6);
     data.WriteString(player->GetName());
     data.WriteGuidBytes(playerGuid, 4, 5, 7, 1);
@@ -3259,7 +3260,7 @@ bool Guild::AddMember(uint64 guid, uint8 rankId)
     data.WriteBits(name.size(), 6);
     data.WriteGuidMask(Guid, 7, 4, 2, 5, 0);
     data.WriteGuidBytes(Guid, 2, 4, 1, 6, 5);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteGuidBytes(Guid, 3, 0);
     data.WriteString(name);
     data.WriteGuidBytes(Guid, 7);

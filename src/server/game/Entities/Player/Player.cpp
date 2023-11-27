@@ -64,6 +64,7 @@
 #include "QueryHolder.h"
 #include "QuestDef.h"
 #include "Random.h"
+#include "Realm.h"
 #include "ReputationMgr.h"
 #include "SkillDiscovery.h"
 #include "SocialMgr.h"
@@ -542,7 +543,7 @@ bool Player::Create(uint32 guidlow, CharacterCreateInfo* createInfo)
     SetUInt32Value(PLAYER_FIELD_GUILD_RANK_ID, 0);
     SetGuildLevel(0);
     SetUInt32Value(PLAYER_FIELD_GUILD_DELETE_DATE, 0);
-    SetUInt32Value(PLAYER_FIELD_VIRTUAL_PLAYER_REALM, realmID);
+    SetUInt32Value(PLAYER_FIELD_VIRTUAL_PLAYER_REALM, realm.Id.Realm);
 
     for (int i = 0; i < KNOWN_TITLES_SIZE; ++i)
         SetUInt64Value(PLAYER_FIELD_KNOWN_TITLES + i, 0);  // 0=disabled
@@ -1378,7 +1379,7 @@ void Player::Update(uint32 p_time)
         if (p_time >= m_session->GetMute().Timer)
         {
             m_session->GetMute().Timer = 0;
-            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realmID, m_session->GetAccountId());
+            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realm.Id.Realm, m_session->GetAccountId());
         }
         else
             m_session->GetMute().Timer -= p_time;
@@ -8034,9 +8035,9 @@ void Player::DuelComplete(DuelCompleteType type)
         data.WriteBit(type != DUEL_WON);                    // 0 = just won; 1 = fled
         data.WriteBits(duel->opponent->GetName().length(), 6);
         data.WriteBits(GetName().length(), 6);
-        data << uint32(realmID);
+        data << uint32(realm.Id.Realm);
         data.WriteString(duel->opponent->GetName());
-        data << uint32(realmID);
+        data << uint32(realm.Id.Realm);
         data.WriteString(GetName());
         SendMessageToSet(&data, true);
     }
@@ -11210,7 +11211,7 @@ void Player::AddDonateTokenCount(uint64 count)
     LoginDatabasePreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_INS_WOW_TOKEN);
     stmt2->setUInt32(0, GetSession()->GetAccountId());
     stmt2->setUInt32(1, GetGUID());
-    stmt2->setUInt32(2, realmID);
+    stmt2->setUInt32(2, realm.Id.Realm);
     stmt2->setUInt32(3, (count / 10000));
     LoginDatabase.Query(stmt2);
 }
@@ -18427,7 +18428,7 @@ bool Player::LoadFromDB(uint32 guid, CharacterDatabaseQueryHolder const& holder)
     SetByteValue(PLAYER_FIELD_ARENA_FACTION, 1, fields[45].GetUInt8());
     SetUInt32Value(PLAYER_FIELD_PLAYER_FLAGS, fields[11].GetUInt32());
     SetInt32Value(PLAYER_FIELD_WATCHED_FACTION_INDEX, fields[44].GetUInt32());
-    SetUInt32Value(PLAYER_FIELD_VIRTUAL_PLAYER_REALM, realmID);
+    SetUInt32Value(PLAYER_FIELD_VIRTUAL_PLAYER_REALM, realm.Id.Realm);
 
     // set which actionbars the client has active - DO NOT REMOVE EVER AGAIN (can be changed though, if it does change fieldwise)
     SetByteValue(PLAYER_FIELD_LIFETIME_MAX_RANK, 2, fields[58].GetUInt8());
@@ -20987,7 +20988,7 @@ void Player::SaveToDB(bool create /*=false*/)
         pet->SavePetToDB();
 
     if (GetSession()->GetMute().Timer > 0)
-        LoginDatabase.PExecute("UPDATE mute_active SET mute_timer = '%u' WHERE realmid = '%u' AND account = '%u'", GetSession()->GetMute().Timer, realmID, GetSession()->GetAccountId());
+        LoginDatabase.PExecute("UPDATE mute_active SET mute_timer = '%u' WHERE realmid = '%u' AND account = '%u'", GetSession()->GetMute().Timer, realm.Id.Realm, GetSession()->GetAccountId());
 
     // we save the data here to prevent spamming
     sAnticheatMgr->SavePlayerData(this);
@@ -30809,7 +30810,7 @@ void Player::SendDeclineGuildInvitation(std::string declinerName, bool autoDecli
     data.WriteBit(autoDecline);
     data.FlushBits();
     data.WriteString(declinerName);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     GetSession()->SendPacket(&data);
 }
 

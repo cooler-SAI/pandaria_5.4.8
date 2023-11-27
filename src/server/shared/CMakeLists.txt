@@ -16,6 +16,7 @@ file(GLOB_RECURSE sources_DataStores DataStores/*.cpp DataStores/*.h)
 file(GLOB_RECURSE sources_Dynamic Dynamic/*.cpp Dynamic/*.h)
 file(GLOB_RECURSE sources_Networking Networking/*.cpp Networking/*.h)
 file(GLOB_RECURSE sources_Packets Packets/*.cpp Packets/*.h)
+file(GLOB_RECURSE sources_Realms Realms/*.cpp Realms/*.h)
 file(GLOB_RECURSE sources_Threading Threading/*.cpp Threading/*.h)
 file(GLOB_RECURSE sources_Utilities Utilities/*.cpp Utilities/*.h)
 file(GLOB sources_localdir *.cpp *.h)
@@ -23,8 +24,9 @@ file(GLOB sources_localdir *.cpp *.h)
 source_group(CMake FILES CMakeLists.txt)
 source_group(DataStores FILES ${sources_DataStores})
 source_group(Dynamic FILES ${sources_Dynamic})
-source_group(Dynamic FILES ${sources_Networking})
+source_group(Networking FILES ${sources_Networking})
 source_group(Packets FILES ${sources_Packets})
+source_group(Realms FILES ${sources_Realms})
 source_group(Threading FILES ${sources_Threading})
 source_group(Utilities FILES ${sources_Utilities})
 source_group(localdir FILES ${sources_localdir})
@@ -43,6 +45,7 @@ set(shared_STAT_SRCS
   ${sources_Dynamic}
   ${sources_Networking}
   ${sources_Packets}
+  ${sources_Realms}
   ${sources_Threading}
   ${sources_Utilities}
   ${sources_localdir}
@@ -67,6 +70,7 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/common/Logging
     ${CMAKE_SOURCE_DIR}/src/common/Threading
     ${CMAKE_SOURCE_DIR}/src/common/Utilities
+    ${CMAKE_SOURCE_DIR}/src/server/database
     ${CMAKE_SOURCE_DIR}/src/server/database/Database
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/DataStores

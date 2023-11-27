@@ -37,6 +37,7 @@
 #include "MMapFactory.h"
 #include "DevTool.h"
 #include "BattlegroundMgr.h"
+#include "Realm.h"
 #include "ServiceMgr.h"
 #include "Config.h"
 #include "ServiceMgr.h"
@@ -1845,7 +1846,7 @@ public:
 
         // Query the prepared statement for login data
         LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO);
-        stmt->setInt32(0, int32(realmID));
+        stmt->setInt32(0, int32(realm.Id.Realm));
         stmt->setUInt32(1, accId);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
@@ -1952,7 +1953,7 @@ public:
         {
             if (onlineMuteTimer)
             {
-                QueryResult qresult = LoginDatabase.PQuery("SELECT muted_by, mute_reason FROM account_muted WHERE id = '%u' AND acc_id = '%u' AND realmid = '%u'", activeMuteId, accId, realmID);
+                QueryResult qresult = LoginDatabase.PQuery("SELECT muted_by, mute_reason FROM account_muted WHERE id = '%u' AND acc_id = '%u' AND realmid = '%u'", activeMuteId, accId, realm.Id.Realm);
                 if (qresult)
                 {
                     Field* fields = qresult->Fetch();
@@ -2170,7 +2171,7 @@ public:
             {
                 QueryResult result = LoginDatabase.PQuery("SELECT m.mute_timer, am.muted_by, am.mute_reason, am.public_channels_only "
                     "FROM mute_active AS m, account_muted AS am "
-                    "WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id", realmID, accId);
+                    "WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id", realm.Id.Realm, accId);
                 if (result)
                 {
                     Field* fields = result->Fetch();
@@ -2207,7 +2208,7 @@ public:
         LoginDatabase.EscapeString(muteReason);
         trans->PAppend("INSERT INTO account_muted (realmid, id, acc_id, char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, public_channels_only) "
             "SELECT %u, %u, id, %u, username, '%s', UNIX_TIMESTAMP(), '%s', %u, '%s', %u FROM account "
-            "WHERE id = '%u'", realmID, muteId, GUID_LOPART(charId), name.c_str(), mutedBy.c_str(), muteTime, muteReason.c_str(), publicChannelsOnly, accId);
+            "WHERE id = '%u'", realm.Id.Realm, muteId, GUID_LOPART(charId), name.c_str(), mutedBy.c_str(), muteTime, muteReason.c_str(), publicChannelsOnly, accId);
 
         if (sWorld->getBoolConfig(CONFIG_GM_USE_ONLINE_MUTES))
         {
@@ -2218,7 +2219,7 @@ public:
                 session->SetMute({ onlineMuteTimer, mutedBy, muteReason, publicChannelsOnly });
 
             trans->PAppend("INSERT INTO mute_active (realmid, account, mute_id, mute_timer) VALUES ('%u', '%u', '%u', '%u')",
-                realmID, accId, muteId, onlineMuteTimer);
+                realm.Id.Realm, accId, muteId, onlineMuteTimer);
         }
         else
         {
@@ -2296,7 +2297,7 @@ public:
                 session->GetMute().Timer = 0;
             }
 
-            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realmID, accId);
+            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realm.Id.Realm, accId);
         }
         else
         {
@@ -2375,7 +2376,7 @@ public:
         if (sWorld->getBoolConfig(CONFIG_GM_USE_ONLINE_MUTES))
         {
             // Get mute info
-            QueryResult result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realmID);
+            QueryResult result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realm.Id.Realm);
 
             if (result)
             {
@@ -2443,7 +2444,7 @@ public:
             sAccountMgr->GetName(accId, acc);
 
             // Get mute info
-            result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realmID);
+            result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realm.Id.Realm);
 
             if (result)
             {
@@ -2476,14 +2477,14 @@ public:
         {
             //                                    0        1          2          3         4          5            6
             result = LoginDatabase.PQuery("SELECT char_id, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
-                                          "WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date ASC", activeMuteId, realmID, acc.c_str(), excludeCharId);
+                                          "WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date ASC", activeMuteId, realm.Id.Realm, acc.c_str(), excludeCharId);
         }
         else
         {
             //                                                   0        1          2          3         4          5            6
             result = LoginDatabase.PQuery("SELECT * FROM (SELECT char_id, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
                                           "               WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date DESC LIMIT %u) AS last_muted "
-                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realmID, acc.c_str(), excludeCharId, limit);
+                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realm.Id.Realm, acc.c_str(), excludeCharId, limit);
         }
 
         if (limit)
@@ -2545,14 +2546,14 @@ public:
         {
             //                                    0        1         2          3          4         5          6            7
             result = LoginDatabase.PQuery("SELECT char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
-                                          "WHERE realmid = '%u' AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date ASC", activeMuteId, realmID, charId, name.c_str());
+                                          "WHERE realmid = '%u' AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date ASC", activeMuteId, realm.Id.Realm, charId, name.c_str());
         }
         else
         {
             //                                                   0        1         2          3          4         5          6            7
             result = LoginDatabase.PQuery("SELECT * FROM (SELECT char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
                                           "               WHERE realmid = %u AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date DESC LIMIT %u) AS last_muted "
-                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realmID, charId, name.c_str(), limit);
+                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realm.Id.Realm, charId, name.c_str(), limit);
         }
 
         if (!result)

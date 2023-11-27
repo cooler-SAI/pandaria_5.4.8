@@ -30,6 +30,7 @@ class Master
     public:
         static Master* instance();
         int Run();
+        bool LoadRealmInfo();
 
     private:
         void ClearOnlineAccounts();

@@ -31,6 +31,7 @@
 #include "MapManager.h"
 #include "Config.h"
 #include "Group.h"
+#include "Realm.h"
 
 void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 {
@@ -61,7 +62,7 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 
     if (nameData)
     {
-        data << uint32(realmID); // realmIdSecond
+        data << uint32(realm.Id.Realm); // realmIdSecond
         data << uint32(1); // AccID
         data << uint8(nameData->m_class);
         data << uint8(nameData->m_race);
@@ -185,7 +186,7 @@ void WorldSession::SendRealmNameQueryOpcode(uint32 realmId)
     if (found)
     {
         data.WriteBits(realmName.length(), 8);
-        data.WriteBit(realmId == realmID);
+        data.WriteBit(realmId == realm.Id.Realm);
         data.WriteBits(realmName.length(), 8);
         data.FlushBits();
 
