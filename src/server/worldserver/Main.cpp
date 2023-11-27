@@ -62,6 +62,9 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/program_options.hpp>
 
+using namespace boost::program_options;
+namespace fs = boost::filesystem;
+
 #ifndef _TRINITY_CORE_CONFIG
 # define _TRINITY_CORE_CONFIG  "worldserver.conf"
 #endif
@@ -114,20 +117,7 @@ void WorldUpdateLoop();
 void ClearOnlineAccounts();
 void ShutdownCLIThread(std::thread* cliThread);
 //bool LoadRealmInfo(Trinity::Asio::IoContext& ioContext);
-
-/// Print out the usage string for this program on the console.
-void usage(const char* prog)
-{
-    printf("Usage:\n");
-    printf(" %s [<options>]\n", prog);
-    printf("    -c config_file           use config_file as configuration file\n");
-#ifdef _WIN32
-    printf("    Running as service functions:\n");
-    printf("    --service                run as service\n");
-    printf("    -s install               install service\n");
-    printf("    -s uninstall             uninstall service\n");
-#endif
-}
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService);
 
 /// Launch the Trinity server
 extern int main(int argc, char** argv)
@@ -136,68 +126,23 @@ extern int main(int argc, char** argv)
     signal(SIGABRT, &Trinity::AbortHandler);    
 
     ///- Command line parsing to get the configuration file name
-    char const* cfg_file = _TRINITY_CORE_CONFIG;
-    int c = 1;
-    while (c < argc)
-    {
-        if (!strcmp(argv[c], "-c"))
-        {
-            if (++c >= argc)
-            {
-                printf("Runtime-Error: -c option requires an input argument");
-                usage(argv[0]);
-                return 1;
-            }
-            else
-                cfg_file = argv[c];
-        }
-
-        #ifdef _WIN32
-        if (strcmp(argv[c], "-s") == 0) // Services
-        {
-            if (++c >= argc)
-            {
-                printf("Runtime-Error: -s option requires an input argument");
-                usage(argv[0]);
-                return 1;
-            }
-
-            if (strcmp(argv[c], "install") == 0)
-            {
-                if (WinServiceInstall())
-                    printf("Installing service\n");
-                return 1;
-            }
-            else if (strcmp(argv[c], "uninstall") == 0)
-            {
-                if (WinServiceUninstall())
-                    printf("Uninstalling service\n");
-                return 1;
-            }
-            else
-            {
-                printf("Runtime-Error: unsupported option %s", argv[c]);
-                usage(argv[0]);
-                return 1;
-            }
-        }
-
-        if (strcmp(argv[c], "--service") == 0)
-            WinServiceRun();
-        #endif
-        ++c;
-    }
+    auto configFile = fs::absolute(_TRINITY_CORE_CONFIG);
+    std::string configService;
+    auto vm = GetConsoleArguments(argc, argv, configFile, configService);
+    // exit if help or version is enabled
+    if (vm.count("help") || vm.count("version"))
+        return 0;
 
     std::string configError;
-    if (!sConfigMgr->LoadInitial(cfg_file,std::vector<std::string>(argv, argv + argc),configError))
+    if (!sConfigMgr->LoadInitial(configFile.generic_string(),
+                                 std::vector<std::string>(argv, argv + argc),
+                                 configError))
     {
-        printf("Invalid or missing configuration file : %s\n", cfg_file);
-        printf("Verify that the file exists and has \'[worldserver]' written in the top of the file!\n");
         printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
     
-    //std::vector<std::string> overriddenKeys = sConfigMgr->OverrideWithEnvVariablesIfAny();
+    std::vector<std::string> overriddenKeys = sConfigMgr->OverrideWithEnvVariablesIfAny();
 
     std::shared_ptr<Trinity::Asio::IoContext> ioContext = std::make_shared<Trinity::Asio::IoContext>();
 
@@ -637,4 +582,46 @@ void ClearOnlineAccounts()
 
     // Battleground instance ids reset at server restart
     CharacterDatabase.DirectExecute("UPDATE character_battleground_data SET instanceId = 0");
+}
+
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService)
+{
+    // Silences warning about configService not be used if the OS is not Windows
+    (void)configService;
+
+    options_description all("Allowed options");
+    all.add_options()
+        ("help,h", "print usage message")
+        ("version,v", "print version build info")
+        ("config,c", value<fs::path>(&configFile)->default_value(fs::absolute(_TRINITY_CORE_CONFIG)),
+                     "use <arg> as configuration file")
+        ("update-databases-only,u", "updates databases only")
+        ;
+#ifdef _WIN32
+    options_description win("Windows platform specific options");
+    win.add_options()
+        ("service,s", value<std::string>(&configService)->default_value(""), "Windows service options: [install | uninstall]")
+        ;
+
+    all.add(win);
+#endif
+    variables_map vm;
+    try
+    {
+        store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), vm);
+        notify(vm);
+    }
+    catch (std::exception& e) {
+        std::cerr << e.what() << "\n";
+    }
+
+    if (vm.count("help")) {
+        std::cout << all << "\n";
+    }
+    else if (vm.count("version"))
+    {
+        std::cout << GitRevision::GetFullVersion() << "\n";
+    }
+
+    return vm;
 }

@@ -440,11 +440,12 @@ void World::LoadConfigSettings(bool reload)
 {
     if (reload)
     {
-        std::string configError;
-        if (!sConfigMgr->Reload(configError))
+        std::vector<std::string> configErrors;
+        if (!sConfigMgr->Reload(configErrors))
         {
+            for (std::string const& configError : configErrors)
+                TC_LOG_ERROR("misc", "World settings reload fail: %s.", configError.c_str());
 
-            TC_LOG_ERROR("misc", "World settings reload fail: can't read settings from %s.", configError.c_str());
             return;
         }
     }
@@ -4412,3 +4413,4 @@ void World::SendRaidQueueInfo(Player* player)
 }
 
 Realm realm;
+

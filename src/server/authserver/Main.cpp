@@ -28,25 +28,30 @@
 #include <ace/ACE.h>
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
-
-#include "Banner.h"
 #include "AppenderDB.h"
+#include "Banner.h"
 #include "Common.h"
+#include "Configuration/Config.h"
 #include "DatabaseEnv.h"
 #include "DatabaseLoader.h"
-#include "Configuration/Config.h"
+#include "GitRevision.h"
 #include "Log.h"
-#include "SystemConfig.h"
-#include "Util.h"
-#include "SignalHandler.h"
-#include "RealmList.h"
-#include "RealmAcceptor.h"
-#include "AppenderDB.h"
 #include "MySQLThreading.h"
 #include "OpenSSLCrypto.h"
 #include "ProcessPriority.h"
-
+#include "RealmList.h"
+#include "RealmAcceptor.h"
+#include "SignalHandler.h"
+#include "SystemConfig.h"
+#include "Util.h"
+#include <boost/program_options.hpp>
 #include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <iostream>
+#include <csignal>
+
+using namespace boost::program_options;
+namespace fs = boost::filesystem;
 
 #ifndef _TRINITY_REALM_CONFIG
 # define _TRINITY_REALM_CONFIG  "authserver.conf"
@@ -54,6 +59,7 @@
 
 bool StartDB();
 void StopDB();
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService);
 
 bool stopEvent = false;                                     // Setting it to true stops the server
 
@@ -84,33 +90,25 @@ void usage(const char* prog)
 /// Launch the auth server
 int main(int argc, char** argv)
 {
+    signal(SIGABRT, &Trinity::AbortHandler);
     // Command line parsing to get the configuration file name
-    char const* configFile = _TRINITY_REALM_CONFIG;
-    int count = 1;
-    while (count < argc)
-    {
-        if (strcmp(argv[count], "-c") == 0)
-        {
-            if (++count >= argc)
-            {
-                printf("Runtime-Error: -c option requires an input argument\n");
-                usage(argv[0]);
-                return 1;
-            }
-            else
-                configFile = argv[count];
-        }
-        ++count;
-    }
+    auto configFile = fs::absolute(_TRINITY_REALM_CONFIG);
+    std::string configService;
+    auto vm = GetConsoleArguments(argc, argv, configFile, configService);
+    // exit if help or version is enabled
+    if (vm.count("help") || vm.count("version"))
+        return 0;
 
     std::string configError;
-    if (!sConfigMgr->LoadInitial(configFile,std::vector<std::string>(argv, argv + argc),configError))  
+    if (!sConfigMgr->LoadInitial(configFile.generic_string(),
+                                 std::vector<std::string>(argv, argv + argc),
+                                 configError))
     {
-        printf("Invalid or missing configuration file : %s\n", configFile);
-        printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!\n");
         printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
+
+    std::vector<std::string> overriddenKeys = sConfigMgr->OverrideWithEnvVariablesIfAny();
 
     sLog->RegisterAppender<AppenderDB>();
     sLog->Initialize(nullptr);
@@ -128,17 +126,12 @@ int main(int argc, char** argv)
         }
     );
 
+    for (std::string const& key : overriddenKeys)
+        TC_LOG_INFO("server.authserver", "Configuration field '%s' was overridden with environment variable.", key.c_str());
+
     OpenSSLCrypto::threadsSetup(boost::dll::program_location().remove_filename());
 
     std::shared_ptr<void> opensslHandle(nullptr, [](void*) { OpenSSLCrypto::threadsCleanup(); });
-
-#if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
-    ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);
-#else
-    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor(), true), true);
-#endif
-
-    TC_LOG_DEBUG("server.authserver", "Max allowed open files is %d", ACE::max_handles());
 
     // authserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
@@ -152,6 +145,14 @@ int main(int argc, char** argv)
             return 1;
         }
     }
+
+#if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);
+#else
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor(), true), true);
+#endif
+
+    TC_LOG_DEBUG("server.authserver", "Max allowed open files is %d", ACE::max_handles());
 
     // Initialize the database connection
     if (!StartDB())
@@ -202,6 +203,12 @@ int main(int argc, char** argv)
     // maximum counter for next ping
     uint32 numLoops = (sConfigMgr->GetIntDefault("MaxPingTime", 30) * (MINUTE * 1000000 / 100000));
     uint32 loopCounter = 0;
+
+    // Enabled a timed callback for handling the database keep alive ping
+    // int32 dbPingInterval = sConfigMgr->GetIntDefault("MaxPingTime", 30);
+    // std::shared_ptr<Trinity::Asio::DeadlineTimer> dbPingTimer = std::make_shared<Trinity::Asio::DeadlineTimer>(*ioContext);
+    // dbPingTimer->expires_from_now(boost::posix_time::minutes(dbPingInterval));
+    // dbPingTimer->async_wait(std::bind(&KeepDatabaseAliveHandler, std::weak_ptr<Trinity::Asio::DeadlineTimer>(dbPingTimer), dbPingInterval, std::placeholders::_1));
 
     // Wait for termination signal
     while (!stopEvent)
@@ -279,4 +286,42 @@ void StopDB()
 {
     LoginDatabase.Close();
     MySQL::Library_End();
+}
+
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService)
+{
+    options_description all("Allowed options");
+    all.add_options()
+        ("help,h", "print usage message")
+        ("version,v", "print version build info")
+        ("config,c", value<fs::path>(&configFile)->default_value(fs::absolute(_TRINITY_REALM_CONFIG)),
+                     "use <arg> as configuration file")
+        ;
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+    options_description win("Windows platform specific options");
+    win.add_options()
+        ("service,s", value<std::string>(&configService)->default_value(""), "Windows service options: [install | uninstall]")
+        ;
+
+    all.add(win);
+#else
+    (void)configService;
+#endif
+    variables_map variablesMap;
+    try
+    {
+        store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), variablesMap);
+        notify(variablesMap);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+    }
+
+    if (variablesMap.count("help"))
+        std::cout << all << "\n";
+    else if (variablesMap.count("version"))
+        std::cout << GitRevision::GetFullVersion() << "\n";
+
+    return variablesMap;
 }
