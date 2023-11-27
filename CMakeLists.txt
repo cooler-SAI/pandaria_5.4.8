@@ -82,7 +82,10 @@ if(WIN32)
   set(BOOST_DEBUG OFF)
   if(DEFINED ENV{BOOST_ROOT})
     set(BOOST_ROOT $ENV{BOOST_ROOT})
+    list(APPEND BOOST_LIBRARYDIR
+      ${BOOST_ROOT}/lib${PLATFORM}-msvc-14.2 )
   endif()
+
 
   set(Boost_USE_STATIC_LIBS        ON)
   set(Boost_USE_MULTITHREADED      ON)
