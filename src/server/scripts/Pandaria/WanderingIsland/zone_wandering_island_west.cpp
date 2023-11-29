@@ -21,7 +21,6 @@
 #include "SpellScript.h"
 #include "Vehicle.h"
 #include "CreatureTextMgr.h"
-#include <Player.cpp>
 
 #define GOSSIP_WIND "I would like to go back on the top of the temple"
 
@@ -193,14 +192,12 @@ class npc_aysa_wind_temple_escort : public CreatureScript
                             auto const player = summoner->ToPlayer();
 
                             player->KilledMonsterCredit(55666);
-                            
-                    me->DespawnOrUnsummon();
                             player->AreaExploredOrEventHappens(29785);
                             player->RemoveAurasDueToSpell(SPELL_SUMMON_AYSA_MARKER);
                         }
 
                         SetEscortPaused(true);
-                        me->DespawnOrUnsummon(10000);
+                        me->DespawnOrUnsummon(10000); // need check time in retail
                         break;
                     }
                     default:
