@@ -57,7 +57,7 @@ void OpcodeTable::InitializeClientTable()
 {
 #define DEFINE_OPCODE_HANDLER(opcode, opcodeNumber, status, processing, handler)                                      \
     ValidateAndSetOpcode<(opcodeNumber < NUM_OPCODE_HANDLERS), (opcode != 0)>(opcode, opcodeNumber, #opcode, status, processing, handler);
-
+    
     DEFINE_OPCODE_HANDLER(CMSG_ACCEPT_LEVEL_GRANT, 0x02FB, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleAcceptGrantLevel); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_ACCEPT_TRADE, 0x144D, STATUS_LOGGEDIN, PROCESS_THREADUNSAFE, &WorldSession::HandleAcceptTradeOpcode); // 5.4.8 18414
     DEFINE_OPCODE_HANDLER(CMSG_ACTIVATE_TAXI, 0x03C9, STATUS_LOGGEDIN, PROCESS_THREADSAFE, &WorldSession::HandleActivateTaxiOpcode); // 5.4.8 18414
@@ -663,7 +663,8 @@ void OpcodeTable::InitializeClientTable()
     DEFINE_OPCODE_HANDLER(MSG_PARTY_ASSIGNMENT, 0x0000, STATUS_UNHANDLED, PROCESS_THREADUNSAFE, &WorldSession::HandlePartyAssignmentOpcode);
     DEFINE_OPCODE_HANDLER(MSG_RAID_READY_CHECK_FINISHED, 0x0000, STATUS_UNHANDLED, PROCESS_THREADUNSAFE, &WorldSession::HandleRaidReadyCheckFinishedOpcode);
     DEFINE_OPCODE_HANDLER(MSG_VERIFY_CONNECTIVITY, 0x4F57, STATUS_UNHANDLED, PROCESS_INPLACE, &WorldSession::Handle_EarlyProccess); // Not an opcode
-
+    DEFINE_OPCODE_HANDLER(MSG_MOVE_WORLDPORT_ACK,  0x1FAD, STATUS_TRANSFER,  PROCESS_THREADUNSAFE, &WorldSession::HandleMoveWorldportAckOpcode); // 5.4.8 18414 
+    
 #undef DEFINE_OPCODE_HANDLER
 };
 
