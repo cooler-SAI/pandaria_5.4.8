@@ -82,16 +82,16 @@ Queuer::Compatibility Queuer::CheckCompatibilityWith(Queuer const& other, Dungeo
     return Compatibility::OK;
 }
 
-if (!sLFGMgr->IsSoloLFG() && numPlayers != MAXGROUPSIZE) // solo lfg
+    If (!sLFGMgr->IsSoloLFG() && numPlayers != MAXGROUPSIZE) // solo lfg
     {
-        LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) single group. Compatibles", GetDetailedMatchRoles(check).c_str());
-        LfgQueueDataContainer::iterator itQueue = QueueDataStore.find(check.front());
-        LfgCompatibilityData data(LFG_COMPATIBLES_WITH_LESS_PLAYERS);
-        data.roles = itQueue->second.roles;
-        LFGMgr::CheckGroupRoles(proposalRoles, dungeon);
-        UpdateBestCompatibleInQueue(itQueue, strGuids, data.roles);
-        SetCompatibilityData(strGuids, data);
-        return LFG_COMPATIBLES_WITH_LESS_PLAYERS;
+    LOG_DEBUG("lfg.queue.match.compatibility.check", "Guids: (%s) single group. Compatibles", GetDetailedMatchRoles(check).c_str());
+    LfgQueueDataContainer::iterator itQueue = QueueDataStore.find(check.front());
+    LfgCompatibilityData data(LFG_COMPATIBLES_WITH_LESS_PLAYERS);
+    data.roles = itQueue->second.roles;
+    LFGMgr::CheckGroupRoles(proposalRoles, dungeon);
+    UpdateBestCompatibleInQueue(itQueue, strGuids, data.roles);
+    SetCompatibilityData(strGuids, data);
+    return LFG_COMPATIBLES_WITH_LESS_PLAYERS;
     }
     
 void Queuer::OutDebug(std::ostringstream& ss, QueueManager const* manager, Queuer const group) const
