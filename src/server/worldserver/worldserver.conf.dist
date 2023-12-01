@@ -1236,7 +1236,13 @@ TicketSystem.FeedBackTickets = 1
 #        Default:     1
 
 DungeonFinder.OptionsMask = 1
+#
+#    LFGSolo.Enabled
+#        Description: Looking for Group Solo Option to queue solo thru LFG\RFD
+#        Default:     1  - (Enabled)
+#                     0  - (Disabled)
 
+LFGSolo.Enabled = 1
 #
 #   DBC.EnforceItemAttributes
 #        Description: Disallow overriding item attributes stored in DBC files with values from the
