@@ -175,8 +175,8 @@ void WorldSession::HandleChannelList(WorldPacket& recvPacket)
     std::string channelName = recvPacket.ReadString(length);
 
     TC_LOG_DEBUG("chat.system", "%s %s Channel: %s",
-        recvPacket.GetOpcode() == CMSG_CHANNEL_DISPLAY_LIST ? "CMSG_CHANNEL_DISPLAY_LIST" : "CMSG_CHANNEL_LIST",
-        GetPlayerInfo().c_str(), channelName.c_str());
+        "CMSG_CHANNEL_LIST",
+        GetPlayerInfo().c_str(), channelName.c_str()); // recvPacket.GetOpcode() == CMSG_CHANNEL_DISPLAY_LIST ? "CMSG_CHANNEL_DISPLAY_LIST" : "CMSG_CHANNEL_LIST"
 
     if (ChannelMgr* cMgr = ChannelMgr::forTeam(GetPlayer()->GetTeam()))
         if (Channel* channel = cMgr->GetChannel(channelName, GetPlayer()))

@@ -1394,14 +1394,14 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
     case CMSG_PETITION_SIGN:                        //   9               4         2 sync 1 async db queries
     case CMSG_TURN_IN_PETITION:                     //   8               5.5       2 sync db query
     case CMSG_GROUP_CHANGE_SUB_GROUP:
-    case CMSG_GROUP_SWAP_SUB_GROUP:
+    //case CMSG_GROUP_SWAP_SUB_GROUP:
     case CMSG_PETITION_QUERY:                       //   4               3.5       1 sync db query
     case CMSG_CHAR_CUSTOMIZE:                       //   5               5         1 sync db query
     case CMSG_CHAR_FACTION_OR_RACE_CHANGE:          //   5               5         1 sync db query
     case CMSG_CHAR_DELETE:                          //   4               4         1 sync db query
     case CMSG_DEL_FRIEND:                           //   7               5         1 async db query
     case CMSG_ADD_FRIEND:                           //   6               4         1 async db query
-    case CMSG_GUILD_CHANGE_NAME_REQUEST:             //   5               3         1 async db query
+    //case CMSG_GUILD_CHANGE_NAME_REQUEST:             //   5               3         1 async db query
     case CMSG_SUBMIT_BUG:                           //   1               1         1 async db query
     case CMSG_GROUP_SET_LEADER:                     //   1               2         1 async db query
     case CMSG_GROUP_RAID_CONVERT:                         //   1               5         1 async db query
@@ -1461,7 +1461,7 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
     case CMSG_CONFIRM_RESPEC_WIPE:                  // not profiled
     case CMSG_SET_DUNGEON_DIFFICULTY:               // not profiled
     case CMSG_SET_RAID_DIFFICULTY:                  // not profiled
-    case MSG_PARTY_ASSIGNMENT:                 // not profiled
+    //case MSG_PARTY_ASSIGNMENT:                 // not profiled
     case CMSG_RAID_READY_CHECK:                       // not profiled
     case CMSG_JOIN_CHANNEL:
     case CMSG_LEAVE_CHANNEL:
@@ -1476,8 +1476,8 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
     case CMSG_AUTH_CONTINUED_SESSION:
     case CMSG_KEEP_ALIVE:
     case CMSG_LOG_DISCONNECT:
-    case CMSG_ENABLE_NAGLE:
-    case CMSG_CONNECT_TO_FAILED:
+    //case CMSG_ENABLE_NAGLE:
+    //case CMSG_CONNECT_TO_FAILED:
     {
         maxPacketCounterAllowed = 25;
         break;
