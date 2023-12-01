@@ -399,7 +399,7 @@ class TC_GAME_API WorldSession
         void SendAuctionCommandResult(AuctionEntry* auction, uint32 Action, uint32 ErrorCode, uint32 bidError = 0);
         void SendAuctionBidderNotification(uint32 location, uint32 auctionId, uint64 bidder, uint32 bidSum, uint32 diff, uint32 item_template);
         void SendAuctionOwnerNotification(AuctionEntry* auction);
-        void SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId);
+        //void SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId);
 
         //Item Enchantment
         void SendEnchantmentLog(uint64 target, uint64 caster, uint64 item, uint32 itemId, uint32 enchantId, uint8 slot);
@@ -854,7 +854,7 @@ class TC_GAME_API WorldSession
         void HandleChannelModerate(WorldPacket& recvPacket);
         void HandleChannelDeclineInvite(WorldPacket& recvPacket);
         void HandleChannelDisplayListQuery(WorldPacket& recvPacket);
-        void HandleGetChannelMemberCount(WorldPacket& recvPacket);
+        //void HandleGetChannelMemberCount(WorldPacket& recvPacket);
         void HandleSetChannelWatch(WorldPacket& recvPacket);
 
         void HandleCompleteCinematic(WorldPacket& recvPacket);
@@ -967,7 +967,7 @@ class TC_GAME_API WorldSession
         void HandleAreaSpiritHealerQueueOpcode(WorldPacket& recvData);
         void HandleCancelMountAuraOpcode(WorldPacket& recvData);
         void HandleSelfResOpcode(WorldPacket& recvData);
-        void HandleComplainOpcode(WorldPacket& recvData);
+        //void HandleComplainOpcode(WorldPacket& recvData);
         void HandleRequestPetInfoOpcode(WorldPacket& recvData);
 
         // Socket gem

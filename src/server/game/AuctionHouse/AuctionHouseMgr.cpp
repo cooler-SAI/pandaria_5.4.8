@@ -310,8 +310,8 @@ void AuctionHouseMgr::SendAuctionCancelledToBidderMail(AuctionEntry* auction, Ch
     if (!bidder)
         bidder_accId = sObjectMgr->GetPlayerAccountIdByGUID(bidder_guid);
 
-    if (bidder)
-        bidder->GetSession()->SendAuctionRemovedNotification(auction->Id, auction->itemEntry, item->GetItemRandomPropertyId());
+    // if (bidder)
+    //     bidder->GetSession()->SendAuctionRemovedNotification(auction->Id, auction->itemEntry, item->GetItemRandomPropertyId());
 
     // bidder exist
     if (bidder || bidder_accId)

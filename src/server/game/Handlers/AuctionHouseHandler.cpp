@@ -213,14 +213,15 @@ void WorldSession::SendAuctionOwnerNotification(AuctionEntry* auction)
     SendPacket(&data);
 }
 
-void WorldSession::SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId)
-{
-    WorldPacket data(SMSG_AUCTION_REMOVED_NOTIFICATION, (4+4+4));
-    data << uint32(auctionId);
-    data << uint32(itemEntry);
-    data << uint32(randomPropertyId);
-    SendPacket(&data);
-}
+// not in 5.4.8
+// void WorldSession::SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId)
+// {
+//     WorldPacket data(SMSG_AUCTION_REMOVED_NOTIFICATION, (4+4+4)); 
+//     data << uint32(auctionId);
+//     data << uint32(itemEntry);
+//     data << uint32(randomPropertyId);
+//     SendPacket(&data);
+// }
 
 //this void creates new auction and adds auction to some auctionhouse
 void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
