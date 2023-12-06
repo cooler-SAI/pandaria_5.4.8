@@ -1136,8 +1136,6 @@ class TC_GAME_API WorldSession
         void HandleResetChallengeMode(WorldPacket& recvData);
         void SendChallengeModeMapStatsUpdate(uint32 mapId);
 
-        void HandlePingUpdate(uint32 latency);
-
         // chat
 
         bool ChannelCheck(std::string channel);

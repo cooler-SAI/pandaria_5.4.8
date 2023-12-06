@@ -813,7 +813,7 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                 }
 
                 // prevent invalid memory access/crash with custom opcodes
-                if (opcode >= NUM_OPCODES)
+                if (opcode >= NUM_OPCODE_HANDLERS)
                     return 0;
 
                 OpcodeHandler const* handler = clientOpcodeTable[opcode];
@@ -1122,7 +1122,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
     return 0;
 }
 
-int WorldSocket::HandlePing (WorldPacket& recvPacket)
+int WorldSocket::HandlePing(WorldPacket& recvPacket)
 {
     using namespace std::chrono;
 
@@ -1167,29 +1167,17 @@ int WorldSocket::HandlePing (WorldPacket& recvPacket)
             m_OverSpeedPings = 0;
     }
 
-    // critical section
     {
         std::lock_guard<std::mutex> guard(m_SessionLock);
 
         if (m_Session)
         {
-            m_Session->SetLatency (latency);
-            uint32 id = m_Session->GetAccountId();
-            // TaskMgr::Default()->ScheduleInvocation([=]
-            // {
-            //     if (WorldSession* session = sWorld->FindSession(id))
-            //         session->HandlePingUpdate(latency);
-            // });
-            if (WorldSession* session = sWorld->FindSession(id))
-                session->HandlePingUpdate(latency);            
+            m_Session->SetLatency(latency);
         }
         else
         {
-            TC_LOG_ERROR("network", "WorldSocket::HandlePing: peer sent CMSG_PING, "
-                            "but is not authenticated or got recently kicked, "
-                            " address = %s",
-                            GetRemoteAddress().c_str());
-             return -1;
+            TC_LOG_ERROR("network", "WorldSocket::HandlePing: peer sent CMSG_PING, but is not authenticated or got recently kicked, address = %s", GetRemoteAddress().c_str());
+            return -1;
         }
     }
 
