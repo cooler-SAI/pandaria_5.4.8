@@ -183,7 +183,7 @@ int WorldSocket::SendPacket(WorldPacket const& pct)
     if (m_Session)
         TC_LOG_TRACE("network.opcode", "S->C: %u %s", m_Session->GetAccountId(), GetOpcodeNameForLogging(pkt->GetOpcode(), true).c_str());
 
-    sScriptMgr->OnPacketSend(this, *pkt);
+    sScriptMgr->OnPacketSend(m_Session, *pkt);
 
     ServerPktHeader header(!m_Crypt.IsInitialized() ? pkt->size() + 2 : pct.size(), opcodeNumber, &m_Crypt);
 
@@ -778,20 +778,20 @@ int WorldSocket::ProcessIncoming(WorldPacket* new_pct)
                     return -1;
                 }
 
-                sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
+                sScriptMgr->OnPacketReceive(m_Session, WorldPacket(*new_pct));
                 return HandleAuthSession(*new_pct);
             case CMSG_KEEP_ALIVE:
-                sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
+                sScriptMgr->OnPacketReceive(m_Session, WorldPacket(*new_pct));
                 return 0;
             case CMSG_LOG_DISCONNECT:
                 new_pct->rfinish(); // contains uint32 disconnectReason;
-                sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
+                sScriptMgr->OnPacketReceive(m_Session, WorldPacket(*new_pct));
                 return 0;
             // not an opcode, client sends string "WORLD OF WARCRAFT CONNECTION - CLIENT TO SERVER" without opcode
             // first 4 bytes become the opcode (2 dropped)
             case MSG_VERIFY_CONNECTIVITY:
             {
-                sScriptMgr->OnPacketReceive(this, WorldPacket(*new_pct));
+                sScriptMgr->OnPacketReceive(m_Session, WorldPacket(*new_pct));
                 std::string str;
                 *new_pct >> str;
                 if (str != "D OF WARCRAFT CONNECTION - CLIENT TO SERVER")
@@ -1123,6 +1123,7 @@ int WorldSocket::HandleAuthSession(WorldPacket& recvPacket)
 
     // NOTE ATM the socket is single-threaded, have this in mind ...
     ACE_NEW_RETURN(m_Session, WorldSession(account.Id, this, AccountTypes(security), account.Expansion, account.MuteTime, account.Locale, account.Recruiter, account.Flags, isRecruiter, hasBoost), -1);
+    //m_Session = new WorldSession(account.Id, shared_from_this(), AccountTypes(security), account.Expansion, account.MuteTime, account.Locale, account.Recruiter, account.Flags, isRecruiter, hasBoost);
     m_Session->SetMute({ onlineMuteTimer, mutedBy, muteReason, mutedInPublicChannelsOnly });
 
     m_Crypt.Init(&k);

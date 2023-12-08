@@ -24,6 +24,7 @@
 #ifndef SF_WORLDSOCKET_H
 #define SF_WORLDSOCKET_H
 
+#include <memory>
 #include <mutex>
 //#include <ace/Synch_Traits.h>
 #include <ace/Svc_Handler.h>

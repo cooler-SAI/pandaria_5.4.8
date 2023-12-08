@@ -467,18 +467,18 @@ void ScriptMgr::OnSocketClose(WorldSocket* socket, bool wasNew)
     FOREACH_SCRIPT(ServerScript)->OnSocketClose(socket, wasNew);
 }
 
-void ScriptMgr::OnPacketReceive(WorldSocket* socket, WorldPacket packet)
+void ScriptMgr::OnPacketReceive(WorldSession* session, WorldPacket packet)
 {
     ASSERT(socket);
 
-    FOREACH_SCRIPT(ServerScript)->OnPacketReceive(socket, packet);
+    FOREACH_SCRIPT(ServerScript)->OnPacketReceive(session, packet);
 }
 
-void ScriptMgr::OnPacketSend(WorldSocket* socket, WorldPacket packet)
+void ScriptMgr::OnPacketSend(WorldSession* session, WorldPacket packet)
 {
     ASSERT(socket);
 
-    FOREACH_SCRIPT(ServerScript)->OnPacketSend(socket, packet);
+    FOREACH_SCRIPT(ServerScript)->OnPacketSend(session, packet);
 }
 
 void ScriptMgr::OnUnknownPacketReceive(WorldSocket* socket, WorldPacket packet)
