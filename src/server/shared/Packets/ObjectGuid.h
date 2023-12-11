@@ -18,11 +18,22 @@
 #ifndef ObjectGuid_h__
 #define ObjectGuid_h__
 
+#include <deque>
+#include <functional>
+#include <list>
+#include <memory>
+#include <set>
+#include <type_traits>
+#include <vector>
+#include <unordered_set>
+
 //! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
 //! Nuke this out when porting ObjectGuid from MaNGOS, but preserve the per-byte storage
 class TC_GAME_API ObjectGuid
 {
 public:
+    static ObjectGuid const Empty;
+    
     ObjectGuid() { _data.u64 = UI64LIT(0); }
     ObjectGuid(uint64 guid) { _data.u64 = guid; }
     ObjectGuid(ObjectGuid const& other) { _data.u64 = other._data.u64; }
@@ -79,5 +90,13 @@ private:
     } _data;
 
 };
+
+// Some Shared defines
+// typedef std::set<ObjectGuid> GuidSet;
+// typedef std::list<ObjectGuid> GuidList;
+// typedef std::deque<ObjectGuid> GuidDeque;
+// typedef std::vector<ObjectGuid> GuidVector;
+typedef std::unordered_set<ObjectGuid> GuidUnorderedSet;
+
 
 #endif // ObjectGuid_h__

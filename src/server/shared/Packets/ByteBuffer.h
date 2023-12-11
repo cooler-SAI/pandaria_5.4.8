@@ -33,6 +33,8 @@
 
 #include "ObjectGuid.h"
 
+class MessageBuffer;
+
 // Root of ByteBuffer exception hierarchy
 class ByteBufferException : public std::exception
 {
@@ -93,6 +95,40 @@ public:
     ByteBuffer(const ByteBuffer &buf) : _rpos(buf._rpos), _wpos(buf._wpos),
         _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(buf._storage)
     {
+    }
+
+    ByteBuffer(ByteBuffer&& buf) noexcept : _rpos(buf._rpos), _wpos(buf._wpos), _storage(std::move(buf._storage))
+    {
+        buf._rpos = 0;
+        buf._wpos = 0;
+    }
+
+    ByteBuffer(MessageBuffer&& buffer);
+
+    ByteBuffer& operator=(ByteBuffer const& right)
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            _wpos = right._wpos;
+            _storage = right._storage;
+        }
+
+        return *this;
+    }
+
+    ByteBuffer& operator=(ByteBuffer&& right) noexcept
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            right._rpos = 0;
+            _wpos = right._wpos;
+            right._wpos = 0;
+            _storage = std::move(right._storage);
+        }
+
+        return *this;
     }
 
     void clear();
@@ -616,6 +652,11 @@ public:
     void append(const char *src, size_t cnt)
     {
         return append((const uint8 *)src, cnt);
+    }
+
+    void shrink_to_fit()
+    {
+        _storage.shrink_to_fit();
     }
 
     template<class T> void append(const T *src, size_t cnt)
