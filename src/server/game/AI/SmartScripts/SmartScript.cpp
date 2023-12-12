@@ -121,10 +121,10 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
     {
         case SMART_ACTION_TALK:
         {
-            ObjectList* targets = GetTargets(e, unit);
             Creature* talker = e.target.type == 0 ? me : nullptr;
-            //Player* targetPlayer = nullptr;
             Unit* talkTarget = nullptr;
+
+            ObjectList* targets = GetTargets(e, unit);
             if (targets)
             {
                 for (ObjectList::const_iterator itr = targets->begin(); itr != targets->end(); ++itr)
@@ -142,6 +142,7 @@ void SmartScript::ProcessAction(SmartScriptHolder& e, Unit* unit, uint32 var0, u
                     }
                     else if (IsPlayer((*itr)))
                     {
+                        talker = me;
                         talkTarget = (*itr)->ToPlayer();
                         break;
                     }
@@ -3216,8 +3217,8 @@ void SmartScript::ProcessEvent(SmartScriptHolder& e, Unit* unit, uint32 var0, ui
                 if ((e.event.los.noHostile && !me->IsHostileTo(unit)) ||
                     (!e.event.los.noHostile && me->IsHostileTo(unit)))
                 {
-                    ProcessAction(e, unit);
                     RecalcTimer(e, e.event.los.cooldownMin, e.event.los.cooldownMax);
+                    ProcessAction(e, unit);
                 }
             }
             break;
@@ -3542,10 +3543,6 @@ void SmartScript::InitTimer(SmartScriptHolder& e)
         case SMART_EVENT_UPDATE_IC:
         case SMART_EVENT_UPDATE_OOC:
             RecalcTimer(e, e.event.minMaxRepeat.min, e.event.minMaxRepeat.max);
-            break;
-        case SMART_EVENT_IC_LOS:
-        case SMART_EVENT_OOC_LOS:
-            RecalcTimer(e, e.event.los.cooldownMin, e.event.los.cooldownMax);
             break;
         case SMART_EVENT_DISTANCE_CREATURE:
         case SMART_EVENT_DISTANCE_GAMEOBJECT:
