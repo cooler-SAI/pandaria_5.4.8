@@ -191,13 +191,31 @@ class CreatureTextLocalizer
                 whisperGUIDpos = _packetCache[loc_idx]->second;
             }
 
+            ObjectGuid receiverGUID = player->GetGUID();
             WorldPacket data(*messageTemplate);
             switch (_msgType)
             {
                 case CHAT_MSG_MONSTER_WHISPER:
                 case CHAT_MSG_RAID_BOSS_WHISPER:
-                    // data.put<uint64>(whisperGUIDpos, player->GetGUID()); //.GetRawValue()
-                    // data.put<uint64>(whisperGUIDpos + (8 + 3 +8 + 2 + 12 + 1+ 1 + 1 + 8 + 8 + 1 + 8), player->GetGUID());
+                    data.bitwpos(whisperGUIDpos);
+                    data.WriteBit(receiverGUID[7]);
+                    data.WriteBit(receiverGUID[6]);
+                    data.WriteBit(receiverGUID[1]);
+                    data.WriteBit(receiverGUID[4]);
+                    data.WriteBit(receiverGUID[0]);
+                    data.WriteBit(receiverGUID[2]);
+                    data.WriteBit(receiverGUID[3]);
+                    data.WriteBit(receiverGUID[5]);
+
+                    data.bitwpos(whisperGUIDpos+71);
+                    data.WriteByteSeq(receiverGUID[2]);
+                    data.WriteByteSeq(receiverGUID[5]);
+                    data.WriteByteSeq(receiverGUID[3]);
+                    data.WriteByteSeq(receiverGUID[6]);
+                    data.WriteByteSeq(receiverGUID[7]);
+                    data.WriteByteSeq(receiverGUID[4]);
+                    data.WriteByteSeq(receiverGUID[1]);
+                    data.WriteByteSeq(receiverGUID[0]);                  
                     break;
                 default:
                     break;
