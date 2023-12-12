@@ -1496,7 +1496,7 @@ std::string GetOpcodeNameForLogging(Opcodes id, bool isServerOpcode, uint16 opco
     std::ostringstream ss;
     ss << '[';
 
-    if (id < UNKNOWN_OPCODE)
+    if (id < MAX_OPCODE)
     {
         if (OpcodeHandler const* handler = table[id])
         {
