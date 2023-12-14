@@ -57,7 +57,8 @@ namespace lfg
 {
 
 
-LFGMgr::LFGMgr(): m_QueueTimer(0), m_lfgProposalId(1), m_options(sWorld->getIntConfig(CONFIG_LFG_OPTIONSMASK)), m_isSoloLFG(false)
+LFGMgr::LFGMgr(): m_QueueTimer(0), m_ShortageCheckTimer(0), m_lfgProposalId(1),
+    m_options(sWorld->getIntConfig(CONFIG_LFG_OPTIONSMASK))
 {
     new LFGPlayerScript();
     new LFGGroupScript();
@@ -1636,9 +1637,7 @@ void LFGMgr::UpdateProposal(uint32 proposalId, uint64 guid, bool accept)
     for (LfgProposalPlayerContainer::const_iterator itPlayers = proposal.players.begin(); itPlayers != proposal.players.end(); ++itPlayers)
         if (itPlayers->second.accept != LFG_ANSWER_AGREE)   // No answer (-1) or not accepted (0)
             allAnswered = false;
-            
-    if (!sLFGMgr->IsSoloLFG() && !allAnswered)
-    
+
     for (auto&& it : proposal.players)
         SendLfgUpdateProposal(it.first, proposal);
 
@@ -2955,8 +2954,6 @@ LfgDungeonSet LFGMgr::GetRandomAndSeasonalDungeons(uint8 level, uint8 expansion)
     }
     return randomDungeons;
 }
-
-void LFGMgr::ToggleSoloLFG() { m_isSoloLFG = !m_isSoloLFG; }
 
 void LFGMgr::SetRolesForCTAReward(uint64 guid, uint32 queueId, LfgRoles roles)
 {

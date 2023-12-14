@@ -36,13 +36,6 @@ LFGPlayerScript::LFGPlayerScript() : PlayerScript("LFGPlayerScript") { }
 
 void LFGPlayerScript::OnLevelChanged(Player* player, uint8 /*oldLevel*/)
 {
-    if (sWorld->getBoolConfig(CONFIG_LFG_SOLO))
-    {
-        if (!sLFGMgr->IsSoloLFG())
-        {
-            sLFGMgr->ToggleSoloLFG();
-        }
-    }
     if (!sLFGMgr->isOptionEnabled(LFG_OPTION_ENABLE_DUNGEON_FINDER | LFG_OPTION_ENABLE_RAID_BROWSER))
         return;
 
