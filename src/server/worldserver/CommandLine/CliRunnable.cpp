@@ -21,7 +21,6 @@
 
 #include "Common.h"
 #include "Errors.h"
-#include "ObjectMgr.h"
 #include "World.h"
 #include "Configuration/Config.h"
 

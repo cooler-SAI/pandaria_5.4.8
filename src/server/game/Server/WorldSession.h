@@ -904,7 +904,7 @@ class TC_GAME_API WorldSession
         void HandleBattlemasterJoinArena(WorldPacket& recvData);
         void HandleBattlemasterJoinRated(WorldPacket& recvData);
         void HandleReportPvPAFK(WorldPacket& recvData);
-        void HandleRequestRatedBgInfo(WorldPacket& recvData);
+        //void HandleRequestRatedBgInfo(WorldPacket& recvData); 
         void HandleRequestPvpOptions(WorldPacket& recvData);
         void HandleRequestPvpReward(WorldPacket& recvData);
         void HandleRequestRatedBgStats(WorldPacket& recvData);
@@ -1135,8 +1135,6 @@ class TC_GAME_API WorldSession
         void HandleChallengeModeRequestMapStats(WorldPacket& recvData);
         void HandleResetChallengeMode(WorldPacket& recvData);
         void SendChallengeModeMapStatsUpdate(uint32 mapId);
-
-        void HandlePingUpdate(uint32 latency);
 
         // chat
 

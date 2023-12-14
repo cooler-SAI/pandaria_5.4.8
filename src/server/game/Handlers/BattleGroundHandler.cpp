@@ -773,39 +773,40 @@ void WorldSession::HandleReportPvPAFK(WorldPacket& recvData)
         bg->ReportAfk(playerGuid, GetPlayer());
 }
 
-void WorldSession::HandleRequestRatedBgInfo(WorldPacket & recvData)
-{
-    TC_LOG_DEBUG("network", "WORLD: CMSG_REQUEST_RATED_BG_INFO");
+// not in 5.4.8
+// void WorldSession::HandleRequestRatedBgInfo(WorldPacket & recvData)
+// {
+//     TC_LOG_DEBUG("network", "WORLD: CMSG_REQUEST_RATED_BG_INFO");
 
-    uint8 unk;
-    recvData >> unk;
+//     uint8 unk;
+//     recvData >> unk;
 
-    TC_LOG_DEBUG("bg.battleground", "WorldSession::HandleRequestRatedBgInfo: unk = %u", unk);
+//     TC_LOG_DEBUG("bg.battleground", "WorldSession::HandleRequestRatedBgInfo: unk = %u", unk);
 
-    /// @Todo: perfome research in this case
-    /// The unk fields are related to arenas
-    WorldPacket data(SMSG_RATED_BG_STATS, 72);
-    data << uint32(0);      // BgWeeklyWins20vs20
-    data << uint32(0);      // BgWeeklyPlayed20vs20
-    data << uint32(0);      // BgWeeklyPlayed15vs15
-    data << uint32(0);
-    data << uint32(0);      // BgWeeklyWins10vs10
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);      // BgWeeklyWins15vs15
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);
-    data << uint32(0);      // BgWeeklyPlayed10vs10
-    data << uint32(0);
-    data << uint32(0);
+//     /// @Todo: perfome research in this case
+//     /// The unk fields are related to arenas
+//     WorldPacket data(SMSG_RATED_BG_STATS, 72);
+//     data << uint32(0);      // BgWeeklyWins20vs20
+//     data << uint32(0);      // BgWeeklyPlayed20vs20
+//     data << uint32(0);      // BgWeeklyPlayed15vs15
+//     data << uint32(0);
+//     data << uint32(0);      // BgWeeklyWins10vs10
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);      // BgWeeklyWins15vs15
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);
+//     data << uint32(0);      // BgWeeklyPlayed10vs10
+//     data << uint32(0);
+//     data << uint32(0);
 
-    SendPacket(&data);
-}
+//     SendPacket(&data);
+// }
 
 void WorldSession::HandleRequestPvpOptions(WorldPacket& /*recvData*/)
 {

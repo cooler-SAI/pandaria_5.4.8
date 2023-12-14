@@ -370,7 +370,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     else if (_player->IsInWorld() && AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
                         auto start = TimeValue::Now();
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                         sWorld->RecordTimeDiffLocal(start, "WorldSession::Update %s %s", opHandle->Name, GetPlayerInfo().c_str());
@@ -384,7 +384,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
                         // not expected _player or must checked in packet hanlder
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                     }
@@ -396,7 +396,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player is still in world");
                     else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                     }
@@ -417,7 +417,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
                     if (AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
-                          sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                          sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                           (this->*opHandle->Handler)(*packet);
                            LogUnprocessedTail(packet);
                               break;
@@ -1291,17 +1291,6 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
 }
 
 
-void WorldSession::HandlePingUpdate(uint32 latency)
-{
-
-    if (latency >= sWorld->getIntConfig(CONFIG_ICORE_ARENA_HIGH_LATENCY_THRESHOLD))
-        if (Player* player = GetPlayer())
-            if (Battleground* bg = player->GetBattleground())
-                bg->UpdatePlayerScore(player, SCORE_HIGH_LATENCY_TIMES, 1);
-}
-
-
-
 uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) const
 {
     uint32 maxPacketCounterAllowed;
@@ -1325,7 +1314,7 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
     case CMSG_REQUEST_PARTY_MEMBER_STATS:           //   0               1.5
     case CMSG_SET_ACTION_BUTTON:                    //   0               1.5
     case CMSG_RESET_INSTANCES:                      //   0               1.5
-    case CMSG_HEARTH_AND_RESURRECT:                 //   0               1.5
+    //case CMSG_HEARTH_AND_RESURRECT:                 //   0               1.5
     case CMSG_TOGGLE_PVP:                           //   0               1.5
     case CMSG_PET_ABANDON:                          //   0               1.5
     case CMSG_ACTIVATE_TAXI:                        //   0               1.5
@@ -1468,7 +1457,7 @@ uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) co
     case CMSG_CHANNEL_LIST:
     case CMSG_CHANNEL_INVITE:
     case CMSG_GUILD_ACHIEVEMENT_PROGRESS_QUERY:
-    case CMSG_PLAYER_LOGOUT:
+    //case CMSG_PLAYER_LOGOUT:
     case SMSG_AUTH_RESPONSE:
     case SMSG_AUTH_CHALLENGE:
     case CMSG_PING:

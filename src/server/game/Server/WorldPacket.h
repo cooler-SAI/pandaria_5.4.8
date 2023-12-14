@@ -21,7 +21,9 @@
 #include "Common.h"
 #include "Opcodes.h"
 #include "ByteBuffer.h"
+#include "Duration.h"
 #include <chrono>
+#include "MessageBuffer.h"
 
 struct z_stream_s;
 
@@ -42,6 +44,36 @@ class WorldPacket : public ByteBuffer
         {
         }
 
+        WorldPacket(WorldPacket&& packet) : ByteBuffer(std::move(packet)), m_opcode(packet.m_opcode)
+        {
+        }
+
+
+        WorldPacket& operator=(WorldPacket const& right)
+        {
+            if (this != &right)
+            {
+                m_opcode = right.m_opcode;
+                ByteBuffer::operator=(right);
+            }
+
+            return *this;
+        }
+
+        WorldPacket& operator=(WorldPacket&& right)
+        {
+            if (this != &right)
+            {
+                m_opcode = right.m_opcode;
+                ByteBuffer::operator=(std::move(right));
+            }
+
+            return *this;
+        }
+
+        WorldPacket(Opcodes opcode, MessageBuffer&& buffer) : ByteBuffer(std::move(buffer)), m_opcode(opcode) { }
+
+
         void Initialize(Opcodes opcode, size_t newres = 200)
         {
             clear();
@@ -56,11 +88,14 @@ class WorldPacket : public ByteBuffer
         void SetReceivedOpcode(uint16 opcode) { m_rcvdOpcodeNumber = opcode; }
         uint16 GetReceivedOpcode() { return m_rcvdOpcodeNumber; }
 
+        TimePoint GetReceivedTime() const { return m_receivedTime; }
+
     protected:
         Opcodes m_opcode;
         uint16 m_rcvdOpcodeNumber;
         void Compress(void* dst, uint32 *dst_size, const void* src, int src_size);
         z_stream_s* _compressionStream = nullptr;
+        TimePoint m_receivedTime; // only set for a specific set of opcodes, for performance reasons.
         
 };
 #endif

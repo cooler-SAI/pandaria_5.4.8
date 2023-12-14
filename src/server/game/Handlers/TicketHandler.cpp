@@ -147,7 +147,7 @@ void WorldSession::HandleGMTicketUpdateOpcode(WorldPacket& recvData)
         response = GMTICKET_RESPONSE_UPDATE_SUCCESS;
     }
 
-    sTicketMgr->SendGmTicketUpdate(SMSG_GM_TICKET_UPDATE_TEXT, response, GetPlayer());
+    // sTicketMgr->SendGmTicketUpdate(SMSG_GM_TICKET_UPDATE_TEXT, response, GetPlayer()); opcode not vaild
 }
 
 void WorldSession::HandleGMTicketDeleteOpcode(WorldPacket & /*recvData*/)
@@ -273,9 +273,9 @@ void WorldSession::HandleGMResponseResolve(WorldPacket& /*recvPacket*/)
         if (float(rand_chance()) < sWorld->getFloatConfig(CONFIG_CHANCE_OF_GM_SURVEY))
             getSurvey = 1;
 
-        WorldPacket data(SMSG_GM_RESPONSE_STATUS_UPDATE, 4);
-        data << uint8(getSurvey);
-        SendPacket(&data);
+        // WorldPacket data(SMSG_GM_RESPONSE_STATUS_UPDATE, 4); // opcode not vaild
+        // data << uint8(getSurvey);
+        // SendPacket(&data);
 
         WorldPacket data2(SMSG_GM_TICKET_UPDATE, 4);
         data2 << uint32(GMTICKET_RESPONSE_TICKET_DELETED);

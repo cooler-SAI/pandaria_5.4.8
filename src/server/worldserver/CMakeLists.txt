@@ -61,6 +61,8 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/common
     ${CMAKE_SOURCE_DIR}/src/common/Asio
     ${CMAKE_SOURCE_DIR}/src/common/Configuration
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication    
     ${CMAKE_SOURCE_DIR}/src/common/Debugging
     ${CMAKE_SOURCE_DIR}/src/common/IPLocation
     ${CMAKE_SOURCE_DIR}/src/common/Logging
@@ -70,8 +72,6 @@ include_directories(
     ${CMAKE_SOURCE_DIR}/src/server/collision/Management
     ${CMAKE_SOURCE_DIR}/src/server/collision/Models
     ${CMAKE_SOURCE_DIR}/src/server/shared
-    ${CMAKE_SOURCE_DIR}/src/common/Cryptography
-    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication
     ${CMAKE_SOURCE_DIR}/src/server/database/Database
     ${CMAKE_SOURCE_DIR}/src/server/database/Logging    
     ${CMAKE_SOURCE_DIR}/src/server/shared/DataStores

@@ -218,11 +218,11 @@ class ServerScript : public ScriptObject
 
         // Called when a packet is sent to a client. The packet object is a copy of the original packet, so reading
         // and modifying it is safe.
-        virtual void OnPacketSend(WorldSocket* /*socket*/, WorldPacket& /*packet*/) { }
+        virtual void OnPacketSend(WorldSession* /*socket*/, WorldPacket& /*packet*/) { }
 
         // Called when a (valid) packet is received by a client. The packet object is a copy of the original packet, so
         // reading and modifying it is safe.
-        virtual void OnPacketReceive(WorldSocket* /*socket*/, WorldPacket& /*packet*/) { }
+        virtual void OnPacketReceive(WorldSession* /*socket*/, WorldPacket& /*packet*/) { }
 
         // Called when an invalid (unknown opcode) packet is received by a client. The packet is a reference to the orignal
         // packet; not a copy. This allows you to actually handle unknown packets (for whatever purpose).
@@ -984,8 +984,8 @@ class ScriptMgr
         void OnNetworkStop();
         void OnSocketOpen(WorldSocket* socket);
         void OnSocketClose(WorldSocket* socket, bool wasNew);
-        void OnPacketReceive(WorldSocket* socket, WorldPacket packet);
-        void OnPacketSend(WorldSocket* socket, WorldPacket packet);
+        void OnPacketReceive(WorldSession* session, WorldPacket packet);
+        void OnPacketSend(WorldSession* session, WorldPacket packet);
         void OnUnknownPacketReceive(WorldSocket* socket, WorldPacket packet);
 
     public: /* WorldScript */

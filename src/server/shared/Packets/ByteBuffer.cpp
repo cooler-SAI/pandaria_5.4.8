@@ -17,6 +17,7 @@
 
 #include "ByteBuffer.h"
 #include "Errors.h"
+#include "MessageBuffer.h"
 #include "Common.h"
 #include "Log.h"
 #include <utf8.h>
@@ -24,6 +25,10 @@
 #include <ctime>
 #include "StringFormat.h"
 #include "Util.h"
+
+ByteBuffer::ByteBuffer(MessageBuffer&& buffer) : _rpos(0), _wpos(0), _storage(buffer.Move())
+{
+}
 
 ByteBufferPositionException::ByteBufferPositionException(bool add, size_t pos,
                                                          size_t size, size_t valueSize)

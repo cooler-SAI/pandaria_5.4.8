@@ -24,6 +24,7 @@
 #ifndef SF_WORLDSOCKET_H
 #define SF_WORLDSOCKET_H
 
+#include <memory>
 #include <mutex>
 //#include <ace/Synch_Traits.h>
 #include <ace/Svc_Handler.h>
@@ -32,13 +33,16 @@
 //#include <ace/Unbounded_Queue.h>
 #include <ace/Message_Block.h>
 
+struct AuthSession;
+
 #if !defined (ACE_LACKS_PRAGMA_ONCE)
 #pragma once
 #endif /* ACE_LACKS_PRAGMA_ONCE */
-
 #include "Common.h"
 #include "AuthCrypt.h"
 #include "Duration.h"
+#include "AsyncCallbackProcessor.h"
+#include "DatabaseEnvFwd.h" 
 
 class ACE_Message_Block;
 class WorldPacket;
@@ -83,6 +87,7 @@ typedef ACE_Svc_Handler<ACE_SOCK_STREAM, ACE_NULL_SYNCH> WorldHandler;
  * notification.
  *
  */
+
 class WorldSocket : public WorldHandler
 {
     public:
@@ -152,12 +157,23 @@ class WorldSocket : public WorldHandler
 
         /// Called by ProcessIncoming() on CMSG_AUTH_SESSION.
         int HandleAuthSession(WorldPacket& recvPacket);
+        void HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result);
 
         /// Called by ProcessIncoming() on CMSG_PING.
         int HandlePing(WorldPacket& recvPacket);
 
         /// Called by MSG_VERIFY_CONNECTIVITY_RESPONSE
         int HandleSendAuthSession();
+
+    protected:
+        enum class ReadDataHandlerResult
+        {
+            Ok = 0,
+            Error = 1,
+            WaitingForQuery = 2
+        };    
+        
+        //ReadDataHandlerResult ReadDataHandler();    
 
     private:
         void SendAuthResponseError(uint8);
@@ -170,6 +186,7 @@ class WorldSocket : public WorldHandler
         /// Address of the remote peer
         std::string m_Address;
 
+        std::array<uint8, 4> _authSeed;
         /// Class used for managing encryption of the headers
         AuthCrypt m_Crypt;
 
@@ -203,12 +220,9 @@ class WorldSocket : public WorldHandler
         /// True if the socket is registered with the reactor for output
         bool m_OutActive;
 
-        uint32 m_Seed;
-
+        QueryCallbackProcessor _queryProcessor;
         std::string _ipCountry;
 
 };
 
 #endif  /* _WORLDSOCKET_H */
-
-/// @}
