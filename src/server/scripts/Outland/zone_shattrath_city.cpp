@@ -63,7 +63,7 @@ public:
         if (action == GOSSIP_ACTION_INFO_DEF+1)
         {
             player->CLOSE_GOSSIP_MENU();
-            creature->setFaction(FACTION_HOSTILE_RD);
+            creature->SetFaction(FACTION_HOSTILE_RD);
             creature->AI()->AttackStart(player);
         }
         return true;
@@ -87,7 +87,7 @@ public:
     {
         npc_raliq_the_drunkAI(Creature* creature) : ScriptedAI(creature)
         {
-            m_uiNormFaction = creature->getFaction();
+            m_uiNormFaction = creature->GetFaction();
         }
 
         uint32 m_uiNormFaction;
@@ -142,7 +142,7 @@ public:
     {
         if (player->GetQuestStatus(QUEST_10004) == QUEST_STATUS_INCOMPLETE)
         {
-            creature->setFaction(FACTION_HOSTILE_SA);
+            creature->SetFaction(FACTION_HOSTILE_SA);
             creature->AI()->AttackStart(player);
         }
         else
@@ -257,32 +257,35 @@ public:
 };
 
 /*######
-# npc_zephyr
+# npc_zephyr  25967
 ######*/
 
-#define GOSSIP_HZ "Take me to the Caverns of Time."
-
-class npc_zephyr : public CreatureScript
+enum ZephyrText
 {
-public:
-    npc_zephyr() : CreatureScript("npc_zephyr") { }
+    ZEPHYR_GOSSIP_MENUID  =  9205,  
+    ZEPHYR_GOSSIP_OPID_0  =  0,     // Take me to the Caverns of Time.
+};
 
-    bool OnGossipSelect(Player* player, Creature* /*creature*/, uint32 /*sender*/, uint32 action) override
+struct npc_zephyr : public ScriptedAI
+{
+    npc_zephyr(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->PlayerTalkClass->ClearMenus();
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
         if (action == GOSSIP_ACTION_INFO_DEF+1)
             player->CastSpell(player, 37778, false);
-
+        CloseGossipMenuFor(player);
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) override
+    bool OnGossipHello(Player* player) override
     {
+        InitGossipMenuFor(player, ZEPHYR_GOSSIP_MENUID);
         if (player->GetReputationRank(989) >= REP_REVERED)
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, GOSSIP_HZ, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-
+            AddGossipItemFor(player, ZEPHYR_GOSSIP_MENUID, ZEPHYR_GOSSIP_OPID_0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        SendGossipMenuFor(player, 12507, me->GetGUID());
         return true;
     }
 };
@@ -411,7 +414,6 @@ public:
         }
 
         void MoveInLineOfSight(Unit* who) override
-
         {
             if (HasEscortState(STATE_ESCORT_ESCORTING))
                 return;
@@ -432,116 +434,119 @@ public:
 };
 
 /*######
-# npc_ishanah
+# npc_ishanah  18538
 ######*/
 
-#define ISANAH_GOSSIP_1 "Who are the Sha'tar?"
-#define ISANAH_GOSSIP_2 "Isn't Shattrath a draenei city? Why do you allow others here?"
-
-class npc_ishanah : public CreatureScript
+enum IshanahText
 {
-public:
-    npc_ishanah() : CreatureScript("npc_ishanah") { }
+    ISANAH_GOSSIP_MENUID  =  7735,  
+    ISANAH_GOSSIP_OPID_0  =  0,     // Who are the Sha'tar?
+    ISANAH_GOSSIP_OPID_1  =  1      // Isn't Shattrath a draenei city? Why do you allow others here?
+};
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+struct npc_ishanah : public ScriptedAI
+{
+    npc_ishanah(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->PlayerTalkClass->ClearMenus();
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
         if (action == GOSSIP_ACTION_INFO_DEF+1)
-            player->SEND_GOSSIP_MENU(9458, creature->GetGUID());
+            SendGossipMenuFor(player, 9458, me->GetGUID());
         else if (action == GOSSIP_ACTION_INFO_DEF+2)
-            player->SEND_GOSSIP_MENU(9459, creature->GetGUID());
-
+            SendGossipMenuFor(player, 9459, me->GetGUID());
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) override
+    bool OnGossipHello(Player* player) override
     {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, ISANAH_GOSSIP_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-        player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, ISANAH_GOSSIP_2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+2);
-
-        player->SEND_GOSSIP_MENU(player->GetGossipTextId(creature), creature->GetGUID());
-
+        InitGossipMenuFor(player, ISANAH_GOSSIP_MENUID);
+        if (me->IsQuestGiver())
+            player->PrepareQuestMenu(me->GetGUID());
+        AddGossipItemFor(player, ISANAH_GOSSIP_MENUID, ISANAH_GOSSIP_OPID_0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        AddGossipItemFor(player, ISANAH_GOSSIP_MENUID, ISANAH_GOSSIP_OPID_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+        SendGossipMenuFor(player, 9457, me->GetGUID());
         return true;
     }
 };
 
 /*######
-# npc_khadgar
+# npc_khadgar   18166
 ######*/
 
-#define KHADGAR_GOSSIP_1    "I've heard your name spoken only in whispers, mage. Who are you?"
-#define KHADGAR_GOSSIP_2    "Go on, please."
-#define KHADGAR_GOSSIP_3    "I see." //6th too this
-#define KHADGAR_GOSSIP_4    "What did you do then?"
-#define KHADGAR_GOSSIP_5    "What happened next?"
-#define KHADGAR_GOSSIP_7    "There was something else I wanted to ask you."
-
-class npc_khadgar : public CreatureScript
+enum KhadgarText
 {
-public:
-    npc_khadgar() : CreatureScript("npc_khadgar") { }
+    KHADGAR_GOSSIP_1   = 7596,  // I've heard your name spoken only in whispers, mage. Who are you?
+    KHADGAR_GOSSIP_2   = 8009,  // Go on, please.
+    KHADGAR_GOSSIP_3   = 8010,  // I see.  6th too this
+    KHADGAR_GOSSIP_4   = 8011,  // What did you do then?
+    KHADGAR_GOSSIP_5   = 8012,  // What happened next?
+    KHADGAR_GOSSIP_7   = 8013   // There was something else I wanted to ask you.
+};
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+struct npc_khadgar : public ScriptedAI
+{
+    npc_khadgar(Creature* creature) : ScriptedAI(creature) { }
+
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->PlayerTalkClass->ClearMenus();
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
         switch (action)
         {
-        case GOSSIP_ACTION_INFO_DEF+1:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_2, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+2);
-            player->SEND_GOSSIP_MENU(9876, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+2:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_3, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+3);
-            player->SEND_GOSSIP_MENU(9877, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+3:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_4, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+4);
-            player->SEND_GOSSIP_MENU(9878, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+4:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_5, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+5);
-            player->SEND_GOSSIP_MENU(9879, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+5:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_3, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+6);
-            player->SEND_GOSSIP_MENU(9880, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+6:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_7, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+7);
-            player->SEND_GOSSIP_MENU(9881, creature->GetGUID());
-            break;
-        case GOSSIP_ACTION_INFO_DEF+7:
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-            player->SEND_GOSSIP_MENU(9243, creature->GetGUID());
-            break;
+            case GOSSIP_ACTION_INFO_DEF+1:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_2, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+                SendGossipMenuFor(player, 9876, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+2:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_3, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+                SendGossipMenuFor(player, 9877, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+3:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_4, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);
+                SendGossipMenuFor(player, 9878, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+4:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_5, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5);
+                SendGossipMenuFor(player, 9879, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+5:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_3, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 6);
+                SendGossipMenuFor(player, 9880, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+6:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_7, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 7);
+                SendGossipMenuFor(player, 9881, me->GetGUID());
+                break;
+            case GOSSIP_ACTION_INFO_DEF+7:
+                AddGossipItemFor(player, KHADGAR_GOSSIP_1, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+                SendGossipMenuFor(player, 9243, me->GetGUID());
+                break;                       
         }
         return true;
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) override
+    bool OnGossipHello(Player* player) override
     {
-        if (creature->IsQuestGiver())
-            player->PrepareQuestMenu(creature->GetGUID());
-
+        InitGossipMenuFor(player, KHADGAR_GOSSIP_1);
+        if (me->IsQuestGiver())
+            player->PrepareQuestMenu(me->GetGUID());
         if (player->GetQuestStatus(10211) != QUEST_STATUS_INCOMPLETE)
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, KHADGAR_GOSSIP_1, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
-
-            player->SEND_GOSSIP_MENU(9243, creature->GetGUID());
-
+            AddGossipItemFor(player, KHADGAR_GOSSIP_1, 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+        SendGossipMenuFor(player, 9243, me->GetGUID());
         return true;
     }
 };
+ 
 
 void AddSC_shattrath_city()
 {
     new npc_raliq_the_drunk();
     new npc_salsalabim();
-    new npc_shattrathflaskvendors();
-    new npc_zephyr();
+    //new npc_shattrathflaskvendors();
+    RegisterCreatureAI(npc_zephyr);
     new npc_kservant();
-    new npc_ishanah();
-    new npc_khadgar();
+    RegisterCreatureAI(npc_ishanah);
+    RegisterCreatureAI(npc_khadgar);
 }

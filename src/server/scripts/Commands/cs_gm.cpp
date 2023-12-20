@@ -22,6 +22,7 @@ Comment: All gm related commands
 Category: commandscripts
 EndScriptData */
 
+#include <mutex>
 #include "ScriptMgr.h"
 #include "ObjectMgr.h"
 #include "Chat.h"
@@ -30,6 +31,7 @@ EndScriptData */
 #include "World.h"
 #include "Player.h"
 #include "Opcodes.h"
+#include "Realm.h"
 
 class gm_commandscript : public CommandScript
 {
@@ -138,7 +140,7 @@ public:
     {
         bool first = true;
 
-        TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+        std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Player>::GetLock());
         HashMapHolder<Player>::MapType const&m = sObjectAccessor->GetPlayers();
         for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
         {
@@ -171,9 +173,9 @@ public:
     static bool HandleGMListFullCommand(ChatHandler* handler, char const* /*args*/)
     {
         ///- Get the accounts with GM Level >0
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_GM_ACCOUNTS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_GM_ACCOUNTS);
         stmt->setUInt8(0, uint8(SEC_MODERATOR));
-        stmt->setInt32(1, int32(realmID));
+        stmt->setInt32(1, int32(realm.Id.Realm));
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
         if (result)

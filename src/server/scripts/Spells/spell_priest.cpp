@@ -30,6 +30,7 @@
 #include "Group.h"
 #include "BattlePetMgr.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum PriestSpells
 {
@@ -201,6 +202,7 @@ enum PriestSpells
     SPELL_PRIEST_GLYPH_OF_INSPIRED_HYMNS            = 147072,
     SPELL_PRIEST_GLYPH_OF_INSPIRED_HYMNS_VISUAL     = 147065,
     SPELL_PRIEST_GLYPH_OF_SHADOWY_FRIENDS           = 126745,
+    SPELL_PRIEST_GLYPH_OF_CONFESSION                = 126123
 };
 
 // Power Word : Fortitude - 21562
@@ -1204,58 +1206,86 @@ class spell_pri_confession : public SpellScriptLoader
 
             void HandleDummy(SpellEffIndex /*effIndex*/)
             {
-                std::string confessions[40] =
+                uint32 confessions[57] = 
                 {
-                    "For a long time, I thought the plural of anecdote WAS data.",
-                    "I always forget to gem my gear.",
-                    "I always wanted to be a paladin.",
-                    "I ask for the Light to give me strength, but I'm not sure it really does.",
-                    "I asked a friend for gold to buy my first mount.",
-                    "I dabble in archaeology, but I'm just not that interested in history.",
-                    "I died to an elevator once.Maybe more than once.",
-                    "I don't know if Milhouse is a good guy or not.",
-                    "I don't really have a clue who the Sin'dorei are.",
-                    "I don't really remember you in the mountains.",
-                    "I don't treat all of my mounts equally.",
-                    "I fell off of Dalaran.",
-                    "I find all these names with so many apostrophes so confusing.",
-                    "I forgot the Sunwell.",
-                    "I go into dungeons not to make Azeroth a better place, but just for loot.",
-                    "I have \"borrowed\" things from my guild bank.",
-                    "I have stood in the fire.",
-                    "I haven't been in a barber shop in months. Goblins with scissors. Shudder.",
-                    "I know he's a jerk, but there's something about Garrosh...",
-                    "I light things on fire and yell BY FIRE BE PURGED when nobody is looking.",
-                    "I never use the lightwell.",
-                    "I once punched a gnome.No reason.I was just having a bad day.",
-                    "I once took a bow that a hunter wanted.",
-                    "I outbid a friend on an auction for something I didn't really want.",
-                    "I really wasn't prepared. Who knew?",
-                    "I said I had been in the dungeon before, but i had no idea what I was doing.It was embarassing.",
-                    "I saw a mage cast a spell once and my jaw really did drop at the damage.",
-                    "I sometimes forget if Northrend is north or south of here.",
-                    "I sometimes use my mount to travel really short distances.I mean REALLY short.",
-                    "I sometimes wonder if tauren taste like... you know.",
-                    "I spent six months chasing the Time - Lost Proto - Drake.",
-                    "I thought pandaren were a type of furbolg.",
-                    "I told my raid leader that I was ready, but I wasn't really ready.",
-                    "I wasn't really at the opening of Ahn'Qiraj, I just read about it. (thanks Stonehearth)",
-                    "I went into Alterac Valley and didn't help my team at all.",
-                    "Oh, I took the candle.",
-                    "Sometimes I ask for a warlock to summon me when I'm really not that far away.",
-                    "Sometimes when I'm questing, I want to be alone, so I pretend I can't hear my friends.",
-                    "This is just a setback.",
-                    "Troll toes sort of creep me out."
+                    64978,   // [%s] confesses: I once took a bow that a hunter wanted.
+                    64991,   // [%s] confesses: I have "borrowed" things from my guild bank.
+                    65005,   // [%s] confesses: I always forget to gem my gear.
+                    65006,   // [%s] confesses: I spent six months chasing the Time-Lost Proto-Drake.
+                    65007,   // [%s] confesses: I went into Alterac Valley and didn't help my team at all.
+                    65008,   // [%s] confesses: I died to an elevator once. Maybe more than once.
+                    65009,   // [%s] confesses: I never use the Lightwell.
+                    65010,   // [%s] confesses: I always wanted to be a paladin.
+                    65011,   // [%s] confesses: Troll toes sort of creep me out.
+                    65012,   // [%s] confesses: I have stood in the fire.
+                    65013,   // [%s] confesses: I told my raid leader that I was ready, but I wasn't really ready.
+                    65014,   // [%s] confesses: I fell off of Dalaran.
+                    65016,   // [%s] confesses: I asked a friend for gold to buy my first mount.
+                    65018,   // [%s] confesses: I said I had been in the dungeon before, but I had no idea what I was doing. It was embarassing.
+                    65019,   // [%s] confesses: I once punched a gnome. No reason. I was just having a bad day.
+                    65020,   // [%s] confesses: I outbid a friend on an auction for something I didn't really want.
+                    65021,   // [%s] confesses: I go into dungeons not to make Azeroth a better place, but just for loot.
+                    65022,   // [%s] confesses: I wasn't really at the opening of Ahn'Qiraj. I just read about it.
+                    65023,   // [%s] confesses: I don't really have a clue who the Sin'dorei are.
+                    65024,   // [%s] confesses: I don't treat all of my mounts equally.
+                    65025,   // [%s] confesses: I dabble in archaeology, but I'm just not that interested in history.
+                    65026,   // [%s] confesses: The draenei laugh really annoys me.
+                    65027,   // [%s] confesses: I haven't been in a barber shop in months. Goblins with scissors. Shudder.
+                    65028,   // [%s] confesses: I thought pandaren were a type of furbolg.
+                    65029,   // [%s] confesses: Oh, I took the candle.
+                    65030,   // [%s] confesses: This is just a setback.
+                    65031,   // [%s] confesses: I light things on fire and yell BY FIRE BE PURGED when nobody is looking.
+                    65032,   // [%s] confesses: I don't really remember you in the mountains.
+                    65033,   // [%s] confesses: I sometimes forget if Northrend is north or south of here.
+                    65034,   // [%s] confesses: I find all these names with so many apostrophes so confusing.
+                    65035,   // [%s] confesses: I forgot the Sunwell.
+                    65036,   // [%s] confesses: I really wasn't prepared. Who knew?
+                    65037,   // [%s] confesses: I sometimes wonder if tauren taste like... you know.
+                    65038,   // [%s] confesses: I ask for the Light to give me strength, but I'm not sure if it really does.
+                    65039,   // [%s] confesses: I sometimes use my mount to travel really short distances. I mean REALLY short.
+                    65040,   // [%s] confesses: I don't know if Milhouse is a good guy or not.
+                    65041,   // [%s] confesses: I know he's a jerk, but there's something about Garrosh....
+                    65042,   // [%s] confesses: I saw a mage cast a spell once and my jaw really did drop at the damage.
+                    65044,   // [%s] confesses: For a long time, I thought the plural of anecdote WAS data.
+                    65045,   // [%s] confesses: Sometimes I ask for a warlock to summon me when I'm really not that far away.
+                    65046,   // [%s] confesses: Sometimes when I'm questing, I want to be alone, so I pretend I can't hear my friends.
+                    74300,   // [%s] confesses: When my allies get mind controlled, I try really hard to kill them.
+                    74301,   // [%s] confesses: I don't use the strongest battle pets. Just the cutest ones.
+                    74302,   // [%s] confesses: I get heart of the wild and the other heart of the wild confused.
+                    74303,   // [%s] confesses: I always ask someone else how to reforge my gear.
+                    74304,   // [%s] confesses: I inspect others to see if they are inspecting me.
+                    74305,   // [%s] confesses: When pandaren tell me to slooow doooown, I just want to punch them.
+                    74306,   // [%s] confesses: I always sell all of my old gear to the same vendor. Dude's rich or something.
+                    74307,   // [%s] confesses: I care more about transmogrification gear than upgrade gear.
+                    74308,   // [%s] confesses: I can't decide between Horde and Alliance. Horde has goblin mages with quad-pigtails but Alliance has dwarf priests with twirly braids.
+                    76092,   // [%s] confesses: I haven't visited Sunsong Ranch in months. I can just imagine weeds and virmen everywhere.
+                    76093,   // [%s] confesses: I think one time I tried to kill Lei Shi instead of Lei Shen.
+                    76094,   // [%s] confesses: I used to think Medivh was a druid because of all the feathers.
+                    76095,   // [%s] confesses: I still carry around Argent Crusade Scorugestones. You never know when they'll be useful again.
+                    76096,   // [%s] confesses: I feel bad for my ground mounts. I hardly ever use them anymore.
+                    76097,   // [%s] confesses: I'm going to totally ninja that hunter's loot.
+                    76098    // [%s] confesses: I am confused why female draenei like gnomes.                    
                 };
+
                 auto target = GetHitUnit();
                 if (GetCaster() != target)
-                    target->MonsterTextEmote((target->GetName() + " confesses: " + confessions[urand(0, 39)]).c_str(), nullptr);
+                {
+                    BroadcastText const* bct = sObjectMgr->GetBroadcastText(confessions[urand(0, 56)]);
+                    Player* _player = target->ToPlayer();
+                    LocaleConstant loc_idx = _player->GetSession()->GetSessionDbLocaleIndex();
+                    std::string baseText = "";
+                    if (bct)
+                        baseText = bct->GetText(loc_idx, _player->GetGender());
+
+                    target->MonsterTextEmote(baseText.c_str(), nullptr); 
+                }
             }
 
             void Register() override
             {
                 OnEffectHitTarget += SpellEffectFn(spell_pri_confession_SpellScript::HandleDummy, EFFECT_0, SPELL_EFFECT_SCRIPT_EFFECT);
             }
+
         };
 
         SpellScript* GetSpellScript() const override
@@ -1263,6 +1293,38 @@ class spell_pri_confession : public SpellScriptLoader
             return new spell_pri_confession_SpellScript();
         }
 };
+
+// Glyph of Corpse Explosion - 126152
+class spell_pri_glyph_of_confession : public SpellScriptLoader
+{
+    public:
+        spell_pri_glyph_of_confession() : SpellScriptLoader("spell_pri_glyph_of_confession") { }
+        class spell_pri_glyph_of_confession_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_pri_glyph_of_confession_AuraScript);
+            void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* _player = GetTarget()->ToPlayer())
+                    _player->LearnSpell(SPELL_PRIEST_GLYPH_OF_CONFESSION, false);
+            }
+            void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* _player = GetTarget()->ToPlayer())
+                    if (_player->HasSpell(SPELL_PRIEST_GLYPH_OF_CONFESSION))
+                        _player->RemoveSpell(SPELL_PRIEST_GLYPH_OF_CONFESSION, false, false);
+            }
+            void Register() override
+            {
+                OnEffectApply += AuraEffectApplyFn(spell_pri_glyph_of_confession_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_pri_glyph_of_confession_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_pri_glyph_of_confession_AuraScript();
+        }
+};
+
 
 // 2944 - Devouring Plague
 class spell_pri_devouring_plague : public SpellScript
@@ -2633,9 +2695,9 @@ class spell_pri_shadowy_appartion : public SpellScript
             { RACE_PANDAREN_HORDE,      { 33589, 33590 } },
         };
 
-        auto it = visual.find(GetCaster()->getRace());
+        auto it = visual.find(GetCaster()->GetRace());
         if (it != visual.end() && GetExplTargetUnit())
-            GetCaster()->SendPlaySpellVisual(it->second[GetCaster()->getGender()], GetExplTargetUnit()->GetGUID(), GetSpellInfo()->Speed);
+            GetCaster()->SendPlaySpellVisual(it->second[GetCaster()->GetGender()], GetExplTargetUnit()->GetGUID(), GetSpellInfo()->Speed);
     }
 
     void Register() override
@@ -3858,6 +3920,7 @@ void AddSC_priest_spell_scripts()
     new spell_pri_mass_dispel();
     new spell_pri_mind_blast();
     new spell_pri_confession();
+    new spell_pri_glyph_of_confession();
     new spell_script<spell_pri_devouring_plague>("spell_pri_devouring_plague");
     new aura_script<spell_pri_devouring_plague_heal>("spell_pri_devouring_plague_heal");
     new aura_script<spell_pri_twist_of_fate>("spell_pri_twist_of_fate");

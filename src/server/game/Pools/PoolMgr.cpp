@@ -447,7 +447,7 @@ void PoolGroup<Quest>::SpawnObject(ActivePoolData& spawns, uint32 limit, uint32 
     // load state from db
     if (!triggerFrom)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_POOL_QUEST_SAVE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_POOL_QUEST_SAVE);
 
         stmt->setUInt32(0, poolId);
 
@@ -573,6 +573,12 @@ void PoolGroup<Quest>::ReSpawn1Object(PoolObject* /*obj*/) { }
 // Methods of class PoolMgr
 
 PoolMgr::PoolMgr() : max_pool_id(0) { }
+
+PoolMgr* PoolMgr::instance()
+{
+    static PoolMgr instance;
+    return &instance;
+}
 
 void PoolMgr::Initialize()
 {
@@ -837,7 +843,7 @@ void PoolMgr::LoadFromDB()
     {
         uint32 oldMSTime = getMSTime();
 
-        PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_QUEST_POOLS);
+        WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_QUEST_POOLS);
         PreparedQueryResult result = WorldDatabase.Query(stmt);
 
         if (!result)
@@ -983,13 +989,13 @@ void PoolMgr::LoadQuestPools()
 
 void PoolMgr::SaveQuestsToDB()
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     for (PoolGroupQuestMap::iterator itr = mPoolQuestGroups.begin(); itr != mPoolQuestGroups.end(); ++itr)
     {
         if (itr->isEmpty())
             continue;
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_POOL_SAVE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_POOL_SAVE);
         stmt->setUInt32(0, itr->GetPoolId());
         trans->Append(stmt);
     }
@@ -998,7 +1004,7 @@ void PoolMgr::SaveQuestsToDB()
     {
         if (IsSpawnedObject<Quest>(itr->first))
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_QUEST_POOL_SAVE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_QUEST_POOL_SAVE);
             stmt->setUInt32(0, itr->second);
             stmt->setUInt32(1, itr->first);
             trans->Append(stmt);

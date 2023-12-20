@@ -27,6 +27,12 @@ OutdoorPvPMgr::OutdoorPvPMgr()
     //TC_LOG_DEBUG("outdoorpvp", "Instantiating OutdoorPvPMgr");
 }
 
+OutdoorPvPMgr* OutdoorPvPMgr::instance()
+{
+    static OutdoorPvPMgr instance;
+    return &instance;
+}
+
 void OutdoorPvPMgr::Die()
 {
     //TC_LOG_DEBUG("outdoorpvp", "Deleting OutdoorPvPMgr");

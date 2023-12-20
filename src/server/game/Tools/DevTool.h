@@ -654,7 +654,7 @@ union DevToolSettings
 
                 auto&& pointPath = path.GetPath();
                 if (!continuous)
-                    ChatHandler(player).PSendSysMessage("%s's %s to |cFFFFCCCC%.3f|rf, |cFFCCFFCC%.3f|rf, |cFFCCCCFF%.3f|rf: %s - Length: " SIZEFMTD " - Type: %u", target->GetName().c_str(), useStraightPath ? "StraightPath" : "SmoothPath", x, y, z, (result ? "|cFF00FF00true|r" : "|cFFFF0000false|r"), pointPath.size(), path.GetPathType());
+                    ChatHandler(player).PSendSysMessage("%s's %s to |cFFFFCCCC%.3f|rf, |cFFCCFFCC%.3f|rf, |cFFCCCCFF%.3f|rf: %s - Length: %lu - Type: %u", target->GetName().c_str(), useStraightPath ? "StraightPath" : "SmoothPath", x, y, z, (result ? "|cFF00FF00true|r" : "|cFFFF0000false|r"), pointPath.size(), path.GetPathType());
 
                 path.VisualizePath(continuous ? continuousInterval * 3 : 2500);
                 if (continuous && path.visualizePathWaypointGUIDs)

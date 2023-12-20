@@ -32,6 +32,7 @@
 #include "Containers.h"
 #include "Pet.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum MageSpells
 {
@@ -2439,7 +2440,7 @@ class spell_mage_conjure_refreshment : public SpellScript
 
     void HandleCast()
     {
-        uint8 level = GetCaster()->getLevel();
+        uint8 level = GetCaster()->GetLevel();
         for (auto&& it : m_conjureData)
         {
             if (level < it.MinLevel || level > it.MaxLevel)
@@ -2462,7 +2463,7 @@ class spell_mage_conjure_refreshment_table : public SpellScript
 
     void HandleCast()
     {
-        uint32 level = GetCaster()->getLevel();
+        uint32 level = GetCaster()->GetLevel();
         uint32 spellId = 120056;
         if (level >= 80)
             spellId = 120055;

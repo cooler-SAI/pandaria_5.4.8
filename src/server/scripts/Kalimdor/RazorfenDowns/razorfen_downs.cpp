@@ -59,7 +59,7 @@ public:
     {
         npc_henry_sternAI(Creature* creature) : ScriptedAI(creature) { }
 
-        void sGossipSelect(Player* player, uint32 /*sender*/, uint32 action) override
+        bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 action) override
         {
             if (action == 0)
             {
@@ -90,6 +90,7 @@ public:
                     player->SendPreparedGossip(me);
                 }
             }
+            return true;
         }
     };
 

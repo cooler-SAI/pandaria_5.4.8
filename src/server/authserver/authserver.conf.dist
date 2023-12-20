@@ -2,7 +2,12 @@
 #   Pandaria Auth Server configuration file   #
 ###############################################
 [authserver]
-
+Updates.AutoSetup = 1
+Updates.EnableDatabases = 1
+Updates.CleanDeadRefMaxCount = 3
+Updates.ArchivedRedundancy = 0
+Updates.AllowRehash = 1
+Updates.Redundancy = 1
 ###################################################################################################
 # SECTION INDEX
 #
@@ -148,6 +153,35 @@ LoginDatabaseInfo = "127.0.0.1;3306;root;root;auth"
 LoginDatabase.WorkerThreads = 1
 
 #
+#    IPLocationFile
+#        Description: The path to your IP2Location database CSV file.
+#        Example:     "C:/Trinity/IP2LOCATION-LITE-DB1.CSV"
+#                     "/home/trinity/IP2LOCATION-LITE-DB1.CSV"
+#        Default:     ""  - (Disabled)
+
+IPLocationFile = ""
+
+#
+#    SourceDirectory
+#        Description: The path to your TrinityCore source directory.
+#                     If the path is left empty, the built-in CMAKE_SOURCE_DIR is used.
+#        Example:     "../TrinityCore"
+#        Default:     ""
+
+SourceDirectory  = ""
+
+#
+#    MySQLExecutable
+#        Description: The path to your MySQL CLI binary.
+#                     If the path is left empty, built-in path from cmake is used.
+#        Example:     "C:/Program Files/MySQL/MySQL Server 5.6/bin/mysql.exe"
+#                     "mysql.exe"
+#                     "/usr/bin/mysql"
+#        Default:     ""
+
+MySQLExecutable = ""
+
+#
 ###################################################################################################
 
 ###################################################################################################
@@ -241,3 +275,4 @@ Logger.root=3,Console Auth
 
 #
 ###################################################################################################
+LoginDatabase.SynchThreads = 1

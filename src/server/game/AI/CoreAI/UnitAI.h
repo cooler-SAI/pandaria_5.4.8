@@ -23,6 +23,17 @@
 #include "Containers.h"
 #include <list>
 
+#define CAST_AI(a, b)   (dynamic_cast<a*>(b))
+#define ENSURE_AI(a,b)  (EnsureAI<a>(b))
+
+template<class T, class U>
+T* EnsureAI(U* ai)
+{
+    T* cast_ai = dynamic_cast<T*>(ai);
+    ASSERT(cast_ai);
+    return cast_ai;
+}
+
 class Player;
 class Quest;
 class Unit;
@@ -39,7 +50,7 @@ enum SelectAggroTarget
 };
 
 // default predicate function to select target based on distance, player and/or aura criteria
-struct DefaultTargetSelector : public std::unary_function<Unit*, bool>
+struct DefaultTargetSelector
 {
     const Unit* me;
     float m_dist;
@@ -89,7 +100,7 @@ struct DefaultTargetSelector : public std::unary_function<Unit*, bool>
 
 // Target selector for spell casts checking range, auras and attributes
 /// @todo Add more checks from Spell::CheckCast
-struct SpellTargetSelector : public std::unary_function<Unit*, bool>
+struct SpellTargetSelector
 {
     public:
         SpellTargetSelector(Unit* caster, uint32 spellId);
@@ -103,7 +114,7 @@ struct SpellTargetSelector : public std::unary_function<Unit*, bool>
 // Very simple target selector, will just skip main target
 // NOTE: When passing to UnitAI::SelectTarget remember to use 0 as position for random selection
 //       because tank will not be in the temporary list
-struct NonTankTargetSelector : public std::unary_function<Unit*, bool>
+struct NonTankTargetSelector
 {
     public:
         NonTankTargetSelector(Creature* source, bool playerOnly = true) : _source(source), _playerOnly(playerOnly) { }
@@ -114,7 +125,7 @@ struct NonTankTargetSelector : public std::unary_function<Unit*, bool>
         bool _playerOnly;
 };
 
-struct CasterSpecTargetSelector :public std::unary_function<uint32, bool>
+struct CasterSpecTargetSelector
 {
     public:
         CasterSpecTargetSelector(uint32 spellId = 0 ) : _spellId(spellId) { }
@@ -125,7 +136,7 @@ struct CasterSpecTargetSelector :public std::unary_function<uint32, bool>
         uint32 _spellId;
 };
 
-struct MeeleSpecTargetSelector :public std::unary_function<uint32, bool>
+struct MeeleSpecTargetSelector
 {
     public:
         MeeleSpecTargetSelector(uint32 spellId = 0) : _spellId(spellId) { }
@@ -136,7 +147,7 @@ struct MeeleSpecTargetSelector :public std::unary_function<uint32, bool>
         uint32 _spellId;
 };
 
-struct DpsSpecTargetSelector :public std::unary_function<uint32, bool>
+struct DpsSpecTargetSelector
 {
     public:
         DpsSpecTargetSelector(uint32 spellId = 0) : _spellId(spellId) { }
@@ -147,7 +158,7 @@ struct DpsSpecTargetSelector :public std::unary_function<uint32, bool>
         uint32 _spellId;
 };
 
-struct TankSpecTargetSelector :public std::unary_function<uint32, bool>
+struct TankSpecTargetSelector
 {
     public:
         TankSpecTargetSelector(uint32 spellId = 0) : _spellId(spellId) { }
@@ -158,7 +169,7 @@ struct TankSpecTargetSelector :public std::unary_function<uint32, bool>
         uint32 _spellId;
 };
 
-struct HealerSpecTargetSelector :public std::unary_function<uint32, bool>
+struct HealerSpecTargetSelector
 {
     public:
         HealerSpecTargetSelector(uint32 spellId = 0) : _spellId(spellId) { }
@@ -169,7 +180,7 @@ struct HealerSpecTargetSelector :public std::unary_function<uint32, bool>
         uint32 _spellId;
 };
 
-struct NonTankSpecTargetSelector :public std::unary_function<uint32, bool>
+struct NonTankSpecTargetSelector
 {
     public:
         NonTankSpecTargetSelector(uint32 spellId = 0) : _spellId(spellId) { }
@@ -196,7 +207,10 @@ class UnitAI
 
         virtual void Reset() { };
 
-        // Called when unit is charmed
+        // Called when unit's charm state changes with isNew = false
+        // Implementation should call me->ScheduleAIChange() if AI replacement is desired
+        // If this call is made, AI will be replaced on the next tick
+        // When replacement is made, OnCharmed is called with isNew = true
         virtual void OnCharmed(bool apply) = 0;
 
         // Pass parameters between AI
@@ -207,8 +221,9 @@ class UnitAI
         virtual uint64 GetGUID(int32 /*id*/ = 0) const { return 0; }
 
         Unit* SelectTarget(SelectAggroTarget targetType, uint32 position = 0, float dist = 0.0f, bool playerOnly = false, int32 aura = 0);
-        // Select the targets satifying the predicate.
-        // predicate shall extend std::unary_function<Unit*, bool>
+        // Select the best target (in <targetType> order) satisfying <predicate> from the threat list.
+        // If <offset> is nonzero, the first <offset> entries in <targetType> order (or SelectTargetMethod::MaxThreat
+        // order, if <targetType> is SelectTargetMethod::Random) are skipped.
         template <class PREDICATE> Unit* SelectTarget(SelectAggroTarget targetType, uint32 position, PREDICATE const& predicate)
         {
             ThreatContainer::StorageType const& threatlist = me->getThreatManager().getThreatList();
@@ -255,10 +270,21 @@ class UnitAI
             return NULL;
         }
 
+        // Select the best (up to) <num> targets (in <targetType> order) from the threat list that fulfill the following:
+        // - Not among the first <offset> entries in <targetType> order (or SelectTargetMethod::MaxThreat order,
+        //   if <targetType> is SelectTargetMethod::Random).
+        // - Within at most <dist> yards (if dist > 0.0f)
+        // - At least -<dist> yards away (if dist < 0.0f)
+        // - Is a player (if playerOnly = true)
+        // - Not the current tank (if withTank = false)
+        // - Has aura with ID <aura> (if aura > 0)
+        // - Does not have aura with ID -<aura> (if aura < 0)
+        // The resulting targets are stored in <targetList> (which is cleared first).
         void SelectTargetList(std::list<Unit*>& targetList, uint32 num, SelectAggroTarget targetType, float dist = 0.0f, bool playerOnly = false, int32 aura = 0);
 
-        // Select the targets satifying the predicate.
-        // predicate shall extend std::unary_function<Unit*, bool>
+        // Select the best (up to) <num> targets (in <targetType> order) satisfying <predicate> from the threat list and stores them in <targetList> (which is cleared first).
+        // If <offset> is nonzero, the first <offset> entries in <targetType> order (or SelectTargetMethod::MaxThreat
+        // order, if <targetType> is SelectTargetMethod::Random) are skipped.
         template <class PREDICATE> void SelectTargetList(std::list<Unit*>& targetList, PREDICATE const& predicate, uint32 maxTargets, SelectAggroTarget targetType)
         {
             ThreatContainer::StorageType const& threatlist = me->getThreatManager().getThreatList();
@@ -283,6 +309,16 @@ class UnitAI
             else
                 targetList.resize(maxTargets);
         }
+
+        // Called when the unit enters combat
+        // (NOTE: Creature engage logic should NOT be here, but in JustEngagedWith, which happens once threat is established!)
+        virtual void JustEnteredCombat(Unit* /*who*/) { }
+
+        // Called when the unit leaves combat
+        virtual void JustExitedCombat() { }
+
+        // Called when the unit is about to be removed from the world (despawn, grid unload, corpse disappearing, player logging out etc.)
+        virtual void OnDespawn() { }
 
         // Called at any Damage to any victim (before damage apply)
         virtual void DamageDealt(Unit* /*victim*/, uint32& /*damage*/, DamageEffectType /*damageType*/) { }
@@ -315,21 +351,24 @@ class UnitAI
 
         float DoGetSpellMaxRange(uint32 spellId, bool positive = false);
 
+        virtual bool ShouldSparWith(Unit const* /*target*/) const { return false; }
+
         void DoMeleeAttackIfReady(bool ignoreLos = false);
         bool DoSpellAttackIfReady(uint32 spell);
 
         static AISpellInfoType* AISpellInfo;
         static void FillAISpellInfo();
 
-        virtual void sGossipHello(Player* /*player*/) { }
-        virtual void sGossipSelect(Player* /*player*/, uint32 /*sender*/, uint32 /*action*/) { }
-        virtual void sGossipSelectCode(Player* /*player*/, uint32 /*sender*/, uint32 /*action*/, char const* /*code*/) { }
-        virtual void sQuestAccept(Player* /*player*/, Quest const* /*quest*/) { }
-        virtual void sQuestSelect(Player* /*player*/, Quest const* /*quest*/) { }
-        virtual void sQuestComplete(Player* /*player*/, Quest const* /*quest*/) { }
-        virtual void sQuestReward(Player* /*player*/, Quest const* /*quest*/, uint32 /*opt*/) { }
+        // skyfire function start
         virtual bool sOnDummyEffect(Unit* /*caster*/, uint32 /*spellId*/, SpellEffIndex /*effIndex*/) { return false; }
         virtual void sOnGameEvent(bool /*start*/, uint16 /*eventId*/) { }
+        // skyfire function end
+
+    private:
+        UnitAI(UnitAI const& right) = delete;
+        UnitAI& operator=(UnitAI const& right) = delete;
+        ThreatManager& GetThreatManager();
+        void SortByDistance(std::list<Unit*>& list, bool ascending = true);        
 };
 
 #endif

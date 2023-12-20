@@ -28,6 +28,7 @@
 #include "Containers.h"
 #include "LootLockoutMap.h"
 #include "Guild.h"
+#include "Random.h"
 
 static Rates const qualityToRate[MAX_ITEM_QUALITY] =
 {
@@ -54,7 +55,7 @@ LootStore LootTemplates_Skinning("skinning_loot_template",           "creature s
 LootStore LootTemplates_Spell("spell_loot_template",                 "spell id (random item creating)", false);
 
 // Selects invalid loot items to be removed from group possible entries (before rolling)
-struct LootGroupInvalidSelector : public std::unary_function<LootStoreItem*, bool>
+struct LootGroupInvalidSelector
 {
     explicit LootGroupInvalidSelector(Loot const& loot, uint32 lootmode, Player* player)
         : _loot(loot), _lootmode(lootmode), _player(player) { }
@@ -324,7 +325,7 @@ bool LootStoreItem::IsValid(LootStore const& store, uint32 entry) const
 {
     if (group && type == LOOT_ITEM_TYPE_CURRENCY)
     {
-        TC_LOG_ERROR("sql.sql", "Table '%s' entry %d currency %d: group is set, but currencies must not have group - skipped", store.GetName(), entry, itemid, group, 1 << 7);
+        TC_LOG_ERROR("sql.sql", "Table '%s' entry %d currency %d: group is set, but currencies must not have group %d - skipped", store.GetName(), entry, itemid, group);
         return false;
     }
 
@@ -690,7 +691,7 @@ bool Loot::FillLoot(Object* source, uint32 lootId, LootStore const& store, Playe
         if (auto const* loot = sLootMgr->GetWorldDrop(creature))
         {
             for (auto&& itr : *loot)
-                if (itr.second.GetChance(creature->getLevel()) > 0.0f)
+                if (itr.second.GetChance(creature->GetLevel()) > 0.0f)
                     items.push_back(LootItem{ itr.second });
         }
     }
@@ -1008,7 +1009,7 @@ void Loot::FillFFALoot(Player* player)
                         toRoll[itr->second.Group].push_back({ i, &itr->second });
                     else
                     {
-                        float chance = itr->second.GetChance(creature->getLevel());
+                        float chance = itr->second.GetChance(creature->GetLevel());
                         if (creature->isElite())
                             AddPct(chance, 20.0f);
                         if (roll_chance_f(chance))
@@ -1023,7 +1024,7 @@ void Loot::FillFFALoot(Player* player)
             for (auto&& itr : toRoll)
             {
                 auto& rolled = itr.second[urand(0, itr.second.size() - 1)];
-                float chance = rolled.Item->GetChance(creature->getLevel());
+                float chance = rolled.Item->GetChance(creature->GetLevel());
                 if (creature->isElite())
                     AddPct(chance, 20.0f);
                 if (roll_chance_f(chance))
@@ -1198,7 +1199,7 @@ void Loot::generateMoneyLoot(uint32 minAmount, uint32 maxAmount)
 void Loot::DeleteLootItemFromContainerItemDB(uint32 itemID)
 {
     // Deletes a single item associated with an openable item from the DB
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEM);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEM);
     stmt->setUInt32(0, containerID);
     stmt->setUInt32(1, itemID);
     CharacterDatabase.Execute(stmt);
@@ -1217,7 +1218,7 @@ void Loot::DeleteLootItemFromContainerItemDB(uint32 itemID)
 void Loot::DeleteLootMoneyFromContainerItemDB()
 {
     // Deletes money loot associated with an openable item from the DB
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
     stmt->setUInt32(0, containerID);
     CharacterDatabase.Execute(stmt);
 }
@@ -2464,7 +2465,7 @@ void LoadLootTemplates_Item()
     // remove real entries and check existence loot
     ItemTemplateContainer const* its = sObjectMgr->GetItemTemplateStore();
     for (ItemTemplateContainer::const_iterator itr = its->begin(); itr != its->end(); ++itr)
-        if (lootIdSet.find(itr->second.ItemId) != lootIdSet.end() && itr->second.Flags & ITEM_PROTO_FLAG_OPENABLE)
+        if (lootIdSet.find(itr->second.ItemId) != lootIdSet.end() && itr->second.Flags & ITEM_FLAG_HAS_LOOT)
             lootIdSet.erase(itr->second.ItemId);
 
     // output error for any still listed (not referenced from appropriate table) ids
@@ -2775,9 +2776,7 @@ void PersonalLoot::Reward(Player* player)
         Item* item = Item::CreateItem(itemId, 1, player);
         player->SendDisplayToast(item, 0, 0, TOAST_TYPE_ITEM, TOAST_DISPLAY_TYPE_ITEM);
         player->StoreNewItem(item);
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Personal loot: %s by %s", Group::Format(item).c_str(), Group::Format(player).c_str());
+
         uint32 questId = m_loot->QuestTracker ? m_loot->QuestTracker : 0;
         if (questId)
             if (player->GetQuestStatus(questId) != QUEST_STATUS_REWARDED)
@@ -2881,10 +2880,6 @@ void BonusLoot::Reward(Player* player)
         player->StoreNewItem(item);
         player->SetBonusRollExtraChance(0.0f);
 
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Bonus roll loot: %s by %s", Group::Format(item).c_str(), Group::Format(player).c_str());
-
         if (Guild* guild = player->GetGuild())
             guild->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_CRAFT_ITEMS_GUILD, newItem->ItemId, 1, 0, nullptr, player);
     }
@@ -2897,9 +2892,6 @@ void BonusLoot::Reward(Player* player)
         player->ModifyMoney(money);
         player->SendDisplayToast(nullptr, 0, money, TOAST_TYPE_MONEY, TOAST_DISPLAY_TYPE_ITEM, bonusLoot);
 
-        if (Group* group = player->GetGroup())
-            if (group->IsLogging())
-                group->LogEvent("Bonus roll failed, gold reward: %s by %s", Group::FormatMoney(money).c_str(), Group::Format(player).c_str());
     }
 }
 

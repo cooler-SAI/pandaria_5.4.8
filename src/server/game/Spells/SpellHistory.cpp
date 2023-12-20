@@ -87,9 +87,9 @@ void SpellHistory::LoadFromDB(PreparedQueryResult&& result, PreparedQueryResult&
 }
 
 template <>
-void SpellHistory::SaveToDB<Player>(SQLTransaction& trans)
+void SpellHistory::SaveToDB<Player>(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SPELL_COOLDOWN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_SPELL_COOLDOWN);
     stmt->setUInt32(0, _owner->GetGUIDLow());
     trans->Append(stmt);
 
@@ -105,7 +105,7 @@ void SpellHistory::SaveToDB<Player>(SQLTransaction& trans)
         {
             if (!entry.OnHold)
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL_COOLDOWN);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL_COOLDOWN);
                 stmt->setUInt32(0, _owner->GetGUIDLow());
                 stmt->setUInt32(1, entry.SpellId);
                 stmt->setUInt32(2, entry.ItemId);
@@ -125,7 +125,7 @@ void SpellHistory::SaveToDB<Player>(SQLTransaction& trans)
 
     for (auto&& itr : _spellCharges)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL_CHARGES);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_SPELL_CHARGES);
         stmt->setUInt32(0, _owner->GetGUIDLow());
         stmt->setUInt32(1, itr.first);
         stmt->setUInt64(2, itr.second.CurrentResetTime.ToMilliseconds());
@@ -135,13 +135,13 @@ void SpellHistory::SaveToDB<Player>(SQLTransaction& trans)
 }
 
 template <>
-void SpellHistory::SaveToDB<Pet>(SQLTransaction& trans)
+void SpellHistory::SaveToDB<Pet>(CharacterDatabaseTransaction trans)
 {
     auto charmInfo = _owner->GetCharmInfo();
     if (!charmInfo)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PET_SPELL_COOLDOWNS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PET_SPELL_COOLDOWNS);
     stmt->setUInt32(0, charmInfo->GetPetNumber());
     trans->Append(stmt);
 
@@ -158,7 +158,7 @@ void SpellHistory::SaveToDB<Pet>(SQLTransaction& trans)
         {
             if (!entry.OnHold)
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PET_SPELL_COOLDOWN);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PET_SPELL_COOLDOWN);
                 stmt->setUInt32(0, charmInfo->GetPetNumber());
                 stmt->setUInt32(1, entry.SpellId);
                 stmt->setUInt64(2, entry.CooldownEnd.ToMilliseconds());
@@ -327,7 +327,7 @@ void SpellHistory::StartCooldown(SpellInfo const* spellInfo, uint32 itemId, Spel
         {
             tm date;
             time_t now = curTime.ToSeconds();
-            ACE_OS::localtime_r(&now, &date);
+            localtime_r(&now, &date);
             cooldown.CategoryRecoveryTime = cooldown.CategoryRecoveryTime * DAY - (date.tm_hour * HOUR + date.tm_min * MINUTE + date.tm_sec) * IN_MILLISECONDS;
         }
     }

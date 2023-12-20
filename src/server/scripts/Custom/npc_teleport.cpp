@@ -1,21 +1,4 @@
-﻿/*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
-*
-* This program is free software; you can redistribute it and/or modify it
-* under the terms of the GNU General Public License as published by the
-* Free Software Foundation; either version 2 of the License, or (at your
-* option) any later version.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-* FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
-* more details.
-*
-* You should have received a copy of the GNU General Public License along
-* with this program. If not, see <http://www.gnu.org/licenses/>.
-*/
-
-#include "Vehicle.h"
+﻿#include "Vehicle.h"
 #include "ScriptPCH.h"
 #include "Common.h"
 #include "Chat.h"
@@ -30,126 +13,160 @@
 #include "DatabaseEnv.h"
 #include <sstream>
 
-struct Location
+#include "ScriptPCH.h"
+#include "Chat.h"
+#include "Player.h"
+
+enum NPC_TELEPORT
 {
-    uint32 mapId;
-    float x;
-    float y;
-    float z;
-    float o;
+    GOSSIP_MENU_NPCTELEPORT                                       = 900000,  
+    NPC_TEXT_NPCTELEPORT                                          = 9000000, 
+    
+    GOSSIP_OPTION_ALLIANCE_SHRINE_OF_THE_SEVEN_STARS              = 1,
+    GOSSIP_OPTION_ALLIANCE_DARNASSUS                              = 2,
+    GOSSIP_OPTION_ALLIANCE_EXODAR                                 = 3,
+    GOSSIP_OPTION_ALLIANCE_IRONFORGE                              = 4,
+    GOSSIP_OPTION_ALLIANCE_STORMWIND                              = 5,
+
+    GOSSIP_OPTION_HORDE_SHRINE_OF_THE_TWO_MOONS                   = 6,
+    GOSSIP_OPTION_HORDE_ORGRIMMAR                                 = 7,
+    GOSSIP_OPTION_HORDE_SLIVERMOON                                = 8,
+    GOSSIP_OPTION_HORDE_THUNDERBLUFF                              = 9,
+    GOSSIP_OPTION_HORDE_UNDERCITY                                 = 10,
+
+    GOSSIP_OPTION_GLOBAL_DALARAN                                  = 11,
+    GOSSIP_OPTION_GLOBAL_SHATTRATH                                = 12,
+
 };
 
-struct TeleData
+
+/**
+ * ALLIANCE
+	Shrine of the Seven Stars (870, 821f, 253f, 503f, 0.59f);
+	Darnassus (1, 9949f, 2284f, 1341f, 1.59f);
+	Exodar (530, -3965f, -11654.6f, -138.9f, 0.85f);
+	Ironforge (0, -4918f, -940f, 501f, 5.42f);
+	Stormwind (0, -8833f, 622f, 94f, 2.44f);
+
+	HORDE
+	Shrine of the two moons (870, 1677f, 931f, 471f, 3.27f);
+	Orgrimmar (1, 1569f, -4397f, 16f, 0.54f);
+	Silvermoon (530, 9487f, -7279f, 14.5f, 6,16f);
+	Thunder Bluff (1, -1277f, 124f, 131f, 6,16f);
+	Undercity (0, 1580f, 256f, -61f, 5,39f);
+
+	GLOBAL:
+	Dalaran (571, 5805f, 626f, 647f, 2f);
+	Shattrath (530, -1842f, 5388f, -12f, 2f);
+ * 
+ * 
+ * 
+ * /
+
+
+
+
+/*######
+## npc_teleport
+######*/
+
+struct npc_teleport : public ScriptedAI
 {
-    uint32 action;
-    uint32 subAction;
-    std::string name;
-    Location loc;
-    uint32 team;
-    bool isEmpty;
-    bool isGrub;
-};
+    npc_teleport(Creature* creature) : ScriptedAI(creature) { }
 
-#define LOCATIONS_COUNT 16
-
-TeleData data[] =
-{
-    {1203, 0, "Darnassus.",             {1, 9947.52f, 2482.73f, 1316.21f, 0.0f},        ALLIANCE, false, false},
-    {1216, 0, "Exodar.",                {530, -3965.69f, -11653.59f, -138.84f, 0.0f},   ALLIANCE, false, false},
-    {1206, 0, "Stormwind.",             {0, -8960.14f, 516.266f, 96.3568f, 0.0f},       ALLIANCE, false, false},
-    {1224, 0, "Ironforge.",             {0, -4924.07f, -951.95f, 501.55f, 5.40f},       ALLIANCE, false, false},
-
-    {1215, 0, "Orgrimmar.",             {1, 1424.53f, -4411.07f, 73.91f, 0.0f},         HORDE,    false, false},
-    {1217, 0, "Silvermoon.",            {530, 9338.74f, -7277.27f, 13.7895f, 0.0f},     HORDE,    false, false},
-    {1213, 0, "Undercity.",             {0, 1819.71f, 238.79f, 60.5321f, 0.0f},         HORDE,    false, false},
-    {1225, 0, "Thunder Bluff.",         {1, -1273.88f, 81.62f, 128.42f, 0.0f},          HORDE,    false, false},
-
-    {1287, 0, "Shattrath City.",        {530, -1850.2f, 5435.8f, -10.9f, 0.0f},         0,        false, false},
-    {1205, 0, "Dalaran.",               {571, 5804.14f, 624.770f, 647.7670f, 1.64f},    0,        false, false},
-    {1207, 0, "Nagrand.",               {530, -2504.31f, 6445.08f, 200.43f, 1.64f},     0,        false, false},
-
-    {5550, 0, "[Outdoor PvP] ->",       {0, 0, 0, 0, 0},                                0,        true,  false},
-    {1248, 5550, "Ring of Trials.",     {530, -2049.26f, 6662.82f, 13.06f, 0.0f},       0,        false, false},
-    {1249, 5550, "Circle of Blood.",    {530, 2839.43f, 5930.16f, 11.20f, 0.0f},        0,        false, false},
-    {1250, 5550, "The mauls.",          {1, -3761.24f, 1131.89f, 132.96f, 0.0f},        0,        false, false},
-    {1252, 5550, "Gurubashi arena.",    {0, -13312.44f, 61.878f,  22.193f, 0.0f},       0,        false, false},
-};
-
-class npc_teleport : public CreatureScript
-{
-public:
-    npc_teleport() : CreatureScript("npc_teleport") { }
-
-    void AddAction(Player *player, uint16 index)
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->ADD_GOSSIP_ITEM(5, data[index].name.c_str(), GOSSIP_SENDER_MAIN, data[index].action);
-    }
-
-    bool OnGossipHello(Player* player, Creature* _Creature) override
-    {
-        for (uint16 i = 0; i < LOCATIONS_COUNT; ++i)
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
+        switch (action)
         {
-            TeleData _data = data[i];
-
-            if (_data.subAction == 0 && (_data.team == player->GetTeam() || !_data.team))
-                AddAction(player, i);
+            // Shrine of the Seven Stars
+	        case GOSSIP_ACTION_INFO_DEF + 1:
+				player->TeleportTo(870, 907.901f, 336.61f, 506.095f, 3.92009f);
+	            break;
+	        // Darnassus
+	        case GOSSIP_ACTION_INFO_DEF + 2:
+	            player->TeleportTo(1, 9949.56f, 2284.21f, 1341.4f, 1.59587f);
+	            break;
+			// Exodar
+	        case GOSSIP_ACTION_INFO_DEF + 3:
+	            player->TeleportTo(530, -3965.0f, -11654.6f, -138.9f, 0.85f);
+	            break;
+	        // Ironforge
+	        case GOSSIP_ACTION_INFO_DEF + 4:
+	            player->TeleportTo(0, -4918.88f, -940.406f, 501.564f, 5.42347f);
+	            break;
+	        // Stormwind
+	        case GOSSIP_ACTION_INFO_DEF + 5:
+	            player->TeleportTo(0, -8833.07f, 622.778f, 93.9317f, 0.6771f);
+				break;
+	        // Shrine of the two moons
+	        case GOSSIP_ACTION_INFO_DEF + 6:
+				player->TeleportTo(870, 1570.2f, 894.047f, 473.6f, 0.48004f);
+	            break;
+	        // Orgrimmar
+	        case GOSSIP_ACTION_INFO_DEF + 7:
+				player->TeleportTo(1, 1569.97f, -4397.41f, 16.0472f, 0.543025f);
+	            break;
+	        // Silvermoon
+	        case GOSSIP_ACTION_INFO_DEF + 8:
+				player->TeleportTo(530, 9487.69f, -7279.2f, 14.2866f, 6.16478f);
+	            break;
+	        // Thunder Bluff
+	        case GOSSIP_ACTION_INFO_DEF + 9:
+				player->TeleportTo(1, -1277.37f, 124.804f, 131.287f, 5.22274f);
+	            break;
+	        // Undercity
+	        case GOSSIP_ACTION_INFO_DEF + 10:
+				player->TeleportTo(0, 1584.07f, 241.987f, -52.1534f, 0.049647f);
+	            break;	  
+	        // Dalaran
+	        case GOSSIP_ACTION_INFO_DEF + 11:
+				player->TeleportTo(571, 5804.15f, 624.771f, 647.767f, 1.64f);
+	            break;
+	        // Shattrath
+	        case GOSSIP_ACTION_INFO_DEF + 12:
+				player->TeleportTo(530, -1838.16f, 5301.79f, -12.428f, 5.9517f);
+	            break;	                      
         }
-
-        player->SEND_GOSSIP_MENU(DEFAULT_GOSSIP_MESSAGE,_Creature->GetGUID());
+        CloseGossipMenuFor(player);
         return true;
     }
 
-    bool OnGossipSelect(Player* player, Creature* _Creature, uint32 sender, uint32 action) override
+    bool OnGossipHello(Player* player) override
     {
-        player->PlayerTalkClass->ClearMenus();
-
-        int16 actionIndex = -1;
-
-        for (uint16 i = 0; i < LOCATIONS_COUNT; ++i)
+        InitGossipMenuFor(player, GOSSIP_MENU_NPCTELEPORT);
+        if (player->IsInCombat())
         {
-            TeleData _data = data[i];
-
-            if (_data.action == action)
-                actionIndex = i;
+            player->GetSession()->SendNotification("You are in combat!");
+            CloseGossipMenuFor(player);
         }
+		if (player->GetTeam() == ALLIANCE)
+		{
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_ALLIANCE_SHRINE_OF_THE_SEVEN_STARS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_ALLIANCE_DARNASSUS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 2);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_ALLIANCE_EXODAR, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 3);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_ALLIANCE_IRONFORGE, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 4);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_ALLIANCE_STORMWIND, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 5);
+		}
+		if (player->GetTeam() == HORDE)
+		{
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_HORDE_SHRINE_OF_THE_TWO_MOONS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 6);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_HORDE_ORGRIMMAR, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 7);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_HORDE_SLIVERMOON, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 8);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_HORDE_THUNDERBLUFF, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 9);
+			AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_HORDE_UNDERCITY, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 10);
+		}
+		AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_GLOBAL_DALARAN, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 11);
+        AddGossipItemFor(player, GOSSIP_MENU_NPCTELEPORT, GOSSIP_OPTION_GLOBAL_SHATTRATH, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 12);
 
-        if (actionIndex < 0)
-            return false;
-
-        if (data[actionIndex].isEmpty)
-        {
-            SendSubMenu(player, _Creature, action);
-            return true;
-        }
-
-        player->CLOSE_GOSSIP_MENU();
-
-        TelePlayerByAction(player, actionIndex);
-
+        SendGossipMenuFor(player, 48, me->GetGUID());
         return true;
     }
-
-    void TelePlayerByAction(Player *player, uint16 actionIndex)
-    {
-        Location loc = data[actionIndex].loc;
-        player->TeleportTo(loc.mapId, loc.x, loc.y, loc.z, loc.z);
-    }
-
-    void SendSubMenu(Player *player, Creature *creature, uint16 submenu)
-    {
-        for (uint16 i = 0; i < LOCATIONS_COUNT; ++i)
-        {
-            TeleData _data = data[i];
-
-            if (_data.subAction == submenu && (_data.team == player->GetTeam() || !_data.team))
-                AddAction(player, i);
-        }
-
-        player->SEND_GOSSIP_MENU(DEFAULT_GOSSIP_MESSAGE, creature->GetGUID());
-    }
 };
-
+ 
 void AddSC_npc_teleport()
 {
-    new npc_teleport();
+    RegisterCreatureAI(npc_teleport);
 }
+

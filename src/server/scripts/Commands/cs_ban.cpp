@@ -30,6 +30,8 @@ EndScriptData */
 #include "Player.h"
 #include "ScriptMgr.h"
 #include "ServiceMgr.h"
+#include "Util.h"
+#include "UtilACE.h"
 
 class ban_commandscript : public CommandScript
 {
@@ -318,7 +320,7 @@ public:
 
         if (!target)
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
             stmt->setString(0, name);
             PreparedQueryResult resultCharacter = CharacterDatabase.Query(stmt);
 
@@ -333,7 +335,7 @@ public:
         else
             targetGuid = target->GetGUIDLow();
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO);
         stmt->setUInt32(0, targetGuid);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
         if (!result)
@@ -394,7 +396,7 @@ public:
 
     static bool HandleBanListAccountCommand(ChatHandler* handler, char const* args)
     {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS);
         LoginDatabase.Execute(stmt);
 
         char* filterStr = strtok((char*)args, " ");
@@ -404,12 +406,12 @@ public:
 
         if (filter.empty())
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BANNED_ALL);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BANNED_ALL);
             result = LoginDatabase.Query(stmt);
         }
         else
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BANNED_BY_USERNAME);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BANNED_BY_USERNAME);
             stmt->setString(0, filter);
             result = LoginDatabase.Query(stmt);
         }
@@ -474,7 +476,7 @@ public:
                     {
                         time_t timeBan = time_t(fields2[0].GetUInt32());
                         tm tmBan;
-                        ACE_OS::localtime_r(&timeBan, &tmBan);
+                        localtime_r(&timeBan, &tmBan);
 
                         if (fields2[0].GetUInt32() == fields2[1].GetUInt32())
                         {
@@ -486,7 +488,7 @@ public:
                         {
                             time_t timeUnban = time_t(fields2[1].GetUInt32());
                             tm tmUnban;
-                            ACE_OS::localtime_r(&timeUnban, &tmUnban);
+                            localtime_r(&timeUnban, &tmUnban);
                             handler->PSendSysMessage("|%-15.15s|%02d-%02d-%02d %02d:%02d|%02d-%02d-%02d %02d:%02d|%-15.15s|%-15.15s|",
                                 accountName.c_str(), tmBan.tm_year%100, tmBan.tm_mon+1, tmBan.tm_mday, tmBan.tm_hour, tmBan.tm_min,
                                 tmUnban.tm_year%100, tmUnban.tm_mon+1, tmUnban.tm_mday, tmUnban.tm_hour, tmUnban.tm_min,
@@ -514,7 +516,7 @@ public:
             return false;
 
         std::string filter(filterStr);
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME_FILTER);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME_FILTER);
         stmt->setString(0, filter);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
         if (!result)
@@ -531,7 +533,7 @@ public:
             do
             {
                 Field* fields = result->Fetch();
-                PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANNED_NAME);
+                CharacterDatabasePreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANNED_NAME);
                 stmt2->setUInt32(0, fields[0].GetUInt32());
                 PreparedQueryResult banResult = CharacterDatabase.Query(stmt2);
                 if (banResult)
@@ -553,7 +555,7 @@ public:
 
                 std::string char_name = fields[1].GetString();
 
-                PreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO_LIST);
+                CharacterDatabasePreparedStatement* stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_BANINFO_LIST);
                 stmt2->setUInt32(0, fields[0].GetUInt32());
                 PreparedQueryResult banInfo = CharacterDatabase.Query(stmt2);
                 if (banInfo)
@@ -563,7 +565,7 @@ public:
                     {
                         time_t timeBan = time_t(banFields[0].GetUInt32());
                         tm tmBan;
-                        ACE_OS::localtime_r(&timeBan, &tmBan);
+                        localtime_r(&timeBan, &tmBan);
 
                         if (banFields[0].GetUInt32() == banFields[1].GetUInt32())
                         {
@@ -575,7 +577,7 @@ public:
                         {
                             time_t timeUnban = time_t(banFields[1].GetUInt32());
                             tm tmUnban;
-                            ACE_OS::localtime_r(&timeUnban, &tmUnban);
+                            localtime_r(&timeUnban, &tmUnban);
                             handler->PSendSysMessage("|%-15.15s|%02d-%02d-%02d %02d:%02d|%02d-%02d-%02d %02d:%02d|%-15.15s|%-15.15s|",
                                 char_name.c_str(), tmBan.tm_year%100, tmBan.tm_mon+1, tmBan.tm_mday, tmBan.tm_hour, tmBan.tm_min,
                                 tmUnban.tm_year%100, tmUnban.tm_mon+1, tmUnban.tm_mday, tmUnban.tm_hour, tmUnban.tm_min,
@@ -594,7 +596,7 @@ public:
 
     static bool HandleBanListIPCommand(ChatHandler* handler, char const* args)
     {
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_EXPIRED_IP_BANS);
         LoginDatabase.Execute(stmt);
 
         char* filterStr = strtok((char*)args, " ");
@@ -605,12 +607,12 @@ public:
 
         if (filter.empty())
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_BANNED_ALL);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_BANNED_ALL);
             result = LoginDatabase.Query(stmt);
         }
         else
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_BANNED_BY_IP);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_IP_BANNED_BY_IP);
             stmt->setString(0, filter);
             result = LoginDatabase.Query(stmt);
         }
@@ -644,7 +646,7 @@ public:
                 Field* fields = result->Fetch();
                 time_t timeBan = time_t(fields[1].GetUInt32());
                 tm tmBan;
-                ACE_OS::localtime_r(&timeBan, &tmBan);
+                localtime_r(&timeBan, &tmBan);
                 if (fields[1].GetUInt32() == fields[2].GetUInt32())
                 {
                     handler->PSendSysMessage("|%-15.15s|%02d-%02d-%02d %02d:%02d|   permanent  |%-15.15s|%-15.15s|",
@@ -655,7 +657,7 @@ public:
                 {
                     time_t timeUnban = time_t(fields[2].GetUInt32());
                     tm tmUnban;
-                    ACE_OS::localtime_r(&timeUnban, &tmUnban);
+                    localtime_r(&timeUnban, &tmUnban);
                     handler->PSendSysMessage("|%-15.15s|%02d-%02d-%02d %02d:%02d|%02d-%02d-%02d %02d:%02d|%-15.15s|%-15.15s|",
                         fields[0].GetCString(), tmBan.tm_year%100, tmBan.tm_mon+1, tmBan.tm_mday, tmBan.tm_hour, tmBan.tm_min,
                         tmUnban.tm_year%100, tmUnban.tm_mon+1, tmUnban.tm_mday, tmUnban.tm_hour, tmUnban.tm_min,

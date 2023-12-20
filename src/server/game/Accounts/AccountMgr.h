@@ -18,7 +18,9 @@
 #ifndef SF_ACCMGR_H
 #define SF_ACCMGR_H
 
-#include <ace/Singleton.h>
+#include "Define.h"
+#include <string>
+#include "Util.h"
 
 enum class AccountOpResult : uint8
 {
@@ -45,18 +47,13 @@ enum PasswordChangeSecurity
 
 class AccountMgr
 {
-    friend class ACE_Singleton<AccountMgr, ACE_Null_Mutex>;
 
     private:
         AccountMgr();
         ~AccountMgr();
 
     public:
-        static AccountMgr* instance()
-        {
-            static AccountMgr _instance;
-            return &_instance;
-        }
+        static AccountMgr* instance();
 
         AccountOpResult CreateAccount(std::string username, std::string password, std::string email = "", uint32 bnetAccountId = 0, uint8 bnetIndex = 0);
         static AccountOpResult DeleteAccount(uint32 accountId);

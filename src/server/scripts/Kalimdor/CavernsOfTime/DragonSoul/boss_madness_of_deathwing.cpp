@@ -3396,7 +3396,9 @@ class spell_madness_of_deathwing_shrapnel : public SpellScriptLoader
                     return;
 
                 m_fragments = std::vector<WorldObject*>(targets.begin(), targets.end());
-                std::random_shuffle(m_fragments.begin(), m_fragments.end());
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(m_fragments.begin(), m_fragments.end(), g);                
             }
 
             void FilterEnemies(std::list<WorldObject*>& targets)

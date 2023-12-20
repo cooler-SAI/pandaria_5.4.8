@@ -15,7 +15,8 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Cryptography/HMACSHA1.h"
+#include "Cryptography/HMAC.h"
+#include "Cryptography/CryptoRandom.h"
 #include "Cryptography/WardenKeyGeneration.h"
 #include "Common.h"
 #include "WorldPacket.h"
@@ -23,8 +24,7 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "ByteBuffer.h"
-#include <openssl/md5.h>
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
 #include "World.h"
 #include "Player.h"
 #include "Util.h"
@@ -48,8 +48,8 @@ void WardenWin::Init(WorldSession* session, BigNumber* k)
     WK.Generate(_outputKey, 16);
 
     // Initial encryption is done with session key
-    uint8 inputKey[MD5_DIGEST_LENGTH];
-    uint8 outputKey[MD5_DIGEST_LENGTH];
+    uint8 inputKey[16]; // MD5_DIGEST_LENGTH
+    uint8 outputKey[16];
 
     auto const inputKeySize = sizeof(inputKey);
     auto const outputKeySize = sizeof(outputKey);
@@ -69,10 +69,10 @@ void WardenWin::Init(WorldSession* session, BigNumber* k)
     _module.clientKeySeedHash = std::make_pair(winWardenModule.ClientKeySeedHash, sizeof(winWardenModule.ClientKeySeedHash));
 
     TC_LOG_DEBUG("warden", "%u - Server side warden initializing...", session->GetAccountId());
-    TC_LOG_DEBUG("warden", "%u - C->S Key: %s", session->GetAccountId(), ByteArrayToHexStr(inputKey, inputKeySize).c_str());
-    TC_LOG_DEBUG("warden", "%u - S->C Key: %s", session->GetAccountId(), ByteArrayToHexStr(outputKey, outputKeySize).c_str());
-    TC_LOG_DEBUG("warden", "%u - Module Key: %s", session->GetAccountId(), ByteArrayToHexStr(_module.key.first, _module.key.second).c_str());
-    TC_LOG_DEBUG("warden", "%u - Module Hash: %s", session->GetAccountId(), ByteArrayToHexStr(_module.hash.first, _module.hash.second).c_str());
+    TC_LOG_DEBUG("warden", "%u - C->S Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(inputKey, inputKeySize).c_str());
+    TC_LOG_DEBUG("warden", "%u - S->C Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(outputKey, outputKeySize).c_str());
+    TC_LOG_DEBUG("warden", "%u - Module Key: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(_module.key.first, _module.key.second).c_str());
+    TC_LOG_DEBUG("warden", "%u - Module Hash: %s", session->GetAccountId(), Trinity::Impl::ByteArrayToHexStr(_module.hash.first, _module.hash.second).c_str());
 
     RequestModule();
     DoCustomMemCheck(12967816, 4);
@@ -116,8 +116,8 @@ void WardenWin::HandleHashResult(ByteBuffer &buff)
     TC_LOG_DEBUG("warden", "%u - Request hash reply: succeed", _session->GetAccountId());
 
     // reinit crypto keys
-    _inputCrypto.Init(_module.clientKeySeed.first);
-    _outputCrypto.Init(_module.serverKeySeed.first);
+    _inputCrypto.Init(_module.clientKeySeed.first, _module.clientKeySeed.second);
+    _outputCrypto.Init(_module.serverKeySeed.first, _module.serverKeySeed.second);
 
     _initialized = true;
     _previousTimestamp = getMSTime();
@@ -203,8 +203,6 @@ void WardenWin::RequestData(WardenRequestContext* context)
     std::string exename = "@exe";
     buff << uint8(exename.size());
     buff.append(exename.c_str(), exename.size());
-
-    ACE_READ_GUARD(ACE_RW_Mutex, g, sWardenCheckMgr->_checkStoreLock);
 
     if (context && context->CustomOtherCheck)
     {
@@ -306,14 +304,10 @@ void WardenWin::RequestData(WardenRequestContext* context)
             }*/
             case MODULE_CHECK:
             {
-                buff << uint8(type ^ xorByte);
-                uint32 seed = rand32();
-                buff << uint32(seed);
-                HmacHash hmac(4, (uint8*)&seed);
-                hmac.UpdateData(wd->Str);
-                hmac.Finalize();
-                buff.append(hmac.GetDigest(), hmac.GetLength());
-                break;
+                std::array<uint8, 4> seed = Trinity::Crypto::GetRandomBytes<4>();
+                buff.append(seed);
+                buff.append(Trinity::Crypto::HMAC_SHA1::GetDigestOf(seed, wd->Str));
+                break;                
             }
             /*case PROC_CHECK:
             {
@@ -384,7 +378,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
     {
         buff.rpos(buff.wpos());
         std::string penalty = Penalty();
-        TC_LOG_WARN("warden", "%s failed checksum. Action: %s, map: %d", _session->GetPlayerInfo().c_str(), Penalty().c_str(), _session->GetPlayer() ? _session->GetPlayer()->GetMapId() : -1, penalty.c_str());
+        TC_LOG_WARN("warden", "%s failed checksum. Action: %s, map: %d", _session->GetPlayerInfo().c_str(), Penalty().c_str(), _session->GetPlayer() ? _session->GetPlayer()->GetMapId() : -1); // , penalty.c_str()
 
         if (receiver)
             ChatHandler(receiver->GetSession()).PSendSysMessage("Failed checksum. Action: %s", penalty.c_str());
@@ -433,8 +427,6 @@ void WardenWin::HandleData(ByteBuffer &buff)
     uint16 checkFailed = 0;
     std::vector<std::tuple<WardenCheck*, bool, std::string>> checksFailed;
 
-    ACE_READ_GUARD(ACE_RW_Mutex, g, sWardenCheckMgr->_checkStoreLock);
-
     for (auto&& check : _currentChecks)
     {
         rd = &check.first;
@@ -464,7 +456,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                 {
                     TC_LOG_DEBUG("warden", "RESULT MEM_CHECK fail CheckId %u account Id %u", rd->CheckId, _session->GetAccountId());
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), rd->Length)));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), rd->Length)));
                     buff.rpos(buff.rpos() + rd->Length);
                     continue;
                 }
@@ -485,7 +477,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                     if (type == DRIVER_CHECK)
                         TC_LOG_DEBUG("warden", "RESULT DRIVER_CHECK fail, CheckId %u account Id %u", rd->CheckId, _session->GetAccountId());
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
                     buff.rpos(buff.rpos() + 1);
                     continue;
                 }
@@ -504,7 +496,7 @@ void WardenWin::HandleData(ByteBuffer &buff)
                 {
                     TC_LOG_INFO("warden", "%u - RESULT MODULE_CHECK fail, CheckId %u", _session->GetAccountId(), rd->CheckId);
                     checkFailed = rd->CheckId;
-                    checksFailed.push_back(std::make_tuple(rd, true, ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
+                    checksFailed.push_back(std::make_tuple(rd, true, Trinity::Impl::ByteArrayToHexStr(buff.contents() + buff.rpos(), sizeof(uint8))));
                     continue;
                 }
 

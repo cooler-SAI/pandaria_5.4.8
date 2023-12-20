@@ -100,7 +100,7 @@ public:
                     Talk(SAY_WORGRAGGRO3);
                     if (Creature* RWORG = me->SummonCreature(NPC_RAVENOUS_WORG, me->GetPositionX()+10, me->GetPositionY()+8, me->GetPositionZ()+2, 3.229f, TEMPSUMMON_TIMED_OR_DEAD_DESPAWN, 120000))
                     {
-                        RWORG->setFaction(35);
+                        RWORG->SetFaction(35);
                         _RavenousworgGUID = RWORG->GetGUID();
                     }
                     break;
@@ -133,7 +133,7 @@ public:
                         {
                             RWORG->Kill(Mrfloppy);
                             Mrfloppy->ExitVehicle();
-                            RWORG->setFaction(14);
+                            RWORG->SetFaction(14);
                             RWORG->GetMotionMaster()->MovePoint(0, RWORG->GetPositionX()+10, RWORG->GetPositionY()+80, RWORG->GetPositionZ());
                             Talk(SAY_VICTORY2);
                         }
@@ -729,9 +729,10 @@ public:
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
             {
                 DoCast(player, SPELL_SUMMON_ASHWOOD_BRAND);
+                return true;
             }
 
         private:

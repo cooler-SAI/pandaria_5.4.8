@@ -16,7 +16,6 @@
 */
 
 #include "Unit.h"
-#include "Common.h"
 #include "Battlefield.h"
 #include "BattlefieldMgr.h"
 #include "Battleground.h"
@@ -45,6 +44,7 @@
 #include "Player.h"
 #include "PlayerAI.h"
 #include "QuestDef.h"
+#include "Random.h"
 #include "ReputationMgr.h"
 #include "SpellAuraEffects.h"
 #include "SpellAuras.h"
@@ -67,7 +67,6 @@
 #include "AreaTrigger.h"
 #include <math.h>
 #include <numeric>
-#include <ace/Stack_Trace.h>
 #include "SpellScript.h"
 #include "PetBattle.h"
 #include "GameEventMgr.h"
@@ -113,8 +112,8 @@ static bool procPrepared = InitTriggerAuraData();
 
 static int32 GetLevelDifferenceForPenalty(Unit const* attacker, Unit const* victim)
 {
-    int32 attackerLevel = attacker->getLevel();
-    int32 victimLevel = victim->getLevelForTarget(attacker);
+    int32 attackerLevel = attacker->GetLevel();
+    int32 victimLevel = victim->GetLevelForTarget(attacker);
     int32 diff = victimLevel - attackerLevel;
     RoundToInterval(diff, -2, 3);
     return diff;
@@ -816,10 +815,10 @@ uint32 Unit::DealDamage(Unit* victim, uint32 damage, CleanDamage const* cleanDam
     sScriptMgr->OnDamage(this, victim, damage);
 
     // optimization done
-	if ((damagetype == SPELL_DIRECT_DAMAGE || damagetype == DOT) && spellProto)
-	{
-		damage = RecaculateDamage(damage);
-	}
+    if ((damagetype == SPELL_DIRECT_DAMAGE || damagetype == DOT) && spellProto)
+    {
+        damage = RecaculateDamage(damage);
+    }
 
 
 
@@ -1553,7 +1552,7 @@ void Unit::CalculateMeleeDamage(Unit* victim, uint32 damage, CalcDamageInfo* dam
             damageInfo->HitInfo |= HITINFO_GLANCING;
             damageInfo->TargetState = VICTIMSTATE_HIT;
             damageInfo->procEx |= PROC_EX_NORMAL_HIT;
-            int32 leveldif = int32(victim->getLevelForTarget(this)) - int32(getLevel());
+            int32 leveldif = int32(victim->GetLevelForTarget(this)) - int32(GetLevel());
             if (leveldif > 3)
                 leveldif = 3;
             float reducePercent = 1 - leveldif * 0.1f;
@@ -1693,8 +1692,8 @@ void Unit::DealMeleeDamage(CalcDamageInfo* damageInfo, bool durabilityLoss)
         float Probability = 20.0f;
 
         // there is a newbie protection, at level 10 just 7% base chance; assuming linear function
-        if (victim->getLevel() < 30)
-            Probability = 0.65f * victim->getLevel() + 0.5f;
+        if (victim->GetLevel() < 30)
+            Probability = 0.65f * victim->GetLevel() + 0.5f;
 
         uint32 VictimDefense = victim->GetMaxSkillValueForLevel(this);
         uint32 AttackerMeleeSkill = GetMaxSkillValueForLevel();
@@ -1919,7 +1918,7 @@ uint32 Unit::CalcArmorReducedDamage(Unit* victim, const uint32 damage, SpellInfo
     if (armor < 0.0f)
         armor = 0.0f;
 
-    float levelModifier = getLevel();
+    float levelModifier = GetLevel();
 
     if (levelModifier > 85)
         levelModifier = levelModifier + (4.5 * (levelModifier - 59)) + (20 * (levelModifier - 80)) + (22 * (levelModifier - 85));
@@ -1952,7 +1951,7 @@ uint32 Unit::CalcSpellResistance(Unit* victim, SpellSchoolMask schoolMask, Spell
     uint8 const bossLevel = 83;
     uint32 const bossResistanceConstant = 510;
     uint32 resistanceConstant = 0;
-    uint8 level = victim->getLevel();
+    uint8 level = victim->GetLevel();
 
     if (level == bossLevel)
         resistanceConstant = bossResistanceConstant;
@@ -2517,7 +2516,7 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst(const Unit* victim, WeaponAttackTy
     if (attType != RANGED_ATTACK &&
         GetAffectingPlayer() &&
         !victim->GetAffectingPlayer() &&
-        getLevel() < victim->getLevelForTarget(this))
+        GetLevel() < victim->GetLevelForTarget(this))
     {
         // cap possible value (with bonuses > max skill)
         int32 skill = attackerMaxSkillValueForLevel;
@@ -2545,7 +2544,7 @@ MeleeHitOutcome Unit::RollMeleeOutcomeAgainst(const Unit* victim, WeaponAttackTy
     }
 
     // mobs can score crushing blows if they're 4 or more levels above victim
-    if (getLevelForTarget(victim) >= victim->getLevelForTarget(this) + 4 &&
+    if (GetLevelForTarget(victim) >= victim->GetLevelForTarget(this) + 4 &&
         // can be from by creature (if can) or from controlled player that considered as creature
         !IsControlledByPlayer() &&
         !(GetTypeId() == TYPEID_UNIT && ToCreature()->GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_NO_CRUSH))
@@ -2624,7 +2623,7 @@ float Unit::CalculateLevelPenalty(SpellInfo const* spellProto) const
 
     if (spellProto->SpellLevel < 20)
         LvlPenalty = 20.0f - spellProto->SpellLevel * 3.75f;
-    float LvlFactor = (float(spellProto->SpellLevel) + 6.0f) / float(getLevel());
+    float LvlFactor = (float(spellProto->SpellLevel) + 6.0f) / float(GetLevel());
     if (LvlFactor > 1.0f)
         LvlFactor = 1.0f;
 
@@ -3107,7 +3106,7 @@ SpellMissInfo Unit::SpellHitResult(Unit* victim, SpellInfo const* spellInfo, uin
 
 uint32 Unit::GetUnitMeleeSkill(Unit const* target) const
 {
-    return (target ? getLevelForTarget(target) : getLevel()) * 5;
+    return (target ? GetLevelForTarget(target) : GetLevel()) * 5;
 }
 
 float Unit::GetUnitDodgeChance() const
@@ -3219,7 +3218,7 @@ float Unit::GetUnitBlockChance() const
 static float GetExpertiseOrHitChanceFormOwner(Player* owner)
 {
     float chance = 0.0f;
-    switch (owner->getClass())
+    switch (owner->GetClass())
     {
         case CLASS_MAGE:
         case CLASS_WARLOCK:
@@ -4094,11 +4093,10 @@ void Unit::RemoveOwnedAura(AuraMap::iterator &i, AuraRemoveMode removeMode)
         Unit* caster = aura->GetCaster();
         if (!caster)
         {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+            TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
             caster = ObjectAccessor::FindPlayerInOrOutOfWorld(aura->GetCasterGUID());
             if (!caster)
-                TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster and !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+                TC_LOG_ERROR("shitlog", "Unit::RemoveOwnedAura !caster and !caster aura: %u, owner: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
         }
         // ASSERT(caster);
         if (caster)
@@ -4955,16 +4953,14 @@ void Unit::UnbindAura(Aura* aura)
     auto listit = m_boundAuras.find(aura->GetId());
     if (listit == m_boundAuras.end())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::UnbindAura listit == m_boundAuras.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n%s" , aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::UnbindAura listit == m_boundAuras.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n" , aura->GetId(), GetGUID(), GetEntry());
         return;
     }
     auto& list = m_boundAuras[aura->GetId()];
     auto it = std::find(list.begin(), list.end(), aura);
     if (it == list.end())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::UnbindAura it == list.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n%s", aura->GetId(), GetGUID(), GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::UnbindAura it == list.end() aura: %u, caster: " UI64FMTD " (entry: %u)\n", aura->GetId(), GetGUID(), GetEntry());
         return;
     }
     list.erase(it);
@@ -6561,7 +6557,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         return false;
 
                     // Select class defined buff
-                    switch (getClass())
+                    switch (GetClass())
                     {
                         case CLASS_PALADIN:                 // 39511, 40997, 40998, 40999, 41002, 41005, 41009, 41011, 41409
                         case CLASS_DRUID:                   // 39511, 40997, 40998, 40999, 41002, 41005, 41009, 41011, 41409
@@ -6764,7 +6760,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         return false;
 
                     std::vector<uint32> RandomSpells;
-                    switch (getClass())
+                    switch (GetClass())
                     {
                         case CLASS_WARRIOR:
                         case CLASS_PALADIN:
@@ -6810,7 +6806,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         return false;
 
                     std::vector<uint32> RandomSpells;
-                    switch (getClass())
+                    switch (GetClass())
                     {
                         case CLASS_WARRIOR:
                         case CLASS_PALADIN:
@@ -7188,7 +7184,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         return false;
 
                     // Set class defined buff
-                    switch (victim->getClass())
+                    switch (victim->GetClass())
                     {
                         case CLASS_PALADIN:
                         case CLASS_PRIEST:
@@ -7316,26 +7312,26 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                     if (triggeredByAura->GetEffIndex() == EFFECT_0)
                         triggered_spell_id = 101423;
                     break;
-				case 31801:  // Seal of Truth
-				{
-					if (effIndex != 0)                      
-						return false;
+                case 31801:  // Seal of Truth
+                {
+                    if (effIndex != 0)                      
+                        return false;
 
-					
-					if (procFlag & PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG && procSpell->Id != 20271)
-						return false;
+                    
+                    if (procFlag & PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG && procSpell->Id != 20271)
+                        return false;
 
-					triggered_spell_id = 31803;
+                    triggered_spell_id = 31803;
 
-					int32 l_Bp = 17;
+                    int32 l_Bp = 17;
 
-					if (HasAura(56416))
-						CastCustomSpell(victim, 42463, &l_Bp, NULL, NULL, true);
-					else
-						CastSpell(victim, 42463, true);
+                    if (HasAura(56416))
+                        CastCustomSpell(victim, 42463, &l_Bp, NULL, NULL, true);
+                    else
+                        CastSpell(victim, 42463, true);
 
-					break;
-				}
+                    break;
+                }
                 case 105361:    // Seal of Command
                     if (triggeredByAura->GetEffIndex() == EFFECT_0)
                         triggered_spell_id = 118215;
@@ -7354,7 +7350,7 @@ bool Unit::HandleDummyAuraProc(Unit* victim, uint32 damage, AuraEffect* triggere
                         return false;
 
                     // Set class defined buff
-                    switch (victim->getClass())
+                    switch (victim->GetClass())
                     {
                         case CLASS_PALADIN:
                         case CLASS_PRIEST:
@@ -7954,7 +7950,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
                     // Soul Preserver
                     case 60510:
                     {
-                        switch (getClass())
+                        switch (GetClass())
                         {
                             case CLASS_DRUID:
                                 trigger_spell_id = 60512;
@@ -8022,7 +8018,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
                 // Item - Death Knight T10 Melee 4P Bonus
                 if (auraSpellInfo->Id == 70656)
                 {
-                    if (GetTypeId() != TYPEID_PLAYER || getClass() != CLASS_DEATH_KNIGHT)
+                    if (GetTypeId() != TYPEID_PLAYER || GetClass() != CLASS_DEATH_KNIGHT)
                         return false;
 
                     for (uint8 i = 0; i < MAX_RUNES; ++i)
@@ -8098,7 +8094,7 @@ bool Unit::HandleProcTriggerSpell(Unit* victim, uint32 damage, AuraEffect* trigg
             break;
             // Frostburn Formula
         case 96325:
-            if (!victim || victim->getLevel() > 85)
+            if (!victim || victim->GetLevel() > 85)
                 return true;
             break;
         // Deep Wounds
@@ -8409,7 +8405,7 @@ void Unit::SetPowerType(Powers new_powertype)
 
 FactionTemplateEntry const* Unit::GetFactionTemplateEntry() const
 {
-    FactionTemplateEntry const* entry = sFactionTemplateStore.LookupEntry(getFaction());
+    FactionTemplateEntry const* entry = sFactionTemplateStore.LookupEntry(GetFaction());
     if (!entry)
     {
         static uint64 guid = 0;                             // prevent repeating spam same faction problem
@@ -8417,11 +8413,11 @@ FactionTemplateEntry const* Unit::GetFactionTemplateEntry() const
         if (GetGUID() != guid)
         {
             if (Player const* player = ToPlayer())
-                TC_LOG_ERROR("entities.unit", "Player %s has invalid faction (faction template id) #%u", player->GetName().c_str(), getFaction());
+                TC_LOG_ERROR("entities.unit", "Player %s has invalid faction (faction template id) #%u", player->GetName().c_str(), GetFaction());
             else if (Creature const* creature = ToCreature())
-                TC_LOG_ERROR("entities.unit", "Creature (template id: %u) has invalid faction (faction template id) #%u", creature->GetCreatureTemplate()->Entry, getFaction());
+                TC_LOG_ERROR("entities.unit", "Creature (template id: %u) has invalid faction (faction template id) #%u", creature->GetCreatureTemplate()->Entry, GetFaction());
             else
-                TC_LOG_ERROR("entities.unit", "Unit (name=%s, type=%u) has invalid faction (faction template id) #%u", GetName().c_str(), uint32(GetTypeId()), getFaction());
+                TC_LOG_ERROR("entities.unit", "Unit (name=%s, type=%u) has invalid faction (faction template id) #%u", GetName().c_str(), uint32(GetTypeId()), GetFaction());
 
             guid = GetGUID();
         }
@@ -13280,7 +13276,7 @@ float Unit::GetHasteMultiplier() const
 {
     float mult = GetTotalAuraMultiplier(SPELL_AURA_MOD_HASTE, [](AuraEffect const* eff) { return eff->GetAmount() > 0; });
 
-    if (getClass() != CLASS_WARLOCK && getClass() != CLASS_MAGE)
+    if (GetClass() != CLASS_WARLOCK && GetClass() != CLASS_MAGE)
         mult *= GetTotalAuraMultiplier(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK, [](AuraEffect const* eff)
     {
         // Only heroism/blood lust/etc
@@ -13289,7 +13285,7 @@ float Unit::GetHasteMultiplier() const
     else
         mult *= GetTotalAuraMultiplier(SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK, [](AuraEffect const* eff) { return eff->GetAmount() > 0; });
 
-    if (getClass() == CLASS_HUNTER)
+    if (GetClass() == CLASS_HUNTER)
         mult *= GetTotalAuraMultiplier(SPELL_AURA_MOD_RANGED_HASTE, [](AuraEffect const* eff) { return eff->GetAmount() > 0; });
 
     if (GetTypeId() == TYPEID_PLAYER)
@@ -13329,7 +13325,7 @@ bool Unit::CanFreeMove() const
                          UNIT_STATE_ROOT | UNIT_STATE_STUNNED | UNIT_STATE_DISTRACTED) && GetOwnerGUID() == 0;
 }
 
-void Unit::SetLevel(uint8 lvl)
+void Unit::SetLevel(uint8 lvl, bool sendUpdate)
 {
     SetUInt32Value(UNIT_FIELD_LEVEL, lvl);
 
@@ -13654,14 +13650,14 @@ uint32 Unit::GetPowerIndex(uint32 powerType) const
     if (powerType == POWER_RAGE && GetEntry() == 60708) // Meng the Demented. TODO: Seems to be override display power id
         return 0;
 
-    uint32 classId = getClass();
+    uint32 classId = GetClass();
     if (Pet const* pet = ToPet())
     {
         if (pet->getPetType() == HUNTER_PET)
             classId = CLASS_HUNTER;
         else if (pet->getPetType() == SUMMON_PET)
         {
-            switch (pet->GetOwner()->getClass())
+            switch (pet->GetOwner()->GetClass())
             {
                 case CLASS_DEATH_KNIGHT:
                     return powerType == POWER_ENERGY ? 0 : MAX_POWERS;
@@ -13685,7 +13681,7 @@ int32 Unit::GetCreatePowers(Powers power) const
             return 1000;
         case POWER_FOCUS:
             if (GetTypeId() == TYPEID_PLAYER)
-                return getClass() == CLASS_HUNTER ? 100 : 0;
+                return GetClass() == CLASS_HUNTER ? 100 : 0;
             return IsPet() && ToPet()->getPetType() == HUNTER_PET ? 100 : 0;
         case POWER_ENERGY:
         {
@@ -13693,7 +13689,7 @@ int32 Unit::GetCreatePowers(Powers power) const
                 return 200;
             if (IsGuardian())
                 if (Unit* owner = GetOwner())
-                    if (owner->GetTypeId() == TYPEID_PLAYER && owner->getClass() == CLASS_WARLOCK)
+                    if (owner->GetTypeId() == TYPEID_PLAYER && owner->GetClass() == CLASS_WARLOCK)
                         return 200.0f;
             return 100;
         }
@@ -13706,19 +13702,19 @@ int32 Unit::GetCreatePowers(Powers power) const
         case POWER_HOLY_POWER:
             return 3;
         case POWER_BURNING_EMBERS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARLOCK)
+            if (GetTypeId() == TYPEID_PLAYER && GetClass() == CLASS_WARLOCK)
                 return ToPlayer()->GetTalentSpecialization() == SPEC_WARLOCK_DESTRUCTION ? 40 : 0;
             break;
         case POWER_DEMONIC_FURY:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARLOCK)
+            if (GetTypeId() == TYPEID_PLAYER && GetClass() == CLASS_WARLOCK)
                 return ToPlayer()->GetTalentSpecialization() == SPEC_WARLOCK_DEMONOLOGY ? 1000 : 0;
             break;
         case POWER_SOUL_SHARDS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARLOCK)
+            if (GetTypeId() == TYPEID_PLAYER && GetClass() == CLASS_WARLOCK)
                 return ToPlayer()->GetTalentSpecialization() == SPEC_WARLOCK_AFFLICTION ? 400 : 0;
             break;
         case POWER_SHADOW_ORBS:
-            if (GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_PRIEST)
+            if (GetTypeId() == TYPEID_PLAYER && GetClass() == CLASS_PRIEST)
                 return ToPlayer()->GetTalentSpecialization() == SPEC_PRIEST_SHADOW ? 3 : 0;
             break;
         case POWER_HEALTH:
@@ -14344,7 +14340,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                 if (procExtra & PROC_EX_DODGE)
                 {
                     // Update AURA_STATE on dodge
-                    if (getClass() != CLASS_ROGUE) // skip Rogue Riposte
+                    if (GetClass() != CLASS_ROGUE) // skip Rogue Riposte
                     {
                         ModifyAuraState(AURA_STATE_DEFENSE, true);
                         StartReactiveTimer(REACTIVE_DEFENSE);
@@ -14354,7 +14350,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                 if (procExtra & PROC_EX_PARRY)
                 {
                     // For Hunters only Counterattack (skip Mongoose bite)
-                    if (getClass() == CLASS_HUNTER)
+                    if (GetClass() == CLASS_HUNTER)
                     {
                         ModifyAuraState(AURA_STATE_HUNTER_PARRY, true);
                         StartReactiveTimer(REACTIVE_HUNTER_PARRY);
@@ -14375,7 +14371,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
             else // For attacker
             {
                 // Overpower on victim dodge
-                if (procExtra & PROC_EX_DODGE && GetTypeId() == TYPEID_PLAYER && getClass() == CLASS_WARRIOR)
+                if (procExtra & PROC_EX_DODGE && GetTypeId() == TYPEID_PLAYER && GetClass() == CLASS_WARRIOR)
                 {
                     ToPlayer()->AddComboPoints(target, 1);
                     StartReactiveTimer(REACTIVE_OVERPOWER);
@@ -14628,7 +14624,7 @@ void Unit::ProcDamageAndSpellFor(bool isVictim, Unit* target, uint32 procFlag, u
                     }
                     case SPELL_AURA_MOD_CASTING_SPEED_NOT_STACK:
                         // Skip melee hits or instant cast spells
-                        if (procSpell && procSpell->CalcCastTime(getLevel()) > 0)
+                        if (procSpell && procSpell->CalcCastTime(GetLevel()) > 0)
                             takeCharges = true;
                         break;
                     case SPELL_AURA_REFLECT_SPELLS:
@@ -14858,6 +14854,29 @@ void Unit::StopMoving()
     UpdateSplineMovement(1);
 }
 
+void Unit::PauseMovement(uint32 timer/* = 0*/, uint8 slot/* = 0*/, bool forced/* = true*/)
+{
+    if (IsInvalidMovementSlot(slot))
+        return;
+
+    // hack
+    // if (MovementGenerator* movementGenerator = GetMotionMaster()->GetCurrentMovementGenerator(MovementSlot(slot)))
+    //     movementGenerator->Pause(timer);
+
+    // if (forced && GetMotionMaster()->GetCurrentSlot() == MovementSlot(slot))
+    //     StopMoving();
+}
+
+void Unit::ResumeMovement(uint32 timer/* = 0*/, uint8 slot/* = 0*/)
+{
+    if (IsInvalidMovementSlot(slot))
+        return;
+
+    // hack
+    // if (MovementGenerator* movementGenerator = GetMotionMaster()->GetCurrentMovementGenerator(MovementSlot(slot)))
+    //     movementGenerator->Resume(timer);
+}
+
 void Unit::SendMovementFlagUpdate(bool self /* = false */)
 {
     WorldPacket data(SMSG_PLAYER_MOVE, 40);
@@ -14976,9 +14995,9 @@ void Unit::ClearAllReactives()
 
     if (HasAuraState(AURA_STATE_DEFENSE))
         ModifyAuraState(AURA_STATE_DEFENSE, false);
-    if (getClass() == CLASS_HUNTER && HasAuraState(AURA_STATE_HUNTER_PARRY))
+    if (GetClass() == CLASS_HUNTER && HasAuraState(AURA_STATE_HUNTER_PARRY))
         ModifyAuraState(AURA_STATE_HUNTER_PARRY, false);
-    if (getClass() == CLASS_WARRIOR && GetTypeId() == TYPEID_PLAYER)
+    if (GetClass() == CLASS_WARRIOR && GetTypeId() == TYPEID_PLAYER)
         ToPlayer()->ClearComboPoints();
 }
 
@@ -15002,11 +15021,11 @@ void Unit::UpdateReactives(uint32 p_time)
                         ModifyAuraState(AURA_STATE_DEFENSE, false);
                     break;
                 case REACTIVE_HUNTER_PARRY:
-                    if (getClass() == CLASS_HUNTER && HasAuraState(AURA_STATE_HUNTER_PARRY))
+                    if (GetClass() == CLASS_HUNTER && HasAuraState(AURA_STATE_HUNTER_PARRY))
                         ModifyAuraState(AURA_STATE_HUNTER_PARRY, false);
                     break;
                 case REACTIVE_OVERPOWER:
-                    if (getClass() == CLASS_WARRIOR && GetTypeId() == TYPEID_PLAYER)
+                    if (GetClass() == CLASS_WARRIOR && GetTypeId() == TYPEID_PLAYER)
                         ToPlayer()->ClearComboPoints();
                     break;
             }
@@ -15152,7 +15171,7 @@ uint32 Unit::GetCastingTimeForBonus(SpellInfo const* spellProto, DamageEffectTyp
     if (overTime > 0 && CastingTime > 0 && DirectDamage)
     {
         // mainly for DoTs which are 3500 here otherwise
-        uint32 OriginalCastTime = spellProto->CalcCastTime(getLevel());
+        uint32 OriginalCastTime = spellProto->CalcCastTime(GetLevel());
         if (OriginalCastTime > 7000) OriginalCastTime = 7000;
         if (OriginalCastTime < 1500) OriginalCastTime = 1500;
         // Portion to Over Time
@@ -15310,7 +15329,7 @@ Pet* Unit::CreateTamedPetFrom(Creature* creatureTarget, uint32 spell_id)
         return NULL;
     }
 
-    InitTamedPet(pet, getLevel(), spell_id);
+    InitTamedPet(pet, GetLevel(), spell_id);
 
     return pet;
 }
@@ -15326,7 +15345,7 @@ Pet* Unit::CreateTamedPetFrom(uint32 creatureEntry, uint32 spell_id)
 
     Pet* pet = new Pet(ToPlayer(), HUNTER_PET);
 
-    if (!pet->CreateBaseAtCreatureInfo(creatureInfo, this) || !InitTamedPet(pet, getLevel(), spell_id))
+    if (!pet->CreateBaseAtCreatureInfo(creatureInfo, this) || !InitTamedPet(pet, GetLevel(), spell_id))
     {
         delete pet;
         return NULL;
@@ -15338,7 +15357,7 @@ Pet* Unit::CreateTamedPetFrom(uint32 creatureEntry, uint32 spell_id)
 bool Unit::InitTamedPet(Pet* pet, uint8 level, uint32 spell_id)
 {
     pet->SetCreatorGUID(GetGUID());
-    pet->setFaction(getFaction());
+    pet->SetFaction(GetFaction());
     pet->SetUInt32Value(UNIT_FIELD_CREATED_BY_SPELL, spell_id);
 
     if (GetTypeId() == TYPEID_PLAYER)
@@ -15744,8 +15763,7 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
     // But we have bug with killing unit than it is dead
     if (!victim->IsAlive())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Unit::Kill, victim isn't alive, killer: " UI64FMTD " (%u), victim: " UI64FMTD " (%u)\n%s", GetGUID(), GetEntry(), victim->GetGUID(), victim->GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Unit::Kill, victim isn't alive, killer: " UI64FMTD " (%u), victim: " UI64FMTD " (%u)\n", GetGUID(), GetEntry(), victim->GetGUID(), victim->GetEntry());
         return;
     }
 
@@ -15907,7 +15925,7 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
 
     // if talent known but not triggered (check priest class for speedup check)
     bool spiritOfRedemption = false;
-    if (victim->GetTypeId() == TYPEID_PLAYER && victim->getClass() == CLASS_PRIEST)
+    if (victim->GetTypeId() == TYPEID_PLAYER && victim->GetClass() == CLASS_PRIEST)
     {
         AuraEffectList const& dummyAuras = victim->GetAuraEffectsByType(SPELL_AURA_DUMMY);
         for (AuraEffectList::const_iterator itr = dummyAuras.begin(); itr != dummyAuras.end(); ++itr)
@@ -16044,9 +16062,6 @@ void Unit::Kill(Unit* victim, bool durabilityLoss, SpellInfo const* spellInfo)
                                 creditedPlayer->AddLootLockout(LootLockoutType::PersonalLoot, creature->GetEntry(), instanceMap->GetDifficulty());
                         }
 
-                        if (Group* group = creditedPlayer->GetGroup())
-                            if (group->IsLogging())
-                                group->LogEvent("Boss killed: %s(%u) (Instance %u)", creature->GetName().c_str(), creature->GetEntry(), instanceMap->GetInstanceId());
                     }
                 }
                 else
@@ -16422,7 +16437,7 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
     // Set charmed
     Map* map = GetMap();
     if (!IsVehicle() || (IsVehicle() && map && !map->IsBattleground()))
-        setFaction(charmer->getFaction());
+        SetFaction(charmer->GetFaction());
 
     charmer->SetCharm(this, true);
 
@@ -16496,7 +16511,7 @@ bool Unit::SetCharmedBy(Unit* charmer, CharmType type, AuraApplication const* au
                 charmer->ToPlayer()->PossessSpellInitialize();
                 break;
             case CHARM_TYPE_CHARM:
-                if (GetTypeId() == TYPEID_UNIT && charmer->getClass() == CLASS_WARLOCK)
+                if (GetTypeId() == TYPEID_UNIT && charmer->GetClass() == CLASS_WARLOCK)
                 {
                     CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate();
                     if (cinfo && cinfo->type == CREATURE_TYPE_DEMON)
@@ -16637,7 +16652,7 @@ void Unit::RemoveCharmedBy(Unit* charmer)
                     ToPlayer()->SetMover(this);
                 break;
             case CHARM_TYPE_CHARM:
-                if (GetTypeId() == TYPEID_UNIT && charmer->getClass() == CLASS_WARLOCK)
+                if (GetTypeId() == TYPEID_UNIT && charmer->GetClass() == CLASS_WARLOCK)
                 {
                     CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate();
                     if (cinfo && cinfo->type == CREATURE_TYPE_DEMON)
@@ -16671,7 +16686,7 @@ void Unit::RestoreFaction()
     // SPELL_AURA_MOD_FACTION + charm/possess
     for (auto&& effect : GetAuraEffectsByType(SPELL_AURA_MOD_FACTION))
     {
-        setFaction(effect->GetMiscValue());
+        SetFaction(effect->GetMiscValue());
         return;
     }
 
@@ -16682,12 +16697,12 @@ void Unit::RestoreFaction()
         {
             Battleground* bg = player->GetBattleground();
             if (bg && bg->IsSoloQueueMatch())
-                player->setFaction(player->GetBGTeam() == ALLIANCE ? 1 : 2);
+                player->SetFaction(player->GetBGTeam() == ALLIANCE ? 1 : 2);
             else
-                player->setFactionForRace(getRace());
+                player->setFactionForRace(GetRace());
         }
         else
-            player->setFactionForRace(getRace());
+            player->setFactionForRace(GetRace());
     }
     else
     {
@@ -16695,7 +16710,7 @@ void Unit::RestoreFaction()
         {
             if (Unit* owner = GetOwner())
             {
-                setFaction(owner->getFaction());
+                SetFaction(owner->GetFaction());
                 return;
             }
         }
@@ -16703,7 +16718,7 @@ void Unit::RestoreFaction()
         if (CreatureTemplate const* cinfo = ToCreature()->GetCreatureTemplate())  // normal creature
         {
             FactionTemplateEntry const* faction = GetFactionTemplateEntry();
-            setFaction((faction && faction->friendlyMask & 0x004) ? cinfo->faction_H : cinfo->faction_A);
+            SetFaction((faction && faction->friendlyMask & 0x004) ? cinfo->faction_H : cinfo->faction_A);
         }
     }
 }
@@ -17378,7 +17393,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                     return 38150;
                 bool kingOfTheJungle = HasAura(102543);
                 // Based on Hair color
-                if (getRace() == RACE_NIGHTELF)
+                if (GetRace() == RACE_NIGHTELF)
                 {
                     uint8 hairColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 3);
                     switch (hairColor)
@@ -17398,7 +17413,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                             return kingOfTheJungle ? 43761 : 892;
                     }
                 }
-                else if (getRace() == RACE_TROLL)
+                else if (GetRace() == RACE_TROLL)
                 {
                     uint8 hairColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 3);
                     switch (hairColor)
@@ -17420,12 +17435,12 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                             return kingOfTheJungle ? 43777 : 33669;
                     }
                 }
-                else if (getRace() == RACE_WORGEN)
+                else if (GetRace() == RACE_WORGEN)
                 {
                     // Based on Skin color
                     uint8 skinColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 0);
                     // Male
-                    if (getGender() == GENDER_MALE)
+                    if (GetGender() == GENDER_MALE)
                     {
                         switch (skinColor)
                         {
@@ -17465,11 +17480,11 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                     }
                 }
                 // Based on Skin color
-                else if (getRace() == RACE_TAUREN)
+                else if (GetRace() == RACE_TAUREN)
                 {
                     uint8 skinColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 0);
                     // Male
-                    if (getGender() == GENDER_MALE)
+                    if (GetGender() == GENDER_MALE)
                     {
                         switch (skinColor)
                         {
@@ -17520,7 +17535,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                         }
                     }
                 }
-                else if (Player::TeamForRace(getRace()) == ALLIANCE)
+                else if (Player::TeamForRace(GetRace()) == ALLIANCE)
                     return 892;
                 else
                     return 8571;
@@ -17529,7 +17544,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
             {
                 // Based on Hair color
                 bool ursocsSon = HasAura(102558);
-                if (getRace() == RACE_NIGHTELF)
+                if (GetRace() == RACE_NIGHTELF)
                 {
                     uint8 hairColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 3);
                     switch (hairColor)
@@ -17548,7 +17563,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                             return ursocsSon ? 43758 : 2281;
                     }
                 }
-                else if (getRace() == RACE_TROLL)
+                else if (GetRace() == RACE_TROLL)
                 {
                     uint8 hairColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 3);
                     switch (hairColor)
@@ -17571,12 +17586,12 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                             return ursocsSon ? 43746 : 33655;
                     }
                 }
-                else if (getRace() == RACE_WORGEN)
+                else if (GetRace() == RACE_WORGEN)
                 {
                     // Based on Skin color
                     uint8 skinColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 0);
                     // Male
-                    if (getGender() == GENDER_MALE)
+                    if (GetGender() == GENDER_MALE)
                     {
                         switch (skinColor)
                         {
@@ -17616,11 +17631,11 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                     }
                 }
                 // Based on Skin color
-                else if (getRace() == RACE_TAUREN)
+                else if (GetRace() == RACE_TAUREN)
                 {
                     uint8 skinColor = GetByteValue(PLAYER_FIELD_HAIR_COLOR_ID, 0);
                     // Male
-                    if (getGender() == GENDER_MALE)
+                    if (GetGender() == GENDER_MALE)
                     {
                         switch (skinColor)
                         {
@@ -17671,34 +17686,34 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                         }
                     }
                 }
-                else if (Player::TeamForRace(getRace()) == ALLIANCE)
+                else if (Player::TeamForRace(GetRace()) == ALLIANCE)
                     return 2281;
                 else
                     return 2289;
             }
             case FORM_FLIGHT:
-                if (Player::TeamForRace(getRace()) == ALLIANCE)
+                if (Player::TeamForRace(GetRace()) == ALLIANCE)
                     return 20857;
                 else
                 {
-                    if (getRace() == RACE_TROLL)
+                    if (GetRace() == RACE_TROLL)
                         return 37728;
                     else
                         return 20872;
                 }
             case FORM_FLIGHT_EPIC:
-                if (Player::TeamForRace(getRace()) == HORDE)
+                if (Player::TeamForRace(GetRace()) == HORDE)
                 {
-                    if (getRace() == RACE_TROLL)
+                    if (GetRace() == RACE_TROLL)
                         return 37730;
-                    else if (getRace() == RACE_TAUREN)
+                    else if (GetRace() == RACE_TAUREN)
                         return 21244;
                 }
-                else if (Player::TeamForRace(getRace()) == ALLIANCE)
+                else if (Player::TeamForRace(GetRace()) == ALLIANCE)
                 {
-                    if (getRace() == RACE_NIGHTELF)
+                    if (GetRace() == RACE_NIGHTELF)
                         return 21243;
-                    else if (getRace() == RACE_WORGEN)
+                    else if (GetRace() == RACE_WORGEN)
                         return 37729;
                 }
                 return 21244;
@@ -17707,7 +17722,7 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                 if (HasAura(131113)) // Druid Form Gepard - Glyph
                     return 1043;
 
-                switch (getRace())
+                switch (GetRace())
                 {
                     case RACE_NIGHTELF:
                     case RACE_WORGEN:
@@ -17723,16 +17738,16 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
             {
                 bool chosenOfElune = HasAura(102560);
                 bool glyphOfStars = GetTypeId() == TYPEID_PLAYER && ToPlayer()->HasGlyph(114301);
-                if (Player::TeamForRace(getRace()) == HORDE)
+                if (Player::TeamForRace(GetRace()) == HORDE)
                 {
-                    if (getRace() == RACE_TROLL)
+                    if (GetRace() == RACE_TROLL)
                     {
                         if (chosenOfElune)
                             return 43789;
                         else if (!glyphOfStars)
                             return 37174;
                     }
-                    else if (getRace() == RACE_TAUREN)
+                    else if (GetRace() == RACE_TAUREN)
                     {
                         if (chosenOfElune)
                             return 43786;
@@ -17740,16 +17755,16 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
                             return 15375;
                     }
                 }
-                else if (Player::TeamForRace(getRace()) == ALLIANCE)
+                else if (Player::TeamForRace(GetRace()) == ALLIANCE)
                 {
-                    if (getRace() == RACE_NIGHTELF)
+                    if (GetRace() == RACE_NIGHTELF)
                     {
                         if (chosenOfElune)
                             return 43790;
                         else if (!glyphOfStars)
                             return 15374;
                     }
-                    else if (getRace() == RACE_WORGEN)
+                    else if (GetRace() == RACE_WORGEN)
                     {
                         if (chosenOfElune)
                             return 43787;
@@ -17785,13 +17800,13 @@ uint32 Unit::GetModelForForm(ShapeshiftForm form) const
             return formEntry->modelID_A;
         else
         {
-            if (Player::TeamForRace(getRace()) == ALLIANCE)
+            if (Player::TeamForRace(GetRace()) == ALLIANCE)
                 modelid = formEntry->modelID_A;
             else
                 modelid = formEntry->modelID_H;
 
             // If the player is horde but there are no values for the horde modelid - take the alliance modelid
-            if (!modelid && Player::TeamForRace(getRace()) == HORDE)
+            if (!modelid && Player::TeamForRace(GetRace()) == HORDE)
                 modelid = formEntry->modelID_A;
         }
     }
@@ -17823,7 +17838,7 @@ uint32 Unit::GetModelForTotem(uint32 totemType) const
             break;
     }
 
-    switch (getRace())
+    switch (GetRace())
     {
         case RACE_ORC:
         {
@@ -19515,7 +19530,7 @@ void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target)
                             *data << (m_uint32Values [UNIT_FIELD_SHAPESHIFT_FORM] & ((UNIT_BYTE2_FLAG_SANCTUARY /*| UNIT_BYTE2_FLAG_AURAS | UNIT_BYTE2_FLAG_UNK5*/) << 8)); // this flag is at uint8 offset 1 !!
                         else
                             // pretend that all other HOSTILE players have own faction, to allow follow, heal, rezz (trade wont work)
-                            *data << uint32(target->getFaction());
+                            *data << uint32(target->GetFaction());
                     }
                     else
                         *data << m_uint32Values [index];
@@ -19995,272 +20010,272 @@ void Unit::GetMovementSpeedModifiers(int32& mainBonus, float& stackBonus, float&
 
 uint32 Unit::RecaculateDamage(uint32 damage) // Here we calculate the damage done
 {
-	if (GetTypeId() == TYPEID_PLAYER)
-	{
-		switch (ToPlayer()->GetSpecialization())
-		{
-			// MAGE
-		case SPEC_MAGE_ARCANE:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEARCANE);
-			break;
-		case SPEC_MAGE_FIRE:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEFIRE);
-			break;
-		case SPEC_MAGE_FROST:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEFROST);
-			break;
-			// PALADIN
-		case SPEC_PALADIN_HOLY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINHOLY);
-			break;
-		case SPEC_PALADIN_PROTECTION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINPROTECTION);
-			break;
-		case SPEC_PALADIN_RETRIBUTION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINRETRIBUTION);
-			break;
-			// WARRIOR
-		case SPEC_WARRIOR_ARMS:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORARMS);
-			break;
-		case SPEC_WARRIOR_FURY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORFURY);
-			break;
-		case SPEC_WARRIOR_PROTECTION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORPROTECTION);
-			break;
-			// DRUID
-		case SPEC_DRUID_BALANCE:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDBALANCE);
-			break;
-		case SPEC_DRUID_FERAL:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDFERAL);
-			break;
-		case SPEC_DRUID_GUARDIAN:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDGUARDIAN);
-			break;
-		case SPEC_DRUID_RESTORATION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDRESTORATION);
-			break;
-			// DEATH KNIGHT
-		case SPEC_DEATH_KNIGHT_BLOOD:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTBLOOD);
-			break;
-		case SPEC_DEATH_KNIGHT_FROST:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTFROST);
-			break;
-		case SPEC_DEATH_KNIGHT_UNHOLY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTUNHOLY);
-			break;
-			// HUNTER
-		case SPEC_HUNTER_BEAST_MASTERY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERBEASTMASTERY);
-			break;
-		case SPEC_HUNTER_MARKSMANSHIP:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERMARKSMANSHIP);
-			break;
-		case SPEC_HUNTER_SURVIVAL:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERSURVIVAL);
-			break;
-			//PRIEST
-		case SPEC_PRIEST_DISCIPLINE:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTDISCIPLINE);
-			break;
-		case SPEC_PRIEST_HOLY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTHOLY);
-			break;
-		case SPEC_PRIEST_SHADOW:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTSHADOW);
-			break;
-			// ROGUE
-		case SPEC_ROGUE_ASSASSINATION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUEASSASSINATION);
-			break;
-		case SPEC_ROGUE_COMBAT:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUECOMBAT);
-			break;
-		case SPEC_ROGUE_SUBTLETY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUESUBTLETY);
-			break;
-			//SHAMAN
-		case SPEC_SHAMAN_ELEMENTAL:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANELEMENTAL);
-			break;
-		case SPEC_SHAMAN_ENHANCEMENT:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANENHANCEMENT);
-			break;
-		case SPEC_SHAMAN_RESTORATION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANRESTORATION);
-			break;
-			//WARLOCK
-		case SPEC_WARLOCK_AFFLICTION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKAFFLICTION);
-			break;
-		case SPEC_WARLOCK_DEMONOLOGY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKDEMONOLOGY);
-			break;
-		case SPEC_WARLOCK_DESTRUCTION:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKDESTRUCTION);
-			break;
-			// MONK
-		case SPEC_MONK_BREWMASTER:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKBREWMASTER);
-			break;
-		case SPEC_MONK_WINDWALKER:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKWINDWALKER);
-			break;
-		case SPEC_MONK_MISTWEAVER:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKMISTWEAVER);
-			break;
-		default:
-			break;
-		}
-	}
-	else if (ToCreature()->IsPet())
+    if (GetTypeId() == TYPEID_PLAYER)
     {
-	switch (ToPet()->GetSpecializationId())
-	{
-		case SPEC_PET_FEROCITY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_FEROCITY);
-			break;
-		case SPEC_PET_TENACITY:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_TENACITY);
-			break;
-		case SPEC_PET_CUNNING:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_CUNNING);
-			break;
-		default:
-			damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_PET_NO_SPEC);
-			break;
-		}
+        switch (ToPlayer()->GetSpecialization())
+        {
+            // MAGE
+        case SPEC_MAGE_ARCANE:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEARCANE);
+            break;
+        case SPEC_MAGE_FIRE:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEFIRE);
+            break;
+        case SPEC_MAGE_FROST:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMAGEFROST);
+            break;
+            // PALADIN
+        case SPEC_PALADIN_HOLY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINHOLY);
+            break;
+        case SPEC_PALADIN_PROTECTION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINPROTECTION);
+            break;
+        case SPEC_PALADIN_RETRIBUTION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPALADINRETRIBUTION);
+            break;
+            // WARRIOR
+        case SPEC_WARRIOR_ARMS:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORARMS);
+            break;
+        case SPEC_WARRIOR_FURY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORFURY);
+            break;
+        case SPEC_WARRIOR_PROTECTION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARRIORPROTECTION);
+            break;
+            // DRUID
+        case SPEC_DRUID_BALANCE:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDBALANCE);
+            break;
+        case SPEC_DRUID_FERAL:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDFERAL);
+            break;
+        case SPEC_DRUID_GUARDIAN:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDGUARDIAN);
+            break;
+        case SPEC_DRUID_RESTORATION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDRUIDRESTORATION);
+            break;
+            // DEATH KNIGHT
+        case SPEC_DEATH_KNIGHT_BLOOD:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTBLOOD);
+            break;
+        case SPEC_DEATH_KNIGHT_FROST:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTFROST);
+            break;
+        case SPEC_DEATH_KNIGHT_UNHOLY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECDEATHKNIGHTUNHOLY);
+            break;
+            // HUNTER
+        case SPEC_HUNTER_BEAST_MASTERY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERBEASTMASTERY);
+            break;
+        case SPEC_HUNTER_MARKSMANSHIP:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERMARKSMANSHIP);
+            break;
+        case SPEC_HUNTER_SURVIVAL:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECHUNTERSURVIVAL);
+            break;
+            //PRIEST
+        case SPEC_PRIEST_DISCIPLINE:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTDISCIPLINE);
+            break;
+        case SPEC_PRIEST_HOLY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTHOLY);
+            break;
+        case SPEC_PRIEST_SHADOW:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECPRIESTSHADOW);
+            break;
+            // ROGUE
+        case SPEC_ROGUE_ASSASSINATION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUEASSASSINATION);
+            break;
+        case SPEC_ROGUE_COMBAT:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUECOMBAT);
+            break;
+        case SPEC_ROGUE_SUBTLETY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECROGUESUBTLETY);
+            break;
+            //SHAMAN
+        case SPEC_SHAMAN_ELEMENTAL:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANELEMENTAL);
+            break;
+        case SPEC_SHAMAN_ENHANCEMENT:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANENHANCEMENT);
+            break;
+        case SPEC_SHAMAN_RESTORATION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECSHAMANRESTORATION);
+            break;
+            //WARLOCK
+        case SPEC_WARLOCK_AFFLICTION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKAFFLICTION);
+            break;
+        case SPEC_WARLOCK_DEMONOLOGY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKDEMONOLOGY);
+            break;
+        case SPEC_WARLOCK_DESTRUCTION:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECWARLOCKDESTRUCTION);
+            break;
+            // MONK
+        case SPEC_MONK_BREWMASTER:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKBREWMASTER);
+            break;
+        case SPEC_MONK_WINDWALKER:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKWINDWALKER);
+            break;
+        case SPEC_MONK_MISTWEAVER:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIGSPECMONKMISTWEAVER);
+            break;
+        default:
+            break;
+        }
+    }
+    else if (ToCreature()->IsPet())
+    {
+    switch (ToPet()->GetSpecializationId())
+    {
+        case SPEC_PET_FEROCITY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_FEROCITY);
+            break;
+        case SPEC_PET_TENACITY:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_TENACITY);
+            break;
+        case SPEC_PET_CUNNING:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_SPEC_PET_CUNNING);
+            break;
+        default:
+            damage = (damage / 100.0f) * sWorld->getFloatConfig(CONFIG_PET_NO_SPEC);
+            break;
+        }
     }
 
-	return damage;
+    return damage;
 }
 
 uint32 Unit::RecaculateHealing(uint32 healamount) // calculate healing here
 {
-	// Custom Balance System For TorghastWOW 
-	if (GetTypeId() == TYPEID_PLAYER)
-	{
-		switch (ToPlayer()->GetSpecialization())
-		{
-			// MAGE
-		case SPEC_MAGE_ARCANE:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEARCANE);
-			break;
-		case SPEC_MAGE_FIRE:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEFIRE);
-			break;
-		case SPEC_MAGE_FROST:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEFROST);
-			break;
-			// PALADIN
-		case SPEC_PALADIN_HOLY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINHOLY);
-			break;
-		case SPEC_PALADIN_PROTECTION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINPROTECTION);
-			break;
-		case SPEC_PALADIN_RETRIBUTION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINRETRIBUTION);
-			break;
-			// WARRIOR
-		case SPEC_WARRIOR_ARMS:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORARMS);
-			break;
-		case SPEC_WARRIOR_FURY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORFURY);
-			break;
-		case SPEC_WARRIOR_PROTECTION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORPROTECTION);
-			break;
-			// DRUID
-		case SPEC_DRUID_BALANCE:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDBALANCE);
-			break;
-		case SPEC_DRUID_FERAL:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDFERAL);
-			break;
-		case SPEC_DRUID_GUARDIAN:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDGUARDIAN);
-			break;
-		case SPEC_DRUID_RESTORATION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDRESTORATION);
-			break;
-			// DEATH KNIGHT
-		case SPEC_DEATH_KNIGHT_BLOOD:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTBLOOD);
-			break;
-		case SPEC_DEATH_KNIGHT_FROST:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTFROST);
-			break;
-		case SPEC_DEATH_KNIGHT_UNHOLY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTUNHOLY);
-			break;
-			// HUNTER
-		case SPEC_HUNTER_BEAST_MASTERY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERBEASTMASTERY);
-			break;
-		case SPEC_HUNTER_MARKSMANSHIP:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERMARKSMANSHIP);
-			break;
-		case SPEC_HUNTER_SURVIVAL:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERSURVIVAL);
-			break;
-			//PRIEST
-		case SPEC_PRIEST_DISCIPLINE:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTDISCIPLINE);
-			break;
-		case SPEC_PRIEST_HOLY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTHOLY);
-			break;
-		case SPEC_PRIEST_SHADOW:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTSHADOW);
-			break;
-			// ROGUE
-		case SPEC_ROGUE_ASSASSINATION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUEASSASSINATION);
-			break;
-		case SPEC_ROGUE_COMBAT:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUECOMBAT);
-			break;
-		case SPEC_ROGUE_SUBTLETY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUESUBTLETY);
-			break;
-			//SHAMAN
-		case SPEC_SHAMAN_ELEMENTAL:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANELEMENTAL);
-			break;
-		case SPEC_SHAMAN_ENHANCEMENT:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANENHANCEMENT);
-			break;
-		case SPEC_SHAMAN_RESTORATION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANRESTORATION);
-			break;
-			//WARLOCK
-		case SPEC_WARLOCK_AFFLICTION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKAFFLICTION);
-			break;
-		case SPEC_WARLOCK_DEMONOLOGY:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKDEMONOLOGY);
-			break;
-		case SPEC_WARLOCK_DESTRUCTION:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKDESTRUCTION);
-			break;
-			// MONK
-		case SPEC_MONK_BREWMASTER:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKBREWMASTER);
-			break;
-		case SPEC_MONK_WINDWALKER:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKWINDWALKER);
-			break;
-		case SPEC_MONK_MISTWEAVER:
-			healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKMISTWEAVER);
-			break;
-		}
-	}
-	return healamount;
+    // Custom Balance System For TorghastWOW 
+    if (GetTypeId() == TYPEID_PLAYER)
+    {
+        switch (ToPlayer()->GetSpecialization())
+        {
+            // MAGE
+        case SPEC_MAGE_ARCANE:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEARCANE);
+            break;
+        case SPEC_MAGE_FIRE:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEFIRE);
+            break;
+        case SPEC_MAGE_FROST:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMAGEFROST);
+            break;
+            // PALADIN
+        case SPEC_PALADIN_HOLY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINHOLY);
+            break;
+        case SPEC_PALADIN_PROTECTION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINPROTECTION);
+            break;
+        case SPEC_PALADIN_RETRIBUTION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPALADINRETRIBUTION);
+            break;
+            // WARRIOR
+        case SPEC_WARRIOR_ARMS:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORARMS);
+            break;
+        case SPEC_WARRIOR_FURY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORFURY);
+            break;
+        case SPEC_WARRIOR_PROTECTION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARRIORPROTECTION);
+            break;
+            // DRUID
+        case SPEC_DRUID_BALANCE:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDBALANCE);
+            break;
+        case SPEC_DRUID_FERAL:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDFERAL);
+            break;
+        case SPEC_DRUID_GUARDIAN:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDGUARDIAN);
+            break;
+        case SPEC_DRUID_RESTORATION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDRUIDRESTORATION);
+            break;
+            // DEATH KNIGHT
+        case SPEC_DEATH_KNIGHT_BLOOD:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTBLOOD);
+            break;
+        case SPEC_DEATH_KNIGHT_FROST:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTFROST);
+            break;
+        case SPEC_DEATH_KNIGHT_UNHOLY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECDEATHKNIGHTUNHOLY);
+            break;
+            // HUNTER
+        case SPEC_HUNTER_BEAST_MASTERY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERBEASTMASTERY);
+            break;
+        case SPEC_HUNTER_MARKSMANSHIP:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERMARKSMANSHIP);
+            break;
+        case SPEC_HUNTER_SURVIVAL:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECHUNTERSURVIVAL);
+            break;
+            //PRIEST
+        case SPEC_PRIEST_DISCIPLINE:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTDISCIPLINE);
+            break;
+        case SPEC_PRIEST_HOLY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTHOLY);
+            break;
+        case SPEC_PRIEST_SHADOW:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECPRIESTSHADOW);
+            break;
+            // ROGUE
+        case SPEC_ROGUE_ASSASSINATION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUEASSASSINATION);
+            break;
+        case SPEC_ROGUE_COMBAT:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUECOMBAT);
+            break;
+        case SPEC_ROGUE_SUBTLETY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECROGUESUBTLETY);
+            break;
+            //SHAMAN
+        case SPEC_SHAMAN_ELEMENTAL:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANELEMENTAL);
+            break;
+        case SPEC_SHAMAN_ENHANCEMENT:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANENHANCEMENT);
+            break;
+        case SPEC_SHAMAN_RESTORATION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECSHAMANRESTORATION);
+            break;
+            //WARLOCK
+        case SPEC_WARLOCK_AFFLICTION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKAFFLICTION);
+            break;
+        case SPEC_WARLOCK_DEMONOLOGY:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKDEMONOLOGY);
+            break;
+        case SPEC_WARLOCK_DESTRUCTION:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECWARLOCKDESTRUCTION);
+            break;
+            // MONK
+        case SPEC_MONK_BREWMASTER:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKBREWMASTER);
+            break;
+        case SPEC_MONK_WINDWALKER:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKWINDWALKER);
+            break;
+        case SPEC_MONK_MISTWEAVER:
+            healamount = (healamount / 100.0f) * sWorld->getFloatConfig(HEALCONFIGSPECMONKMISTWEAVER);
+            break;
+        }
+    }
+    return healamount;
 }
 
 void Unit::HandleEmoteCommandWithDelay(uint32 Delay, uint8 Id)

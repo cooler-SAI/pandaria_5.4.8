@@ -20,7 +20,13 @@
 #include "DatabaseEnv.h"
 #include "Chat.h"
 
-#define GetText(a, b, c) a->GetSession()->GetSessionDbLocaleIndex() == LOCALE_ruRU ? b : c
+enum BattlePayTokenTrinityStrings 
+{
+    BATTLEPAY_TOKEN_TRINITYSTRING_SUCCESS                             = 30007,    // Thanks for helping the Pandaria 5.4.8 project, you just received donate coins: %f
+    BATTLEPAY_TOKEN_TRINITYSTRING_ERR_NOTENOUGH                       = 30008,    // You do not have the necessary token.
+    BATTLEPAY_TOKEN_TRINITYSTRING_ERR_INBATTLE                        = 30009,    // You may not use this token whilst you are in combat or present in an arena or battleground.
+    BATTLEPAY_TOKEN_TRINITYSTRING_ERR_DISABLED                        = 30010,    // Coins disabled.
+};
 
 namespace BattlePay
 {
@@ -43,11 +49,11 @@ public:
     {
         if (player->IsInCombat() || player->InArena() || player->InBattleground())
         {
-            player->GetSession()->SendNotification(GetText(player, "Вы не можете использовать этот жетон, пока находитесь в бою, на арене или поле боя.", "You may not use this token whilst you are in combat or present in an arena or battleground."));
+            ChatHandler(player->GetSession()).PSendSysMessage(player->GetSession()->GetTrinityString(BATTLEPAY_TOKEN_TRINITYSTRING_ERR_INBATTLE));  
         }
         else if (!sWorld->getBoolConfig(CONFIG_WOW_TOKEN))
         {
-            player->GetSession()->SendNotification(GetText(player, "Жетоны отключены.", "Coins disabled."));
+            ChatHandler(player->GetSession()).PSendSysMessage(player->GetSession()->GetTrinityString(BATTLEPAY_TOKEN_TRINITYSTRING_ERR_DISABLED));
             player->CastSpell(player, 27880, true);
         }
         else
@@ -56,16 +62,12 @@ public:
             {
                 player->AddDonateTokenCount(Coins);
                 player->DestroyItemCount(item->GetEntry(), 1, true);
-
-                std::ostringstream coins_amount_message_ru, coins_amount_message_en;
-                coins_amount_message_ru << "Спасибо за помощь проекту Pandaria 5.4.8, вы только что получили очков пожертвования: " << Coins/10000;
-                coins_amount_message_en << "Thanks for helping the Pandaria 5.4.8 project, you just received donate coins: " << Coins/10000;
-                ChatHandler(player->GetSession()).SendSysMessage(GetText(player, coins_amount_message_ru.str().c_str(), coins_amount_message_en.str().c_str()));
+                ChatHandler(player->GetSession()).PSendSysMessage(player->GetSession()->GetTrinityString(BATTLEPAY_TOKEN_TRINITYSTRING_SUCCESS),Coins/10000);
                 player->SaveToDB();
             }
             else
             {
-                ChatHandler(player->GetSession()).SendSysMessage(GetText(player, "У вас нет необходимого жетона.", "You do not have the necessary token."));
+                ChatHandler(player->GetSession()).PSendSysMessage(player->GetSession()->GetTrinityString(BATTLEPAY_TOKEN_TRINITYSTRING_ERR_NOTENOUGH));
             }
         }
         return true;

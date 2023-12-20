@@ -35,7 +35,7 @@ class PetAI : public CreatureAI
         void UpdateAI(uint32);
         static int Permissible(const Creature*);
 
-        void KilledUnit(Unit* /*victim*/);
+        void KilledUnit(Unit* /*victim*/) override;
         void AttackStart(Unit* target);
         void MovementInform(uint32 moveType, uint32 data);
         void OwnerAttackedBy(Unit* attacker);

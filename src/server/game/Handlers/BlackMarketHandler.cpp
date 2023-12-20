@@ -23,7 +23,6 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "BlackMarketMgr.h"
-#include "CustomLogs.h"
 
 void WorldSession::HandleBlackMarketHelloOpcode(WorldPacket& recvData)
 {
@@ -101,7 +100,7 @@ void WorldSession::HandleBlackMarketBidOnItem(WorldPacket& recvData)
 
     if (auction->GetCurrentBid() > bidAmount && bidAmount != auction->GetTemplate()->MinBid)
     {
-        TC_LOG_DEBUG("blackMarket", "HandleBlackMarketBid - Player (GUID: %u) could not bid. The current bid (%u) is higher than the given amount (" UI64FMTD ").", GetPlayer()->GetGUIDLow(), auction->GetCurrentBid(), bidAmount);
+        TC_LOG_DEBUG("blackMarket", "HandleBlackMarketBid - Player (GUID: %u) could not bid. The current bid (" UI64FMTD ") is higher than the given amount (" UI64FMTD ").", GetPlayer()->GetGUIDLow(), auction->GetCurrentBid(), bidAmount);
         SendBlackMarketBidOnItemResult(auctionId, itemId, ERR_BMAH_HIGHER_BID);
         return;
     }
@@ -124,7 +123,6 @@ void WorldSession::HandleBlackMarketBidOnItem(WorldPacket& recvData)
     else
     {
         GetPlayer()->ModifyMoney(-int64(bidAmount));
-        logs::CurrencyTransaction(GetPlayer(), CurrencyOperation::BlackMarket, itemId, -int64(bidAmount));
     }
 
     sBlackMarketMgr->UpdateAuction(auction, currentRequiredIncrement, newIncrement, GetPlayer());

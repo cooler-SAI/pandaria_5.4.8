@@ -23,6 +23,7 @@
 #include "CreatureTextMgr.h"
 #include "ulduar.h"
 #include "Group.h"
+#include "Random.h"
 
 enum Yells
 {
@@ -910,7 +911,7 @@ class boss_sara : public CreatureScript
             {
                 me->RemoveAllAuras();
                 me->SetReactState(REACT_PASSIVE);
-                me->setFaction(35);
+                me->SetFaction(35);
                 me->SetVisible(true);
                 _events.Reset();
                 _events.SetPhase(PHASE_ONE);
@@ -955,7 +956,7 @@ class boss_sara : public CreatureScript
                         case EVENT_TRANSFORM_3:
                             Talk(SAY_SARA_TRANSFORM_4);
                             DoCast(me, SPELL_FULL_HEAL);
-                            me->setFaction(16);
+                            me->SetFaction(16);
                             if (Creature* voice = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_VOICE_OF_YOGG_SARON)))
                                 voice->AI()->DoAction(ACTION_PHASE_TWO);
                             if (Creature* mimiron = ObjectAccessor::GetCreature(*me, instance->GetData64(DATA_MIMIRON_YS)))
@@ -1541,7 +1542,7 @@ class npc_corruptor_tentacle : public CreatureScript
             {
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }
@@ -1615,7 +1616,7 @@ class npc_constrictor_tentacle : public CreatureScript
                     passenger->RemoveAurasDueToSpell(Is25ManRaid() ? SPELL_SQUEEZE_25 : SPELL_SQUEEZE);
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }
@@ -1677,7 +1678,7 @@ class npc_crusher_tentacle : public CreatureScript
             {
                 if (apply && passenger)
                 {
-                    passenger->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    passenger->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     passenger->RemoveAurasByType(SPELL_AURA_MOD_SHAPESHIFT);
                 }
             }
@@ -1912,10 +1913,10 @@ class npc_observation_ring_keeper : public CreatureScript
                 DoCast(SPELL_KEEPER_ACTIVE);
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 /*action*/) override
             {
                 if (sender != 10333)
-                    return;
+                    return false;
 
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                 me->DespawnOrUnsummon(2000);
@@ -1938,6 +1939,7 @@ class npc_observation_ring_keeper : public CreatureScript
                         me->SummonCreature(NPC_MIMIRON_YS, YSKeepersPos[3]);
                         break;
                 }
+                return true;
             }
 
             void UpdateAI(uint32 /*diff*/) override { }

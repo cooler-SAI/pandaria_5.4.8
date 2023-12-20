@@ -360,6 +360,12 @@ SpellMgr::~SpellMgr()
     UnloadSpellInfoStore();
 }
 
+SpellMgr* SpellMgr::instance()
+{
+    static SpellMgr _instance;
+    return &_instance;
+}
+
 /// Some checks for spells, to prevent adding deprecated/broken spells for trainers, spell book, etc
 bool SpellMgr::IsSpellValid(SpellInfo const* spellInfo, Player* player, bool msg)
 {
@@ -1029,11 +1035,11 @@ SpellAreaForAreaMapBounds SpellMgr::GetSpellAreaForAreaMapBounds(uint32 area_id)
 bool SpellArea::IsFitToRequirements(Player const* player, uint32 newZone, uint32 newArea) const
 {
     if (gender != GENDER_NONE)                   // not in expected gender
-        if (!player || gender != player->getGender())
+        if (!player || gender != player->GetGender())
             return false;
 
     if (raceMask)                                // not in expected race
-        if (!player || !(raceMask & player->getRaceMask()))
+        if (!player || !(raceMask & player->GetRaceMask()))
             return false;
 
     if (areaId)                                  // not in expected zone
@@ -1162,7 +1168,7 @@ void SpellMgr::LoadSpellRanks()
     uint32 oldMSTime = getMSTime();
 
     //                                                     0             1      2
-    QueryResult result = WorldDatabase.Query("SELECT first_spell_id, spell_id, rank from spell_ranks ORDER BY first_spell_id, rank");
+    QueryResult result = WorldDatabase.Query("SELECT first_spell_id, spell_id, `rank` from spell_ranks ORDER BY first_spell_id, `rank`");
 
     if (!result)
     {
@@ -2851,24 +2857,38 @@ void SpellMgr::LoadSpellInfoCustomAttributes()
                 case 72133: // Pain and Suffering
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_CONE_LINE;
                     break;
-                case 24340: // Meteor
-                case 26558: // Meteor
-                case 28884: // Meteor
-                case 36837: // Meteor
-                case 38903: // Meteor
-                case 41276: // Meteor
-                case 57467: // Meteor
-                case 26789: // Shard of the Fallen Star
-                case 31436: // Malevolent Cleave
-                case 35181: // Dive Bomb
-                case 40810: // Saber Lash
-                case 43267: // Saber Lash
-                case 43268: // Saber Lash
-                case 42384: // Brutal Swipe
-                case 45150: // Meteor Slash
-                case 64688: // Sonic Screech
-                case 72373: // Shared Suffering
-                case 70492: // Ooze Eruption
+                case 24340:  // Meteor
+                case 26558:  // Meteor
+                case 28884:  // Meteor
+                case 36837:  // Meteor
+                case 38903:  // Meteor
+                case 41276:  // Meteor
+                case 57467:  // Meteor
+                case 26789:  // Shard of the Fallen Star
+                case 31436:  // Malevolent Cleave
+                case 35181:  // Dive Bomb
+                case 40810:  // Saber Lash
+                case 43267:  // Saber Lash
+                case 43268:  // Saber Lash
+                case 42384:  // Brutal Swipe
+                case 45150:  // Meteor Slash
+                case 64688:  // Sonic Screech
+                case 72373:  // Shared Suffering
+                case 70492:  // Ooze Eruption
+                case 81280:  // Blood Burst
+                case 98474:  // Flame Scythe
+                case 145944: // Sha Smash
+                case 106375: // Unstable Twilight
+                case 107439: // Twilight Barrage
+                case 106401: // Twilight Onslaught
+                case 103414: // Stomp
+                case 135703: // Static shock tr ef dmg
+                case 116364: // Arcane Velocity
+                case 116018: // Epicenter
+                case 116157: // Lightning fists
+                case 116374: // Lightning fists (trigger dmg)
+                case 136324: // Rising Anger
+                case 136220: // Acidic explosion tr ef dmg
                     // ONLY SPELLS WITH SPELLFAMILY_GENERIC and EFFECT_SCHOOL_DAMAGE
                     spellInfo->AttributesCu |= SPELL_ATTR0_CU_SHARE_DAMAGE;
                     break;
@@ -7615,9 +7635,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 131116: // Raging Blow! - Handled by Raging Blow hit
                     spellInfo->ProcFlags = 0;
                     break;
-				case 31801:  ///< Seal of Truth
-					spellInfo->ProcFlags |= PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG;
-					break;
+                case 31801:  ///< Seal of Truth
+                    spellInfo->ProcFlags |= PROC_FLAG_DONE_SPELL_MAGIC_DMG_CLASS_NEG;
+                    break;
                 case 32379: // Shadow Word: Death
                     std::swap(spellInfo->Effects[EFFECT_0].TargetA, spellInfo->Effects[EFFECT_1].TargetA);
                     std::swap(spellInfo->Effects[EFFECT_0].TargetB, spellInfo->Effects[EFFECT_1].TargetB);
@@ -7727,9 +7747,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                     spellInfo->Effects[EFFECT_0].Effect = SPELL_EFFECT_HEAL_PCT;
                     spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
                     break;
-				case 42463: // Seal of Truth
-					spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
-					break;
+                case 42463: // Seal of Truth
+                    spellInfo->AttributesEx3 |= SPELL_ATTR3_NO_DONE_BONUS;
+                    break;
                 case 35546:  // Combat Potency
                 case 49560:  // Death Grip
                     spellInfo->Mechanic = MECHANIC_NONE;
@@ -7814,9 +7834,9 @@ void SpellMgr::LoadSpellInfoCorrections()
                 case 106830: // Thrash
                 case 108686: // Immolate
                 case 114893: // Stone Bulwark
-					spellInfo->Effects[EFFECT_1].RealPointsPerLevel = 888;
-					spellInfo->Effects[EFFECT_1].BasePoints = 300;
-					spellInfo->Effects[EFFECT_1].ScalingMultiplier = 5.0;
+                    spellInfo->Effects[EFFECT_1].RealPointsPerLevel = 888;
+                    spellInfo->Effects[EFFECT_1].BasePoints = 300;
+                    spellInfo->Effects[EFFECT_1].ScalingMultiplier = 5.0;
                 case 132464: // Chi Wave
                 case 132467: // Chi Wave
                 case 137619: // Marked for Death

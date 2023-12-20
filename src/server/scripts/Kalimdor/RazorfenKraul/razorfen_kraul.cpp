@@ -52,7 +52,7 @@ public:
         {
             CAST_AI(npc_escortAI, (creature->AI()))->Start(true, false, player->GetGUID());
             creature->AI()->Talk(SAY_READY, player);
-            creature->setFaction(113);
+            creature->SetFaction(113);
         }
 
         return true;
@@ -146,7 +146,7 @@ enum SnufflenoseGopher
     POINT_TUBBER                 = 0
 };
 
-struct DistanceOrder : public std::binary_function<GameObject, GameObject, bool>
+struct DistanceOrder 
 {
     DistanceOrder(Creature* me) : me(me) { }
 

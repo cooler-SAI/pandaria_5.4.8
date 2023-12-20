@@ -39,7 +39,9 @@
 #include "ScriptMgr.h"
 #include "AccountMgr.h"
 #include "WordFilterMgr.h"
-
+#ifdef ELUNA
+#include "HookMgr.h"
+#endif
 void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
 {
     ChatMsg type;
@@ -318,12 +320,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
     }
 
-    if (type != CHAT_MSG_WHISPER && lang != LANG_ADDON && sender->IsInWorld() && (!(type == CHAT_MSG_SAY || type == CHAT_MSG_YELL || type == CHAT_MSG_EMOTE || type == CHAT_MSG_TEXT_EMOTE) || sender->GetMap()->Instanceable()))
-        if (Group* group = sender->GetGroup() ? sender->GetGroup() : sender->GetMap()->GetInstanceGroup())
-            if (group->IsLogging())
-                group->LogChat(ChatMsg(type), sender->GetGUID(), msg);
-
-	/// filtering of bad words
+    /// filtering of bad words
     if(sWorld->getBoolConfig(CONFIG_WORD_FILTER_ENABLE))
     {
         sender->m_sentMsgCache.append(msg);
@@ -360,11 +357,15 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         case CHAT_MSG_EMOTE:
         case CHAT_MSG_YELL:
         {
-            if (sender->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ))
+            if (sender->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ))
             {
                 SendNotification(GetTrinityString(LANG_SAY_REQ), sWorld->getIntConfig(CONFIG_CHAT_SAY_LEVEL_REQ));
                 return;
             }
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(sender, type, lang, msg))
+                return;
+#endif
 
             if (type == CHAT_MSG_SAY)
                 sender->Say(msg, lang);
@@ -387,7 +388,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 SendPlayerNotFoundNotice(to);
                 return;
             }
-            if (!sender->IsGameMaster() && sender->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ) && !receiver->IsInWhisperWhiteList(sender->GetGUID()))
+            if (!sender->IsGameMaster() && sender->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ) && !receiver->IsInWhisperWhiteList(sender->GetGUID()))
             {
                 SendNotification(GetTrinityString(LANG_WHISPER_REQ), sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ));
                 return;
@@ -408,7 +409,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
 
             // If player is a Gamemaster and doesn't accept whisper, we auto-whitelist every player that the Gamemaster is talking to
             // We also do that if a player is under the required level for whispers.
-            if (receiver->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ) ||
+            if (receiver->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_WHISPER_LEVEL_REQ) ||
                 (GetSecurity() > SEC_PLAYER && !sender->isAcceptWhispers() && !sender->IsInWhisperWhiteList(receiver->GetGUID())))
                 sender->AddWhisperWhiteList(receiver->GetGUID());
 
@@ -430,6 +431,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 type = CHAT_MSG_PARTY_LEADER;
 
             sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, group);
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(sender, type, lang, msg, group))
+                return;
+#endif
 
             WorldPacket data;
             ChatHandler::BuildChatPacket(data, type, Language(lang), _player, NULL, msg);
@@ -442,6 +447,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (Guild* guild = sGuildMgr->GetGuildById(GetPlayer()->GetGuildId()))
                 {
                     sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, guild);
+#ifdef ELUNA
+                    if (!sHookMgr->OnChat(sender, type, lang, msg, guild))
+                        return;
+#endif
 
                     guild->BroadcastToGuild(this, false, msg, lang == LANG_ADDON ? LANG_ADDON : LANG_UNIVERSAL);
                 }
@@ -454,6 +463,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (Guild* guild = sGuildMgr->GetGuildById(GetPlayer()->GetGuildId()))
                 {
                     sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, guild);
+#ifdef ELUNA
+                    if (!sHookMgr->OnChat(sender, type, lang, msg, guild))
+                        return;
+#endif
 
                     guild->BroadcastToGuild(this, true, msg, lang == LANG_ADDON ? LANG_ADDON : LANG_UNIVERSAL);
                 }
@@ -474,6 +487,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 type = instance ? CHAT_MSG_INSTANCE_CHAT_LEADER : CHAT_MSG_RAID_LEADER;
 
             sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, group);
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(sender, type, lang, msg, group))
+                return;
+#endif
 
             WorldPacket data;
             ChatHandler::BuildChatPacket(data, type, Language(lang), _player, NULL, msg);
@@ -487,6 +504,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 return;
 
             sScriptMgr->OnPlayerChat(GetPlayer(), type, lang, msg, group);
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(sender, type, lang, msg, group))
+                return;
+#endif
 
             WorldPacket data;
             //in battleground, raid warning is sent only to players in battleground - code is ok
@@ -496,7 +517,7 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
         }
         case CHAT_MSG_CHANNEL:
         {
-            if (_player->getLevel() < sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ))
+            if (_player->GetLevel() < sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ))
             {
                 SendNotification(GetTrinityString(LANG_CHANNEL_REQ), sWorld->getIntConfig(CONFIG_CHAT_CHANNEL_LEVEL_REQ));
                 return;
@@ -507,6 +528,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 if (Channel* chn = cMgr->GetChannel(channel, _player))
                 {
                     sScriptMgr->OnPlayerChat(_player, type, lang, msg, chn);
+#ifdef ELUNA
+                    if (!sHookMgr->OnChat(sender, type, lang, msg, chn))
+                        return;
+#endif
                     chn->Say(_player->GetGUID(), msg.c_str(), lang);
                 }
             }
@@ -533,6 +558,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
                 }
 
                 sScriptMgr->OnPlayerChat(_player, type, lang, msg);
+#ifdef ELUNA
+                if (!sHookMgr->OnChat(sender, type, lang, msg))
+                    return;
+#endif
             }
             break;
         }
@@ -556,6 +585,10 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket& recvData)
             }
 
             sScriptMgr->OnPlayerChat(_player, type, lang, msg);
+#ifdef ELUNA
+            if (!sHookMgr->OnChat(sender, type, lang, msg))
+                return;
+#endif
             break;
         }
         case CHAT_MSG_INSTANCE_CHAT:

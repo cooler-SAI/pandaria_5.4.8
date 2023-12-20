@@ -122,7 +122,7 @@ void BattlePetMgr::LoadFromDb(PreparedQueryResult result)
     GetOwner()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_OWN_BATTLE_PET_COUNT, species.size());
 }
 
-void BattlePetMgr::SaveToDb(SQLTransaction& trans)
+void BattlePetMgr::SaveToDb(CharacterDatabaseTransaction trans)
 {
     SaveSlotsToDb(trans);
 
@@ -143,7 +143,7 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
                 break;
             case BATTLE_PET_DB_STATE_DELETE:
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
                 stmt->setUInt64(0, battlePet->GetId());
                 trans->Append(stmt);
 
@@ -154,26 +154,26 @@ void BattlePetMgr::SaveToDb(SQLTransaction& trans)
             }
             case BATTLE_PET_DB_STATE_SAVE:
             {
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET);
                 stmt->setUInt64(0, battlePet->GetId());
                 trans->Append(stmt);
 
-                stmt = LoginDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_BATTLE_PET);
-                stmt->setUInt64(0, battlePet->GetId());
-                stmt->setUInt32(1, m_owner->GetSession()->GetAccountId());
-                stmt->setUInt16(2, battlePet->GetSpecies());
-                stmt->setString(3, battlePet->GetNickname());
-                stmt->setUInt32(4, battlePet->GetTimestamp());
-                stmt->setUInt8 (5, battlePet->GetLevel());
-                stmt->setUInt16(6, battlePet->GetXp());
-                stmt->setUInt16(7, battlePet->GetCurrentHealth());
-                stmt->setUInt16(8, battlePet->GetMaxHealth());
-                stmt->setUInt16(9, battlePet->GetPower());
-                stmt->setUInt16(10, battlePet->GetSpeed());
-                stmt->setUInt8 (11, battlePet->GetQuality());
-                stmt->setUInt8 (12, battlePet->GetBreed());
-                stmt->setUInt16(13, battlePet->GetFlags());
-                trans->Append(stmt);
+                CharacterDatabasePreparedStatement* lstmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ACCOUNT_BATTLE_PET);
+                lstmt->setUInt64(0, battlePet->GetId());
+                lstmt->setUInt32(1, m_owner->GetSession()->GetAccountId());
+                lstmt->setUInt16(2, battlePet->GetSpecies());
+                lstmt->setString(3, battlePet->GetNickname());
+                lstmt->setUInt32(4, battlePet->GetTimestamp());
+                lstmt->setUInt8 (5, battlePet->GetLevel());
+                lstmt->setUInt16(6, battlePet->GetXp());
+                lstmt->setUInt16(7, battlePet->GetCurrentHealth());
+                lstmt->setUInt16(8, battlePet->GetMaxHealth());
+                lstmt->setUInt16(9, battlePet->GetPower());
+                lstmt->setUInt16(10, battlePet->GetSpeed());
+                lstmt->setUInt8 (11, battlePet->GetQuality());
+                lstmt->setUInt8 (12, battlePet->GetBreed());
+                lstmt->setUInt16(13, battlePet->GetFlags());
+                trans->Append(lstmt);
 
                 battlePet->SetDbState(BATTLE_PET_DB_STATE_NONE);
                 break;
@@ -231,12 +231,12 @@ void BattlePetMgr::LoadSlotsFromDb(PreparedQueryResult result)
     SetLoadoutSlot(BATTLE_PET_LOADOUT_SLOT_3, hasError ? 0 : slot3);
 }
 
-void BattlePetMgr::SaveSlotsToDb(SQLTransaction& trans)
+void BattlePetMgr::SaveSlotsToDb(CharacterDatabaseTransaction trans)
 {
     if (!m_loadoutSave)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET_SLOTS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ACCOUNT_BATTLE_PET_SLOTS);
     stmt->setUInt32(0, m_owner->GetSession()->GetAccountId());
     trans->Append(stmt);
 
@@ -305,7 +305,7 @@ void BattlePetMgr::ResummonLastBattlePet()
     if (!battlePet)
     {
 
-        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: %u",
+        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: " UI64FMTD "",
             m_owner->GetName().c_str(), m_owner->GetGUIDLow(), battlePetId);
         return;
     }
@@ -316,7 +316,7 @@ void BattlePetMgr::ResummonLastBattlePet()
     TempSummon* summon = GetCurrentSummon();
     if (!summon)
     {
-        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: %u, spell: %u",
+        TC_LOG_ERROR("shitlog", "BattlePetMgr::ResummonLastBattlePet !summon, player: %s (%u), battle pet: " UI64FMTD ", spell: %u",
             m_owner->GetName().c_str(), m_owner->GetGUIDLow(), battlePetId, spell);
     }
 

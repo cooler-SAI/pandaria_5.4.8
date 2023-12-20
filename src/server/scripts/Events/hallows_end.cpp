@@ -20,6 +20,7 @@
 #include "Player.h"
 #include "GameEventMgr.h"
 #include "Vehicle.h"
+#include "Random.h"
 
 struct PostionEventoHallowend
 {
@@ -806,18 +807,19 @@ struct npc_start_stink_bombs_away : public ScriptedAI
 {
     npc_start_stink_bombs_away(Creature* creature) : ScriptedAI(creature) { }
 
-    void sGossipHello(Player* player) override
+    bool OnGossipHello(Player* player) override
     {
         player->PlayerTalkClass->ClearMenus();
 
         if (player->GetQuestStatus(stinkBombsAwayQuest[player->GetTeamId()]) != QUEST_STATUS_INCOMPLETE)
-            return;
+            return false;
 
         player->ADD_GOSSIP_ITEM_DB(player->GetDefaultGossipMenuForSource(me), 0, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
         player->SEND_GOSSIP_MENU(player->GetGossipTextId(me), me->GetGUID());
+        return true;
     }
 
-    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+    bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
     {
         player->CLOSE_GOSSIP_MENU();
 
@@ -852,6 +854,7 @@ struct npc_start_stink_bombs_away : public ScriptedAI
                     });
             });
         }
+        return true;
     }
 };
 
@@ -967,7 +970,7 @@ class spell_halloween_wand : public SpellScript
             return;
 
         uint32 spellId = 0;
-        uint8 gender = target->getGender();
+        uint8 gender = target->GetGender();
 
         switch (GetSpellInfo()->Id)
         {

@@ -239,7 +239,7 @@ void BattlefieldWG::OnBattleStart()
         if (Creature* creature = GetCreature(*itr))
         {
             ShowNpc(creature, true);
-            creature->setFaction(WintergraspFaction[GetDefenderTeam()]);
+            creature->SetFaction(WintergraspFaction[GetDefenderTeam()]);
         }
     }
 
@@ -320,7 +320,7 @@ void BattlefieldWG::OnBattleEnd(bool endByTimer)
         if (Creature* creature = GetCreature(*itr))
         {
             if (!endByTimer)
-                creature->setFaction(WintergraspFaction[GetDefenderTeam()]);
+                creature->SetFaction(WintergraspFaction[GetDefenderTeam()]);
             HideNpc(creature);
         }
     }
@@ -393,9 +393,6 @@ void BattlefieldWG::OnBattleEnd(bool endByTimer)
         for (GuidSet::const_iterator itr = m_PlayersInWar[team].begin(); itr != m_PlayersInWar[team].end(); ++itr)
             if (Player* player = sObjectAccessor->FindPlayer(*itr))
             {
-                if (sWorld->AreprojectDailyQuestsEnabled() && player->HasAura(SPELL_LIEUTENANT))
-                    player->CreditprojectDailyQuest(180014); // project Daily Quest Credit - Wintergrasp First Lieutenant Participation
-
                 RemoveAurasFromPlayer(player);
             }
 
@@ -648,7 +645,6 @@ void BattlefieldWG::HandleKill(Player* killer, Unit* victim)
                 if (player->GetDistance2d(killer) < 40)
                 {
                     PromotePlayer(player);
-                    player->CreditprojectDailyQuest(180010); // project Daily Quest Credit - Outdoor PvP Honorable Kill
                 }
         return;
     }
@@ -1005,7 +1001,7 @@ void BattlefieldWG::UpdateTenacity()
     {
         for (GuidSet::const_iterator itr = m_players[team].begin(); itr != m_players[team].end(); ++itr)
             if (Player* player = sObjectAccessor->FindPlayer(*itr))
-                if (player->getLevel() >= m_MinLevel)
+                if (player->GetLevel() >= m_MinLevel)
                     player->RemoveAurasDueToSpell(SPELL_TENACITY);
 
         for (GuidSet::const_iterator itr = m_vehicles[team].begin(); itr != m_vehicles[team].end(); ++itr)

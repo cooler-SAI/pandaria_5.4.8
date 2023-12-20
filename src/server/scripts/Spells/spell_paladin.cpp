@@ -27,6 +27,7 @@
 #include "GridNotifiers.h"
 #include "spell_common.h"
 #include "PetAI.h"
+#include "Random.h"
 
 enum PaladinSpells
 {
@@ -152,6 +153,7 @@ enum PaladinSpells
     SPELL_PALADIN_GLYPH_OF_BLADED_JUDGEMENT_AXE  = 127756,
     SPELL_PALADIN_GLYPH_OF_THE_MOUNTED_KING      = 57958,
     SPELL_PALADIN_BLESSING_OF_KINGS              = 20217,
+    PALADIN_SPELL_GLYPH_OF_CONTEMPLATION         = 121183,
 
     SPELL_DRUID_CONSECRATION_DAMAGE              = 110705,
 
@@ -639,7 +641,7 @@ class spell_pal_blessing_of_faith : public SpellScriptLoader
                 if (Unit* unitTarget = GetHitUnit())
                 {
                     uint32 spell_id = 0;
-                    switch (unitTarget->getClass())
+                    switch (unitTarget->GetClass())
                     {
                         case CLASS_DRUID:   spell_id = SPELL_BLESSING_OF_LOWER_CITY_DRUID; break;
                         case CLASS_PALADIN: spell_id = SPELL_BLESSING_OF_LOWER_CITY_PALADIN; break;
@@ -2622,6 +2624,42 @@ class spell_pal_glyph_of_bladed_judgement : public AuraScript
     }
 };
 
+// Glyph of Corpse Explosion - 125043
+class spell_pal_glyph_of_contemplation : public SpellScriptLoader
+{
+    public:
+        spell_pal_glyph_of_contemplation() : SpellScriptLoader("spell_pal_glyph_of_contemplation") { }
+
+        class spell_pal_glyph_of_contemplation_AuraScript : public AuraScript
+        {
+            PrepareAuraScript(spell_pal_glyph_of_contemplation_AuraScript);
+
+            void OnApply(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* _player = GetTarget()->ToPlayer())
+                    _player->LearnSpell(PALADIN_SPELL_GLYPH_OF_CONTEMPLATION, false);
+            }
+
+            void OnRemove(AuraEffect const* /*aurEff*/, AuraEffectHandleModes /*mode*/)
+            {
+                if (Player* _player = GetTarget()->ToPlayer())
+                    if (_player->HasSpell(PALADIN_SPELL_GLYPH_OF_CONTEMPLATION))
+                        _player->RemoveSpell(PALADIN_SPELL_GLYPH_OF_CONTEMPLATION, false, false);
+            }
+
+            void Register() override
+            {
+                OnEffectApply += AuraEffectApplyFn(spell_pal_glyph_of_contemplation_AuraScript::OnApply, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+                OnEffectRemove += AuraEffectRemoveFn(spell_pal_glyph_of_contemplation_AuraScript::OnRemove, EFFECT_0, SPELL_AURA_DUMMY, AURA_EFFECT_HANDLE_REAL);
+            }
+        };
+
+        AuraScript* GetAuraScript() const override
+        {
+            return new spell_pal_glyph_of_contemplation_AuraScript();
+        }
+};
+
 void AddSC_paladin_spell_scripts()
 {
     new spell_pal_glyph_of_devotian_aura();
@@ -2708,4 +2746,5 @@ void AddSC_paladin_spell_scripts()
     new aura_script<spell_pal_censure_control_fix>("spell_pal_censure_control_fix");
     new aura_script<spell_pal_hand_of_sacrifice>("spell_pal_hand_of_sacrifice");
     new aura_script<spell_pal_glyph_of_bladed_judgement>("spell_pal_glyph_of_bladed_judgement");
+    new spell_pal_glyph_of_contemplation();
 }

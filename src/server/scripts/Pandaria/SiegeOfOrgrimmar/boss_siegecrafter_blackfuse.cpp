@@ -264,7 +264,7 @@ Position CalculateMissleThrowPosition(uint64 m_ownerGUID, uint32 count = 0)
 }
 
 // Predicate on select player that not has a tank spec and actually not on conveyor
-struct NonTankSpecConveyorPredicate : public std::unary_function<Unit*, bool>
+struct NonTankSpecConveyorPredicate 
 {
     public:
         NonTankSpecConveyorPredicate(Creature const* me) : _me(me) { }
@@ -2187,7 +2187,7 @@ struct npc_siegecrafter_shockwave_missle_trigger : public ScriptedAI
 };
 
 // This spells have a radius hit box, idea in exclude by type range where players shouldn`t affect
-class ShockwaveRangePredicate : public std::binary_function<uint32, Unit*, bool>
+class ShockwaveRangePredicate 
 {
     public:
         ShockwaveRangePredicate(uint32 const& spell_id, Unit* const m_caster) : _spell_id(spell_id), _caster(m_caster) { }

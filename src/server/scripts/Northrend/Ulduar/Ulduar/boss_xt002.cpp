@@ -394,7 +394,7 @@ class boss_xt002 : public CreatureScript
                 {
                     heart->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_NOT_SELECTABLE);
                     heart->EnterVehicle(me, 1);
-                    heart->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                    heart->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                     heart->SetInCombatWithZone();
                     heart->CastSpell(heart, SPELL_EXPOSED_HEART, true);
                     heart->CastSpell(heart, SPELL_HEART_OVERLOAD, true);
@@ -967,7 +967,7 @@ class spell_xt002_gravity_bomb_aura : public SpellScriptLoader
         }
 };
 
-class BombTargetSelector : public std::unary_function<Unit *, bool>
+class BombTargetSelector 
 {
     public:
         BombTargetSelector(Creature* me, const Unit* victim) : _me(me), _victim(victim) { }

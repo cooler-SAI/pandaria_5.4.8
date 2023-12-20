@@ -74,8 +74,6 @@ public:
                     { "professions",    SEC_ADMINISTRATOR,  true,   &HandleSupportCheckProfCommand,      },
                     { "aura",           SEC_ADMINISTRATOR,  true,   &HandleSupportCheckAuraCommand,      },
                     { "auras",          SEC_ADMINISTRATOR,  true,   &HandleSupportCheckAurasCommand,     },
-                    { "premium",        SEC_ADMINISTRATOR,  true,   &HandleSupportCheckPremCommand,      },
-                    { "verified",       SEC_ADMINISTRATOR,  true,   &HandleSupportCheckVerifCommand,     },
                     { "boost",          SEC_ADMINISTRATOR,  true,   &HandleSupportCheckBoostCommand,     },
                     { "services",       SEC_ADMINISTRATOR,  false,
                     {
@@ -175,7 +173,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& str : spellTok)
             {
                 uint32 spellId = handler->extractSpellIdFromLink((char*)str);
@@ -187,7 +185,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (!CharacterDatabase.Query(stmt))
@@ -266,7 +264,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (CharacterDatabase.Query(stmt))
@@ -328,7 +326,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& str : spellTok)
             {
                 uint32 spellId = handler->extractSpellIdFromLink((char*)str);
@@ -340,7 +338,7 @@ public:
 
                 if (auto spell = sSpellMgr->GetSpellInfo(spellId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, spell->Id);
                     if (CharacterDatabase.Query(stmt))
@@ -421,7 +419,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& itr : skillTok)
             {
                 Tokenizer skillData{ itr, ':' };
@@ -442,7 +440,7 @@ public:
 
                 if (auto skill = sSkillLineStore.LookupEntry(skillId))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (!CharacterDatabase.Query(stmt))
@@ -507,7 +505,7 @@ public:
             {
                 if (auto skill = sSkillLineStore.LookupEntry(atoi(skillId)))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (CharacterDatabase.Query(stmt))
@@ -562,12 +560,12 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& skillId : skillTok)
             {
                 if (auto skill = sSkillLineStore.LookupEntry(atoi(skillId)))
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
                     stmt->setUInt32(0, GUID_LOPART(guid));
                     stmt->setUInt32(1, skill->id);
                     if (CharacterDatabase.Query(stmt))
@@ -887,7 +885,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT guid, sum(count) FROM item_instance WHERE itemEntry = %u AND owner_guid = %u", item->ItemId, GUID_LOPART(guid)))
                     {
                         CharacterDatabase.PExecute("DELETE FROM item_instance WHERE guid = %u", (*result)[0].GetUInt32());
-                        handler->PSendSysMessage("Item %s (%u, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
+                        handler->PSendSysMessage("Item %d (%s, count %u) removed from player %s (guid: %u), source - inventory.", item->ItemId, item->Name1.c_str(), (*result)[1].GetUInt32(), name.c_str(), GUID_LOPART(guid));
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't item %s (%u).", name.c_str(), GUID_LOPART(guid), item->Name1.c_str(), item->ItemId);
@@ -1195,14 +1193,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CHAR_ACHIEVEMENT);
                         stmt->setUInt32(0, GUID_LOPART(guid));
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1247,9 +1245,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (player->HasAchieved(ach->ID, true))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1262,9 +1260,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", name.c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", name.c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1304,7 +1302,7 @@ public:
                         handler->PSendSysMessage("Achievement %u removed from player %s (guid: %u).", ach->ID, handler->GetNameLink(player).c_str(), GUID_LOPART(guid));
                     }
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) did not know achievement %u.", handler->GetNameLink(player).c_str(), ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %u) did not know achievement %u.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1313,14 +1311,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
                         stmt->setUInt32(0, ach->ID);
                         stmt->setUInt32(1, GUID_LOPART(guid));
                         trans->Append(stmt);
@@ -1378,7 +1376,7 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             QueryResult accountCheck = CharacterDatabase.PQuery("SELECT account FROM characters WHERE name = %s", name.c_str());
             uint32 account = (*accountCheck)[0].GetUInt32();
             for (auto&& achievId : achievTok)
@@ -1387,7 +1385,7 @@ public:
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM account_achievement WHERE account = %u AND achievement = %u", account, ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
                         stmt->setUInt32(0, account);
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1433,9 +1431,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (player->HasAchieved(ach->ID, false))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u.", handler->GetNameLink(player).c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1450,9 +1448,9 @@ public:
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM account_achievement WHERE account = %u AND achievement = %u", account, ach->ID))
-                        handler->PSendSysMessage("Player %s (guid: %u) has achievement %u on account.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) has achievement %u on account.", name.c_str(), guid, ach->ID);
                     else
-                        handler->PSendSysMessage("Player %s (guid: %u) hasn't achievement %u on account.", name.c_str(), guid, ach->ID);
+                        handler->PSendSysMessage("Player %s (guid: %lu) hasn't achievement %u on account.", name.c_str(), guid, ach->ID);
                 }
                 else
                     handler->PSendSysMessage("Error. Achievement %u not found.", atoi(achievId));
@@ -1501,14 +1499,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (CharacterDatabase.PQuery("SELECT * FROM character_achievement WHERE guid = %u AND achievement = %u", GUID_LOPART(guid), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
                         stmt->setUInt32(0, ach->ID);
                         stmt->setUInt32(1, GUID_LOPART(guid));
                         trans->Append(stmt);
@@ -1574,14 +1572,14 @@ public:
         }
         else
         {
-            SQLTransaction trans = CharacterDatabase.BeginTransaction();
+            CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
             for (auto&& achievId : achievTok)
             {
                 if (auto ach = sAchievementStore.LookupEntry(atoi(achievId)))
                 {
                     if (!CharacterDatabase.PQuery("SELECT * FROM guild_achievement WHERE guildId = %u AND achievement = %u", guild->GetId(), ach->ID))
                     {
-                        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GUILD_ACHIEVEMENT);
+                        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_GUILD_ACHIEVEMENT);
                         stmt->setUInt32(0, guild->GetId());
                         stmt->setUInt32(1, ach->ID);
                         stmt->setUInt32(2, time(nullptr));
@@ -1857,7 +1855,7 @@ public:
                     {
                         CharacterDatabase.PExecute("DELETE FROM character_aura WHERE spell = %u AND guid = %u", spell->Id, GUID_LOPART(guid));
                         CharacterDatabase.PExecute("DELETE FROM character_aura_effect WHERE slot = %u AND guid = %u", (*result)[0].GetUInt32(), GUID_LOPART(guid));
-                        handler->PSendSysMessage("Aura %u removed from player %s (guid: %u).", name.c_str(), GUID_LOPART(guid), spell->Id);
+                        handler->PSendSysMessage("Aura %u removed from player %s (guid: %u).", spell->Id, name.c_str(), GUID_LOPART(guid));
                     }
                     else
                         handler->PSendSysMessage("Player %s (guid: %u) hasn't aura %u.", name.c_str(), GUID_LOPART(guid), spell->Id);
@@ -1941,7 +1939,7 @@ public:
         player->RemoveActiveQuest(quest->GetQuestId(), false);
         player->RemoveRewardedQuest(quest->GetQuestId());
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_QUESTSTATUS_REWARDED_BY_QUEST);
         stmt->setUInt32(0, player->GetGUIDLow());
         stmt->setUInt32(1, quest->GetQuestId());
         CharacterDatabase.Execute(stmt);
@@ -2435,79 +2433,6 @@ public:
     }
     // quest support end
 
-    static bool HandleSupportCheckPremCommand(ChatHandler* handler, char const* args)
-    {
-        if (!args)
-            return false;
-
-        Tokenizer tok{ args, ' ' };
-        if (tok.size() != 1)
-            return false;
-
-        Player* player;
-        uint64 guid;
-        std::string name;
-        if (!handler->extractPlayerTarget((char*)tok[0], &player, &guid, &name))
-            return false;
-
-        if (player)
-        {
-            if (player->GetSession()->IsPremium())
-            {
-                auto member = player->GetSession()->GetprojectMemberInfo();
-                time_t until = member->GetPremiumUnsetDate();
-                handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) has premium until %s.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), member->MemberID, TimeToTimestampStr(until).c_str());
-            }
-        }
-        else
-        {
-            if (QueryResult charResult = CharacterDatabase.PQuery("SELECT account FROM characters WHERE guid = %u", GUID_LOPART(guid)))
-            {
-                if (QueryResult memberResult = LoginDatabase.PQuery("SELECT member_id, unsetdate, active FROM project_member_premiums WHERE id = %u", (*charResult)[0].GetUInt32()))
-                {
-                    if ((*memberResult)[2].GetUInt32())
-                    {
-                        uint32 memberId = (*memberResult)[0].GetUInt32();
-                        time_t until = (*memberResult)[1].GetUInt32();
-                        handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) has premium until %s.", name.c_str(), GUID_LOPART(guid), memberId, TimeToTimestampStr(until).c_str());
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    static bool HandleSupportCheckVerifCommand(ChatHandler* handler, char const* args)
-    {
-        if (!args)
-            return false;
-
-        Tokenizer tok{ args, ' ' };
-        if (tok.size() != 1)
-            return false;
-
-        Player* player;
-        uint64 guid;
-        std::string name;
-        if (!handler->extractPlayerTarget((char*)tok[0], &player, &guid, &name))
-            return false;
-
-        if (player)
-        {
-            if (auto member = player->GetSession()->GetprojectMemberInfo())
-                if (member->IsVerified)
-                    handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) is verified.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), member->MemberID);
-        }
-        else
-        {
-            if (QueryResult charResult = CharacterDatabase.PQuery("SELECT account FROM characters WHERE guid = %u", GUID_LOPART(guid)))
-                if (QueryResult accountResult = LoginDatabase.PQuery("SELECT project_member_id FROM account WHERE id = %u", (*charResult)[0].GetUInt32()))
-                    if (uint32 memberId = (*accountResult)[0].GetUInt32())
-                        handler->PSendSysMessage("Player %s (guid: %u, memberId: %u) is verified.", name.c_str(), GUID_LOPART(guid), memberId);
-        }
-        return true;
-    }
-
     static bool HandleSupportCheckBoostCommand(ChatHandler* handler, char const* args)
     {
         if (!args)
@@ -2899,7 +2824,7 @@ public:
 
             LoginDatabase.PExecute("DELETE FROM character_account_data WHERE guid = %u", guid);
 
-            handler->PSendSysMessage("Cache for player %s (guid: %u) removed.", name.c_str(), guid);
+            handler->PSendSysMessage("Cache for player %s (guid: %lu) removed.", name.c_str(), guid);
         }
         return true;
     }
@@ -3267,7 +3192,7 @@ public:
         if (player)
         {
             player->ModifyMoney(money, true);
-            handler->PSendSysMessage("Changed money for player %s (%u) on amount %u.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), money);
+            handler->PSendSysMessage("Changed money for player %s (%u) on amount %ld.", handler->GetNameLink(player).c_str(), GUID_LOPART(guid), money);
             player->SaveToDB();
         }
         else
@@ -3281,7 +3206,7 @@ public:
                     money = currentAmount + money;
 
                 CharacterDatabase.PExecute("UPDATE characters SET money = %u WHERE guid = %u", money, GUID_LOPART(guid));
-                handler->PSendSysMessage("Changed money for player %s (%u) on amount %u.", name.c_str(), GUID_LOPART(guid), money);
+                handler->PSendSysMessage("Changed money for player %s (%u) on amount %ld.", name.c_str(), GUID_LOPART(guid), money);
             }
         }
         return true;
@@ -3319,9 +3244,9 @@ public:
         for (uint32 i = PVP_SLOT_ARENA_2v2; i < PVP_SLOT_MAX; ++i)
         {
             if (auto info = RatedPvpMgr::Instance()->GetInfo(RatedPvpSlot(i), guid))
-			{
-				handler->PSendSysMessage("Slot %s (%u): Rating - %u, Rank - %u, SeasonGames - %u, SeasonWins - %u.", SlotToString(i).c_str(), i, info->Rating, info->Rank, info->SeasonGames, info->SeasonWins);
-			}
+            {
+                handler->PSendSysMessage("Slot %s (%u): Rating - %u, Rank - %u, SeasonGames - %u, SeasonWins - %u.", SlotToString(i).c_str(), i, info->Rating, info->Rank, info->SeasonGames, info->SeasonWins);
+            }
             else
                 handler->PSendSysMessage("No PvP info for slot %s (%u).", SlotToString(i).c_str(), i);
         }
@@ -3345,7 +3270,7 @@ public:
 
         uint32 slot = atoi(tok[1]);
         if (slot >= PVP_SLOT_MAX)
-            handler->PSendSysMessage("Incorrect slot %u, max %s.", slot, PVP_SLOT_MAX);
+            handler->PSendSysMessage("Incorrect slot %u, max %d.", slot, PVP_SLOT_MAX);
 
         if (auto info = RatedPvpMgr::Instance()->GetInfo(RatedPvpSlot(slot), guid))
         {
@@ -3379,7 +3304,7 @@ public:
 
         uint32 slot = atoi(tok[1]);
         if (slot >= PVP_SLOT_MAX)
-            handler->PSendSysMessage("Incorrect slot %u, max %s.", slot, PVP_SLOT_MAX);
+            handler->PSendSysMessage("Incorrect slot %u, max %d.", slot, PVP_SLOT_MAX);
 
         if (auto info = RatedPvpMgr::Instance()->GetInfo(RatedPvpSlot(slot), guid))
         {
@@ -3535,7 +3460,7 @@ public:
                     if (QueryResult result = CharacterDatabase.PQuery("SELECT currency FROM character_currency WHERE guid = %u AND currency = %u", GUID_LOPART(guid), cur->ID))
                     {
                         uint64 currencyAmount = (*result)[0].GetUInt32();
-                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %u.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
+                        handler->PSendSysMessage("Player %s (%u) has currency %s (%u) - amount %lu.", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID, currencyAmount);
                     }
                     else
                         handler->PSendSysMessage("Player %s (%u) hasn't currency %s (%u).", name.c_str(), GUID_LOPART(guid), cur->Name[handler->GetSessionDbcLocale()], cur->ID);

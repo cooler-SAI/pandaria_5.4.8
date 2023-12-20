@@ -18,10 +18,27 @@
 #include "CustomTransmogrification.h"
 #pragma execution_character_set("UTF-8")
 
+
+Transmogrification::Transmogrification()
+{
+
+}
+
+Transmogrification::~Transmogrification()
+{
+    
+}
+
+Transmogrification* Transmogrification::instance()
+{
+    static Transmogrification instance;
+    return &instance;
+}
+
 #ifdef PRESETS
 void Transmogrification::PresetTransmog(Player* player, Item* itemTransmogrified, uint32 fakeEntry, uint8 slot)
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::PresetTransmog");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::PresetTransmog");
 
     if (!EnableSets)
         return;
@@ -48,7 +65,7 @@ void Transmogrification::PresetTransmog(Player* player, Item* itemTransmogrified
 
 void Transmogrification::LoadPlayerSets(uint64 pGUID)
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::LoadPlayerSets");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::LoadPlayerSets");
 
     for (presetData::iterator it = presetById[pGUID].begin(); it != presetById[pGUID].end(); ++it)
         it->second.clear();
@@ -74,13 +91,13 @@ void Transmogrification::LoadPlayerSets(uint64 pGUID)
                     break;
                 if (slot >= EQUIPMENT_SLOT_END)
                 {
-                    sLog->outError("Transmogrification.log", "Item entry (FakeEntry: %u, playerGUID: %u, slot: %u, presetId: %u) has invalid slot, ignoring.", entry, GUID_LOPART(pGUID), slot, uint32(PresetID));
+                    TC_LOG_DEBUG("Transmogrification.log", "Item entry (FakeEntry: %u, playerGUID: %u, slot: %u, presetId: %u) has invalid slot, ignoring.", entry, GUID_LOPART(pGUID), slot, uint32(PresetID));
                     continue;
                 }
                 if (sObjectMgr->GetItemTemplate(entry))
                     presetById[pGUID][PresetID][slot] = entry; // Transmogrification::Preset(presetName, fakeEntry);
                                                                //else
-                                                               //sLog->outError(LOG_FILTER_SQL, "Item entry (FakeEntry: %u, playerGUID: %u, slot: %u, presetId: %u) does not exist, ignoring.", entry, GUID_LOPART(pGUID), uint32(slot), uint32(PresetID));
+                                                               //TC_LOG_DEBUG(LOG_FILTER_SQL, "Item entry (FakeEntry: %u, playerGUID: %u, slot: %u, presetId: %u) does not exist, ignoring.", entry, GUID_LOPART(pGUID), uint32(slot), uint32(PresetID));
             }
 
             if (!presetById[pGUID][PresetID].empty())
@@ -128,7 +145,7 @@ void Transmogrification::UnloadPlayerSets(uint64 pGUID)
 
 const char* Transmogrification::GetSlotName(uint8 slot, WorldSession* /*session*/) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetSlotName");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetSlotName");
 
     switch (slot)
     {
@@ -152,7 +169,7 @@ const char* Transmogrification::GetSlotName(uint8 slot, WorldSession* /*session*
 
 std::string Transmogrification::GetItemIcon(uint32 entry, uint32 width, uint32 height, int x, int y) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetItemIcon");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetItemIcon");
 
     std::ostringstream ss;
     ss << "|TInterface";
@@ -172,7 +189,7 @@ std::string Transmogrification::GetItemIcon(uint32 entry, uint32 width, uint32 h
 
 std::string Transmogrification::GetSlotIcon(uint8 slot, uint32 width, uint32 height, int x, int y) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetSlotIcon");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetSlotIcon");
 
     std::ostringstream ss;
     ss << "|TInterface/PaperDoll/";
@@ -200,13 +217,15 @@ std::string Transmogrification::GetSlotIcon(uint8 slot, uint32 width, uint32 hei
 
 std::string Transmogrification::GetItemLink(Item* item, WorldSession* session) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetItemLink");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetItemLink");
 
-    int loc_idx = session->GetSessionDbLocaleIndex();
+    LocaleConstant localeConstant = session->GetSessionDbLocaleIndex();
+    int loc_idx = session->GetSessionDbLocaleIndex(); // TODO
     const ItemTemplate* temp = item->GetTemplate();
     std::string name = temp->Name1;
-    if (ItemLocale const* il = sObjectMgr->GetItemLocale(temp->ItemId))
-        ObjectMgr::GetLocaleString(il->Name, loc_idx, name);
+    if (localeConstant != LOCALE_enUS)
+        if (ItemLocale const* il = sObjectMgr->GetItemLocale(temp->ItemId))
+            ObjectMgr::GetLocaleString(il->Name, localeConstant, name);
 
     if (int32 itemRandPropId = item->GetItemRandomPropertyId())
     {
@@ -215,13 +234,13 @@ std::string Transmogrification::GetItemLink(Item* item, WorldSession* session) c
         {
             const ItemRandomSuffixEntry* itemRandEntry = sItemRandomSuffixStore.LookupEntry(-item->GetItemRandomPropertyId());
             if (itemRandEntry)
-                suffix = itemRandEntry->nameSuffix[LOCALE_zhCN];
+                suffix = itemRandEntry->nameSuffix[loc_idx];
         }
         else
         {
             const ItemRandomPropertiesEntry* itemRandEntry = sItemRandomPropertiesStore.LookupEntry(item->GetItemRandomPropertyId());
             if (itemRandEntry)
-                suffix = itemRandEntry->nameSuffix[LOCALE_zhCN];
+                suffix = itemRandEntry->nameSuffix[loc_idx];
         }
         if (suffix)
         {
@@ -243,20 +262,21 @@ std::string Transmogrification::GetItemLink(Item* item, WorldSession* session) c
         item->GetEnchantmentId(SOCK_ENCHANTMENT_SLOT_3) << ":" <<
         item->GetEnchantmentId(BONUS_ENCHANTMENT_SLOT) << ":" <<
         item->GetItemRandomPropertyId() << ":" << item->GetItemSuffixFactor() << ":" <<
-        (uint32)item->GetOwner()->getLevel() << "|h[" << name << "]|h|r";
+        (uint32)item->GetOwner()->GetLevel() << "|h[" << name << "]|h|r";
 
     return oss.str();
 }
 
 std::string Transmogrification::GetItemLink(uint32 entry, WorldSession* session) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetItemLink");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetItemLink");
 
     const ItemTemplate* temp = sObjectMgr->GetItemTemplate(entry);
-    int loc_idx = session->GetSessionDbLocaleIndex();
+    LocaleConstant localeConstant = session->GetSessionDbLocaleIndex();
     std::string name = temp->Name1;
-    if (ItemLocale const* il = sObjectMgr->GetItemLocale(entry))
-        ObjectMgr::GetLocaleString(il->Name, loc_idx, name);
+    if (localeConstant != LOCALE_enUS)
+        if (ItemLocale const* il = sObjectMgr->GetItemLocale(entry))
+            ObjectMgr::GetLocaleString(il->Name, localeConstant, name);
 
     std::ostringstream oss;
     oss << "|c" << std::hex << ItemQualityColors[temp->Quality] << std::dec <<
@@ -267,7 +287,7 @@ std::string Transmogrification::GetItemLink(uint32 entry, WorldSession* session)
 
 uint32 Transmogrification::GetFakeEntry(uint64 itemGUID) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::GetFakeEntry");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::GetFakeEntry");
 
     transmogData::const_iterator itr = dataMap.find(itemGUID);
     if (itr == dataMap.end()) return 0;
@@ -280,7 +300,7 @@ uint32 Transmogrification::GetFakeEntry(uint64 itemGUID) const
 
 void Transmogrification::UpdateItem(Player* player, Item* item, uint32 newItemId) const
 {
-    sLog->outDebug("Transmogrification.log", "Transmogrification::UpdateItem");
+    TC_LOG_DEBUG("Transmogrification.log", "Transmogrification::UpdateItem");
 
     if (item->IsEquipped())
     {
@@ -291,7 +311,7 @@ void Transmogrification::UpdateItem(Player* player, Item* item, uint32 newItemId
     }
 }
 
-void Transmogrification::DeleteFakeEntry(Player* player, uint8 /*slot*/, Item* itemTransmogrified, SQLTransaction* trans)
+void Transmogrification::DeleteFakeEntry(Player* player, uint8 /*slot*/, Item* itemTransmogrified, CharacterDatabaseTransaction trans)
 {
     //if (!GetFakeEntry(item))
     //    return false;
@@ -306,7 +326,7 @@ void Transmogrification::SetFakeEntry(Player* player, uint32 newEntry, uint8 /*s
     dataMap[itemGUID] = player->GetGUID();
     CharacterDatabase.PExecute("REPLACE INTO custom_transmogrification (GUID, FakeEntry, Owner) VALUES (%u, %u, %u)", GUID_LOPART(itemGUID), newEntry, player->GetGUIDLow());
     CharacterDatabase.PExecute("UPDATE item_instance SET transmogrifyId = %u WHERE guid = %u", newEntry, GUID_LOPART(itemGUID));
-	UpdateItem(player, itemTransmogrified, newEntry);
+    UpdateItem(player, itemTransmogrified, newEntry);
 }
 
 TransmogTrinityStrings Transmogrification::Transmogrify(Player* player, uint64 itemGUID, uint8 slot, /*uint32 newEntry, */bool no_cost)
@@ -369,7 +389,7 @@ TransmogTrinityStrings Transmogrification::Transmogrify(Player* player, uint64 i
             if (cost) // 0 cost if reverting look
             {
                 if (cost < 0)
-                    sLog->outDebug("Transmogrification.log",  "Transmogrification::Transmogrify - %s (%u) transmogrification invalid cost (non negative, amount %i). Transmogrified %u with %u", player->GetName().c_str(), player->GetGUIDLow(), -cost, itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
+                    TC_LOG_DEBUG("Transmogrification.log",  "Transmogrification::Transmogrify - %s (%u) transmogrification invalid cost (non negative, amount %li). Transmogrified %u with %u", player->GetName().c_str(), player->GetGUIDLow(), -cost, itemTransmogrified->GetEntry(), itemTransmogrifier->GetEntry());
                 else
                 {
                     if (!player->HasEnoughMoney(cost))
@@ -388,7 +408,7 @@ TransmogTrinityStrings Transmogrification::Transmogrify(Player* player, uint64 i
         itemTransmogrified->SetNotRefundable(player);
         itemTransmogrified->ClearSoulboundTradeable(player);
 
-        if (itemTransmogrifier->GetTemplate()->Bonding == BIND_WHEN_EQUIPED || itemTransmogrifier->GetTemplate()->Bonding == BIND_WHEN_USE)
+        if (itemTransmogrifier->GetTemplate()->Bonding == BIND_ON_ACQUIRE || itemTransmogrifier->GetTemplate()->Bonding == BIND_ON_USE)
             itemTransmogrifier->SetBinding(true);
 
         itemTransmogrifier->SetOwnerGUID(player->GetGUID());
@@ -419,14 +439,14 @@ bool Transmogrification::CanTransmogrifyItemWithItem(Player* player, ItemTemplat
         source->InventoryType == INVTYPE_QUIVER)
         return false;
 
-	if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_WEAPONOFFHAND)
-		return true;
+    if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_WEAPONOFFHAND)
+        return true;
 
-	if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_HOLDABLE)
-		return true;
-	
-	if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_SHIELD)
-		return true;
+    if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_HOLDABLE)
+        return true;
+    
+    if (source->Class == ITEM_CLASS_WEAPON && target->InventoryType == INVTYPE_SHIELD)
+        return true;
 
     // TC doesnt check this? Checked by Inventory type check.
     if (source->Class != target->Class)
@@ -494,10 +514,10 @@ bool Transmogrification::SuitableForTransmogrification(Player* player, ItemTempl
     if ((proto->Flags2 & ITEM_FLAGS_EXTRA_ALLIANCE_ONLY) && player->GetTeamId() != TEAM_ALLIANCE)
         return false;
 
-    if (!IgnoreReqClass && (proto->AllowableClass & player->getClassMask()) == 0)
+    if (!IgnoreReqClass && (proto->AllowableClass & player->GetClassMask()) == 0)
         return false;
 
-    if (!IgnoreReqRace && (proto->AllowableRace & player->getRaceMask()) == 0)
+    if (!IgnoreReqRace && (proto->AllowableRace & player->GetRaceMask()) == 0)
         return false;
 
     if (!IgnoreReqSkill && proto->RequiredSkill != 0)
@@ -511,7 +531,7 @@ bool Transmogrification::SuitableForTransmogrification(Player* player, ItemTempl
     if (!IgnoreReqSpell && proto->RequiredSpell != 0 && !player->HasSpell(proto->RequiredSpell))
         return false;
 
-    if (!IgnoreReqLevel && player->getLevel() < proto->RequiredLevel)
+    if (!IgnoreReqLevel && player->GetLevel() < proto->RequiredLevel)
         return false;
 
     // If World Event is not active, prevent using event dependant items
@@ -661,12 +681,12 @@ void Transmogrification::LoadConfig(bool reload)
 
     if (!sObjectMgr->GetItemTemplate(TokenEntry))
     {
-        //sLog->outError(LOG_FILTER_SERVER_LOADING, "Transmogrification.TokenEntry (%u) does not exist. Using default.", TokenEntry);
+        //TC_LOG_DEBUG(LOG_FILTER_SERVER_LOADING, "Transmogrification.TokenEntry (%u) does not exist. Using default.", TokenEntry);
         TokenEntry = 49426;
     }
 }
 
-void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans)
+void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, CharacterDatabaseTransaction trans)
 {
     if (dataMap.find(itemGUID) != dataMap.end())
     {
@@ -675,7 +695,7 @@ void Transmogrification::DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans
         dataMap.erase(itemGUID);
     }
     if (trans)
-        (*trans)->PAppend("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
+        trans->PAppend("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
     else
         CharacterDatabase.PExecute("DELETE FROM custom_transmogrification WHERE GUID = %u", GUID_LOPART(itemGUID));
 }

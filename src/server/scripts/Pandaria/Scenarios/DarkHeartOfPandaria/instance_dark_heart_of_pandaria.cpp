@@ -82,7 +82,7 @@ class instance_dark_heart_of_pandaria : public InstanceMapScript
             {
                 // Alliance players to goblin
                 if (player && player->GetTeam() == ALLIANCE)
-                    player->CastSpell(player, player->getGender() == GENDER_MALE ? SPELL_GOBLIN_ILLUSION_MALE : SPELL_GOBLIN_ILLISION_FEMALE, true);
+                    player->CastSpell(player, player->GetGender() == GENDER_MALE ? SPELL_GOBLIN_ILLUSION_MALE : SPELL_GOBLIN_ILLISION_FEMALE, true);
 
                 // Init Scenario
                 sScenarioMgr->SendScenarioState(player, 1144, STEP_TALK_WITH_LEADER, 0);
@@ -225,7 +225,7 @@ class instance_dark_heart_of_pandaria : public InstanceMapScript
                         {
                             SendScenarioProgressUpdate(CriteriaProgressData(CRITERIA_DEFEAT_ECHO_OF_YSHAARJ, 1, GetScenarioGUID(), time(NULL), 0, 0));
                             DoFinishLFGDungeon(instance->GetDifficulty() == SCENARIO_DIFFICULTY_HEROIC ? 624 : 647);
-							DoFinishLFGDungeon(instance->GetDifficulty() == SCENARIO_DIFFICULTY_NORMAL ? 624 : 647);
+                            DoFinishLFGDungeon(instance->GetDifficulty() == SCENARIO_DIFFICULTY_NORMAL ? 624 : 647);
 
                             // Interaction Scene
                             if (Creature* norushen = instance->GetCreature(GetData64(NPC_NORUSHEN)))

@@ -24,7 +24,9 @@
 #include "Item.h"
 #include "ItemPrototype.h"
 
-class Bag : public Item
+class Field;
+
+class TC_GAME_API Bag : public Item
 {
     public:
 
@@ -41,8 +43,8 @@ class Bag : public Item
         void RemoveItem(uint8 slot, bool update);
 
         Item* GetItemByPos(uint8 slot) const;
-        uint32 GetItemCount(uint32 item, Item* eItem = NULL) const;
-        uint32 GetItemCountWithLimitCategory(uint32 limitCategory, Item* skipItem = NULL) const;
+        uint32 GetItemCount(uint32 item, Item* eItem = nullptr) const;
+        uint32 GetItemCountWithLimitCategory(uint32 limitCategory, Item* skipItem = nullptr) const;
 
         uint8 GetSlotByItemGUID(uint64 guid) const;
         bool IsEmpty() const;
@@ -51,11 +53,11 @@ class Bag : public Item
 
         // DB operations
         // overwrite virtual Item::SaveToDB
-        void SaveToDB(SQLTransaction& trans);
+        void SaveToDB(CharacterDatabaseTransaction trans);
         // overwrite virtual Item::LoadFromDB
         bool LoadFromDB(uint32 guid, uint64 ownerGuid, Field* fields, uint32 entry, Player* owner);
         // overwrite virtual Item::DeleteFromDB
-        void DeleteFromDB(SQLTransaction& trans);
+        void DeleteFromDB(CharacterDatabaseTransaction trans);
 
         void BuildCreateUpdateBlockForPlayer(UpdateData* data, Player* target) const;
 

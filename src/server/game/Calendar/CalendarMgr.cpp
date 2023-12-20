@@ -47,6 +47,12 @@ CalendarMgr::~CalendarMgr()
             delete *itr2;
 }
 
+CalendarMgr* CalendarMgr::instance()
+{
+    static CalendarMgr instance;
+    return &instance;
+}
+
 void CalendarMgr::LoadFromDB()
 {
     uint32 count = 0;
@@ -85,7 +91,7 @@ void CalendarMgr::LoadFromDB()
     count = 0;
 
     //                                                       0   1      2        3       4       5           6     7
-    if (QueryResult result = CharacterDatabase.Query("SELECT id, event, invitee, sender, status, statustime, rank, text FROM calendar_invites"))
+    if (QueryResult result = CharacterDatabase.Query("SELECT id, event, invitee, sender, status, statustime, `rank`, `text` FROM calendar_invites"))
         do
         {
             Field* fields = result->Fetch();
@@ -153,8 +159,8 @@ void CalendarMgr::RemoveEvent(uint64 eventId, uint64 remover)
 
     SendCalendarEventRemovedAlert(*calendarEvent);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt;
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt;
     MailDraft mail(calendarEvent->BuildCalendarMailSubject(remover), calendarEvent->BuildCalendarMailBody());
 
     CalendarInviteStore& eventInvites = _invites[eventId];
@@ -199,8 +205,8 @@ void CalendarMgr::RemoveInvite(uint64 inviteId, uint64 eventId, uint64 remover)
     if (itr == _invites[eventId].end())
         return;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CALENDAR_INVITE);
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CALENDAR_INVITE);
     stmt->setUInt64(0, (*itr)->GetInviteId());
     trans->Append(stmt);
 
@@ -221,8 +227,8 @@ void CalendarMgr::RemoveInvite(uint64 inviteId, uint64 eventId, uint64 remover)
 
 void CalendarMgr::UpdateEvent(CalendarEvent* calendarEvent)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CALENDAR_EVENT);
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CALENDAR_EVENT);
     stmt->setUInt64(0, calendarEvent->GetEventId());
     stmt->setUInt32(1, GUID_LOPART(calendarEvent->GetCreatorGUID()));
     stmt->setString(2, calendarEvent->GetTitle());
@@ -237,8 +243,8 @@ void CalendarMgr::UpdateEvent(CalendarEvent* calendarEvent)
 
 void CalendarMgr::UpdateInvite(CalendarInvite* invite)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CALENDAR_INVITE);
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CALENDAR_INVITE);
     stmt->setUInt64(0, invite->GetInviteId());
     stmt->setUInt64(1, invite->GetEventId());
     stmt->setUInt32(2, GUID_LOPART(invite->GetInviteeGUID()));
@@ -416,7 +422,7 @@ void CalendarMgr::SendCalendarEventInvite(CalendarInvite const& invite)
     ObjectGuid invitee = invite.GetInviteeGUID();
     Player* player = ObjectAccessor::FindPlayer(invitee);
 
-    uint8 level = player ? player->getLevel() : Player::GetLevelFromDB(invitee);
+    uint8 level = player ? player->GetLevel() : Player::GetLevelFromDB(invitee);
 
     WorldPacket data(SMSG_CALENDAR_EVENT_INVITE, 8 + 8 + 8 + 1 + 1 + 1 + (statusTime ? 4 : 0) + 1);
     data << uint8(invite.GetSenderGUID() == invite.GetInviteeGUID()); // true only if the invite is sign-up
@@ -698,7 +704,7 @@ void CalendarMgr::SendCalendarEvent(uint64 playerGuid, CalendarEvent const& cale
         CalendarInvite const* invitee = (*iter);
         ObjectGuid guid = invitee->GetInviteeGUID();
         Player* player = ObjectAccessor::FindPlayer(invitee->GetInviteeGUID());
-        uint8 inviteeLevel = player ? player->getLevel() : Player::GetLevelFromDB(invitee->GetInviteeGUID());
+        uint8 inviteeLevel = player ? player->GetLevel() : Player::GetLevelFromDB(invitee->GetInviteeGUID());
         uint32 inviteeGuildId = player ? player->GetGuildId() : Player::GetGuildIdFromDB(invitee->GetInviteeGUID());
 
         data.WriteBit(guid[1]);

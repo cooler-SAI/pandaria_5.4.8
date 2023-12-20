@@ -101,8 +101,9 @@ class boss_urom : public CreatureScript
 
                 for (uint8 i = 0; i < 3; ++i)
                     group[i] = i;
-
-                std::random_shuffle(group, group + 3);
+                std::random_device rd;
+                std::mt19937 g(rd());
+                std::shuffle(group, group + 3, g);
             }
 
             void Initialize()

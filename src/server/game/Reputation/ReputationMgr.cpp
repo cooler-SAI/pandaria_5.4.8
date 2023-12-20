@@ -40,6 +40,8 @@ uint32 ReputationRankStrIndex(ReputationRank rank)
 }
 
 const int32 ReputationMgr::PointsInRank[MAX_REPUTATION_RANK] = {36000, 3000, 3000, 3000, 6000, 12000, 21000, 1000};
+const int32 ReputationMgr::Reputation_Cap = 42999;
+const int32 ReputationMgr::Reputation_Bottom = -42000;
 
 ReputationRank ReputationMgr::ReputationToRank(int32 standing)
 {
@@ -94,8 +96,8 @@ int32 ReputationMgr::GetBaseReputation(FactionEntry const* factionEntry) const
     if (!factionEntry)
         return 0;
 
-    uint32 raceMask = _player->getRaceMask();
-    uint32 classMask = _player->getClassMask();
+    uint32 raceMask = _player->GetRaceMask();
+    uint32 classMask = _player->GetClassMask();
     for (int i=0; i < 4; i++)
     {
         if ((factionEntry->BaseRepRaceMask[i] & raceMask  ||
@@ -148,8 +150,8 @@ uint32 ReputationMgr::GetDefaultStateFlags(FactionEntry const* factionEntry) con
     if (!factionEntry)
         return 0;
 
-    uint32 raceMask = _player->getRaceMask();
-    uint32 classMask = _player->getClassMask();
+    uint32 raceMask = _player->GetRaceMask();
+    uint32 classMask = _player->GetClassMask();
     for (int i=0; i < 4; i++)
     {
         if ((factionEntry->BaseRepRaceMask[i] & raceMask  ||
@@ -426,10 +428,6 @@ bool ReputationMgr::SetOneFactionReputation(FactionEntry const* factionEntry, fl
         _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_REVERED_REPUTATION, factionEntry->ID);
         _player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_GAIN_HONORED_REPUTATION, factionEntry->ID);
 
-        if (new_rank == REP_EXALTED && old_rank != REP_EXALTED)
-            if (projectMemberInfo* info = _player->GetSession()->GetprojectMemberInfo())
-                info->Notify(_player, projectMemberInfo::Notification::ReputationRank);
-
         return true;
     }
     return false;
@@ -442,7 +440,7 @@ void ReputationMgr::SetVisible(FactionTemplateEntry const*factionTemplateEntry)
 
     if (FactionEntry const* factionEntry = sFactionStore.LookupEntry(factionTemplateEntry->faction))
         // Never show factions of the opposing team
-        if (!(factionEntry->BaseRepRaceMask[1] & _player->getRaceMask() && factionEntry->BaseRepValue[1] == Reputation_Bottom))
+        if (!(factionEntry->BaseRepRaceMask[1] & _player->GetRaceMask() && factionEntry->BaseRepValue[1] == Reputation_Bottom))
             SetVisible(factionEntry);
 }
 
@@ -613,13 +611,13 @@ void ReputationMgr::LoadFromDB(PreparedQueryResult result)
     }
 }
 
-void ReputationMgr::SaveToDB(SQLTransaction& trans)
+void ReputationMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     for (FactionStateList::iterator itr = _factions.begin(); itr != _factions.end(); ++itr)
     {
         if (itr->second.needSave)
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_REPUTATION_BY_FACTION);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_REPUTATION_BY_FACTION);
             stmt->setUInt32(0, _player->GetGUIDLow());
             stmt->setUInt16(1, uint16(itr->second.ID));
             trans->Append(stmt);

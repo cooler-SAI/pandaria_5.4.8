@@ -22,6 +22,7 @@
 #include <list>
 #include <random>
 #include "Util.h"
+#include "Random.h"
 
 //! Because circular includes are bad
 extern uint32 urand(uint32 min, uint32 max);
@@ -81,7 +82,7 @@ namespace Trinity
             std::discrete_distribution<uint32>::param_type ddParam(weights.begin(), weights.end());
             std::discrete_distribution<uint32> dd(ddParam);
             typename C::const_iterator it = container.begin();
-            std::advance(it, dd(SFMTEngine::Instance()));
+            std::advance(it, dd(RandomEngine::Instance()));
             return it;
         }
 

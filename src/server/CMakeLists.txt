@@ -14,9 +14,10 @@ endif()
 
 if( SERVERS )
   set(sources_windows_Debugging
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.cpp
-    ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging/WheatyExceptionReport.h
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging/WheatyExceptionReport.cpp
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging/WheatyExceptionReport.h
   )
+  add_subdirectory(database)
   add_subdirectory(shared)
   add_subdirectory(game)
   add_subdirectory(collision)

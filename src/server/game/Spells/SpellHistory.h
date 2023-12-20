@@ -65,7 +65,7 @@ public:
     void LoadFromDB(PreparedQueryResult&& result, PreparedQueryResult&& chargesResult);
 
     template <typename Owner>
-    void SaveToDB(SQLTransaction& result);
+    void SaveToDB(CharacterDatabaseTransaction trans);
 
     // Is spell can be casted
     bool IsReady(uint32 spellId, uint32 itemId = 0, bool ignoreCategoryCooldown = false) const;

@@ -15,6 +15,7 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <mutex>
 #include "Common.h"
 #include "Language.h"
 #include "DatabaseEnv.h"
@@ -28,7 +29,6 @@
 #include "GuildMgr.h"
 #include "WorldSession.h"
 #include "BigNumber.h"
-#include "SHA1.h"
 #include "UpdateData.h"
 #include "LootMgr.h"
 #include "Chat.h"
@@ -58,9 +58,13 @@
 #include "AchievementMgr.h"
 #include "ArenaTeam.h"
 #include "LFGMgr.h"
+#include "Realm.h"
 
 bool AFDRoyaleRepopRequestHook(Player* player);
 
+#ifdef ELUNA
+#include "HookMgr.h"
+#endif
 void WorldSession::HandleRepopRequestOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_REPOP_REQUEST Message");
@@ -87,6 +91,9 @@ void WorldSession::HandleRepopRequestOpcode(WorldPacket& recvData)
             GetPlayer()->GetName().c_str(), GetPlayer()->GetGUIDLow());
         GetPlayer()->KillPlayer();
     }
+#ifdef ELUNA
+    sHookMgr->OnRepop(GetPlayer());
+#endif
 
     //this is spirit release confirm?
     GetPlayer()->BuildPlayerRepop();
@@ -190,9 +197,14 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
     {
         if (unit)
         {
-            unit->AI()->sGossipSelectCode(_player, menuId, gossipListId, code.c_str());
-            if (!sScriptMgr->OnGossipSelectCode(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId), code.c_str()))
+            if (!sScriptMgr->OnGossipSelectCode(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId), code.c_str()) && !unit->AI()->OnGossipSelectCode(_player, menuId, gossipListId, code.c_str()))
+            {
                 _player->OnGossipSelect(unit, gossipListId, menuId);
+            }
+            // if (!unit->AI()->OnGossipSelectCode(_player, menuId, gossipListId, code.c_str())) // hack, add to support ScriptAI
+            // {
+            //     _player->OnGossipSelect(unit, gossipListId, menuId);  
+            // }
         }
         else if (go)
         {
@@ -212,9 +224,14 @@ void WorldSession::HandleGossipSelectOptionOpcode(WorldPacket& recvData)
     {
         if (unit)
         {
-            unit->AI()->sGossipSelect(_player, menuId, gossipListId);
-            if (!sScriptMgr->OnGossipSelect(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)))
+            if (!sScriptMgr->OnGossipSelect(_player, unit, _player->PlayerTalkClass->GetGossipOptionSender(gossipListId), _player->PlayerTalkClass->GetGossipOptionAction(gossipListId)) && !unit->AI()->OnGossipSelect(_player, menuId, gossipListId))
+            {
                 _player->OnGossipSelect(unit, gossipListId, menuId);
+            }
+            // if (!unit->AI()->OnGossipSelect(_player, menuId, gossipListId)) // hack, add to support ScriptAI
+            // {
+            //     _player->OnGossipSelect(unit, gossipListId, menuId);   
+            // }
         }
         else if (go)
         {
@@ -344,7 +361,7 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
     size_t pos = data.bitwpos();
     data.WriteBits(displaycount, 6);
 
-    TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+    std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Player>::GetLock());
     HashMapHolder<Player>::MapType const& m = sObjectAccessor->GetPlayers();
     for (auto itr = m.begin(); itr != m.end() && displaycount <= sWorld->getIntConfig(CONFIG_MAX_WHO); ++itr)
     {
@@ -369,22 +386,22 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
             continue;
 
         // check if target's level is in level range
-        uint8 level = target->getLevel();
+        uint8 level = target->GetLevel();
         if (level < levelMin || level > levelMax)
             continue;
 
         // check if class matches classmask
-        uint8 class_ = target->getClass();
+        uint8 class_ = target->GetClass();
         if (!(classMask & (1 << class_)))
             continue;
 
         // check if race matches racemask
-        uint32 race = target->getRace();
+        uint32 race = target->GetRace();
         if (!(raceMask & (1 << race)))
             continue;
 
         uint32 zoneId = target->GetZoneId();
-        uint8 gender = target->getGender();
+        uint8 gender = target->GetGender();
 
         bool z_show = true;
         for (uint32 i = 0; i < zonesCount; ++i)
@@ -486,9 +503,9 @@ void WorldSession::HandleWhoOpcode(WorldPacket& recvData)
         data.WriteBits(pname.size(), 6);
 
         bytesData.WriteByteSeq(playerGuid[1]);
-        bytesData << uint32(realmID);
+        bytesData << uint32(realm.Id.Realm);
         bytesData.WriteByteSeq(playerGuid[7]);
-        bytesData << uint32(realmID);
+        bytesData << uint32(realm.Id.Realm);
         bytesData.WriteByteSeq(playerGuid[4]);
         bytesData.WriteString(pname);
         bytesData.WriteByteSeq(guildGuid[1]);
@@ -757,66 +774,126 @@ void WorldSession::HandleAddFriendOpcode(WorldPacket& recvData)
     TC_LOG_DEBUG("network", "WORLD: %s asked to add friend : '%s'",
         GetPlayer()->GetName().c_str(), friendName.c_str());
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_RACE_ACC_BY_NAME);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_RACE_ACC_BY_NAME);
 
     stmt->setString(0, friendName);
 
-    _addFriendCallback.SetParam(friendNote);
-    _addFriendCallback.SetFutureResult(CharacterDatabase.AsyncQuery(stmt));
+    // _addFriendCallback.SetParam(friendNote);
+    // _addFriendCallback.SetFutureResult(CharacterDatabase.AsyncQuery(stmt));
+
+    _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
+        .WithChainingPreparedCallback([this, friendNote](QueryCallback& queryCallback, PreparedQueryResult result)
+    {
+
+        if (!GetPlayer())
+            return;
+
+        uint64 friendGuid;
+        uint32 friendAccountId;
+        uint32 team;
+        FriendsResult friendResult;
+
+        friendResult = FRIEND_NOT_FOUND;
+        friendGuid = 0;
+
+        if (result)
+        {
+            Field* fields = result->Fetch();
+
+            friendGuid = MAKE_NEW_GUID(fields[0].GetUInt32(), 0, HIGHGUID_PLAYER);
+            team = Player::TeamForRace(fields[1].GetUInt8());
+            friendAccountId = fields[2].GetUInt32();
+
+            if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realm.Id.Realm) < SEC_MODERATOR)
+            {
+                if (friendGuid)
+                {
+                    if (friendGuid == GetPlayer()->GetGUID())
+                        friendResult = FRIEND_SELF;
+                    else if (GetPlayer()->GetTeam() != team && !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ADD_FRIEND) && GetSecurity() < SEC_MODERATOR)
+                        friendResult = FRIEND_ENEMY;
+                    else if (GetPlayer()->GetSocial()->HasFriend(GUID_LOPART(friendGuid)))
+                        friendResult = FRIEND_ALREADY;
+                    else
+                    {
+                        Player* pFriend = ObjectAccessor::FindPlayer(friendGuid);
+                        if (pFriend && pFriend->IsInWorld() && pFriend->IsVisibleGloballyFor(GetPlayer()))
+                            friendResult = FRIEND_ADDED_ONLINE;
+                        else
+                            friendResult = FRIEND_ADDED_OFFLINE;
+                        if (!GetPlayer()->GetSocial()->AddToSocialList(GUID_LOPART(friendGuid), false))
+                        {
+                            friendResult = FRIEND_LIST_FULL;
+                            TC_LOG_DEBUG("network", "WORLD: %s's friend list is full.", GetPlayer()->GetName().c_str());
+                        }
+                    }
+                    GetPlayer()->GetSocial()->SetFriendNote(GUID_LOPART(friendGuid), friendNote);
+                }
+            }
+        }
+
+        sSocialMgr->SendFriendStatus(GetPlayer(), friendResult, friendGuid, false);
+
+        TC_LOG_DEBUG("network", "WORLD: Sent (SMSG_FRIEND_STATUS)");
+
+    }));
+
+
+
 }
 
 void WorldSession::HandleAddFriendOpcodeCallBack(PreparedQueryResult result, std::string const& friendNote)
 {
-    if (!GetPlayer())
-        return;
+    // if (!GetPlayer())
+    //     return;
 
-    uint64 friendGuid;
-    uint32 friendAccountId;
-    uint32 team;
-    FriendsResult friendResult;
+    // uint64 friendGuid;
+    // uint32 friendAccountId;
+    // uint32 team;
+    // FriendsResult friendResult;
 
-    friendResult = FRIEND_NOT_FOUND;
-    friendGuid = 0;
+    // friendResult = FRIEND_NOT_FOUND;
+    // friendGuid = 0;
 
-    if (result)
-    {
-        Field* fields = result->Fetch();
+    // if (result)
+    // {
+    //     Field* fields = result->Fetch();
 
-        friendGuid = MAKE_NEW_GUID(fields[0].GetUInt32(), 0, HIGHGUID_PLAYER);
-        team = Player::TeamForRace(fields[1].GetUInt8());
-        friendAccountId = fields[2].GetUInt32();
+    //     friendGuid = MAKE_NEW_GUID(fields[0].GetUInt32(), 0, HIGHGUID_PLAYER);
+    //     team = Player::TeamForRace(fields[1].GetUInt8());
+    //     friendAccountId = fields[2].GetUInt32();
 
-        if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realmID) < SEC_MODERATOR)
-        {
-            if (friendGuid)
-            {
-                if (friendGuid == GetPlayer()->GetGUID())
-                    friendResult = FRIEND_SELF;
-                else if (GetPlayer()->GetTeam() != team && !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ADD_FRIEND) && GetSecurity() < SEC_MODERATOR)
-                    friendResult = FRIEND_ENEMY;
-                else if (GetPlayer()->GetSocial()->HasFriend(GUID_LOPART(friendGuid)))
-                    friendResult = FRIEND_ALREADY;
-                else
-                {
-                    Player* pFriend = ObjectAccessor::FindPlayer(friendGuid);
-                    if (pFriend && pFriend->IsInWorld() && pFriend->IsVisibleGloballyFor(GetPlayer()))
-                        friendResult = FRIEND_ADDED_ONLINE;
-                    else
-                        friendResult = FRIEND_ADDED_OFFLINE;
-                    if (!GetPlayer()->GetSocial()->AddToSocialList(GUID_LOPART(friendGuid), false))
-                    {
-                        friendResult = FRIEND_LIST_FULL;
-                        TC_LOG_DEBUG("network", "WORLD: %s's friend list is full.", GetPlayer()->GetName().c_str());
-                    }
-                }
-                GetPlayer()->GetSocial()->SetFriendNote(GUID_LOPART(friendGuid), friendNote);
-            }
-        }
-    }
+    //     if (GetSecurity() >= SEC_MODERATOR || sWorld->getBoolConfig(CONFIG_ALLOW_GM_FRIEND) || AccountMgr::GetSecurity(friendAccountId, realm.Id.Realm) < SEC_MODERATOR)
+    //     {
+    //         if (friendGuid)
+    //         {
+    //             if (friendGuid == GetPlayer()->GetGUID())
+    //                 friendResult = FRIEND_SELF;
+    //             else if (GetPlayer()->GetTeam() != team && !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_ADD_FRIEND) && GetSecurity() < SEC_MODERATOR)
+    //                 friendResult = FRIEND_ENEMY;
+    //             else if (GetPlayer()->GetSocial()->HasFriend(GUID_LOPART(friendGuid)))
+    //                 friendResult = FRIEND_ALREADY;
+    //             else
+    //             {
+    //                 Player* pFriend = ObjectAccessor::FindPlayer(friendGuid);
+    //                 if (pFriend && pFriend->IsInWorld() && pFriend->IsVisibleGloballyFor(GetPlayer()))
+    //                     friendResult = FRIEND_ADDED_ONLINE;
+    //                 else
+    //                     friendResult = FRIEND_ADDED_OFFLINE;
+    //                 if (!GetPlayer()->GetSocial()->AddToSocialList(GUID_LOPART(friendGuid), false))
+    //                 {
+    //                     friendResult = FRIEND_LIST_FULL;
+    //                     TC_LOG_DEBUG("network", "WORLD: %s's friend list is full.", GetPlayer()->GetName().c_str());
+    //                 }
+    //             }
+    //             GetPlayer()->GetSocial()->SetFriendNote(GUID_LOPART(friendGuid), friendNote);
+    //         }
+    //     }
+    // }
 
-    sSocialMgr->SendFriendStatus(GetPlayer(), friendResult, friendGuid, false);
+    // sSocialMgr->SendFriendStatus(GetPlayer(), friendResult, friendGuid, false);
 
-    TC_LOG_DEBUG("network", "WORLD: Sent (SMSG_FRIEND_STATUS)");
+    // TC_LOG_DEBUG("network", "WORLD: Sent (SMSG_FRIEND_STATUS)");
 }
 
 void WorldSession::HandleDelFriendOpcode(WorldPacket& recvData)
@@ -848,11 +925,13 @@ void WorldSession::HandleAddIgnoreOpcode(WorldPacket& recvData)
     TC_LOG_DEBUG("network", "WORLD: %s asked to Ignore: '%s'",
         GetPlayer()->GetName().c_str(), ignoreName.c_str());
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
 
     stmt->setString(0, ignoreName);
 
-    _addIgnoreCallback = CharacterDatabase.AsyncQuery(stmt);
+    //_addIgnoreCallback = CharacterDatabase.AsyncQuery(stmt);
+    _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt)
+        .WithPreparedCallback(std::bind(&WorldSession::HandleAddIgnoreOpcodeCallBack, this, std::placeholders::_1 )));
 }
 
 void WorldSession::HandleAddIgnoreOpcodeCallBack(PreparedQueryResult result)
@@ -935,7 +1014,7 @@ void WorldSession::HandleBugOpcode(WorldPacket& recvData)
     TC_LOG_DEBUG("network", "%s", type.c_str());
     TC_LOG_DEBUG("network", "%s", content.c_str());
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_BUG_REPORT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_BUG_REPORT);
 
     stmt->setString(0, type);
     stmt->setString(1, content);
@@ -989,6 +1068,9 @@ void WorldSession::HandleReclaimCorpseOpcode(WorldPacket& recvData)
 
     if (!corpse->IsWithinDistInMap(GetPlayer(), CORPSE_RECLAIM_RADIUS, true))
         return;
+#ifdef ELUNA
+    sHookMgr->OnResurrect(GetPlayer());
+#endif
 
     // resurrect
     GetPlayer()->ResurrectPlayer(GetPlayer()->InBattleground() ? 1.0f : 0.5f);
@@ -1645,7 +1727,7 @@ void WorldSession::HandleWhoisOpcode(WorldPacket& recvData)
 
     uint32 accid = player->GetSession()->GetAccountId();
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_WHOIS);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_WHOIS);
 
     stmt->setUInt32(0, accid);
 
@@ -1681,46 +1763,47 @@ void WorldSession::HandleWhoisOpcode(WorldPacket& recvData)
         GetPlayer()->GetName().c_str(), charname.c_str());
 }
 
-void WorldSession::HandleComplainOpcode(WorldPacket& recvData)
-{
-    TC_LOG_DEBUG("network", "WORLD: CMSG_COMPLAIN");
+// not in 5.4.8
+// void WorldSession::HandleComplainOpcode(WorldPacket& recvData)
+// {
+//     TC_LOG_DEBUG("network", "WORLD: CMSG_COMPLAIN");
 
-    uint8 spam_type;                                        // 0 - mail, 1 - chat
-    uint64 spammer_guid;
-    uint32 unk1 = 0;
-    uint32 unk2 = 0;
-    uint32 unk3 = 0;
-    uint32 unk4 = 0;
-    std::string description = "";
-    recvData >> spam_type;                                 // unk 0x01 const, may be spam type (mail/chat)
-    recvData >> spammer_guid;                              // player guid
-    switch (spam_type)
-    {
-        case 0:
-            recvData >> unk1;                              // const 0
-            recvData >> unk2;                              // probably mail id
-            recvData >> unk3;                              // const 0
-            break;
-        case 1:
-            recvData >> unk1;                              // probably language
-            recvData >> unk2;                              // message type?
-            recvData >> unk3;                              // probably channel id
-            recvData >> unk4;                              // time
-            recvData >> description;                       // spam description string (messagetype, channel name, player name, message)
-            break;
-    }
+//     uint8 spam_type;                                        // 0 - mail, 1 - chat
+//     uint64 spammer_guid;
+//     uint32 unk1 = 0;
+//     uint32 unk2 = 0;
+//     uint32 unk3 = 0;
+//     uint32 unk4 = 0;
+//     std::string description = "";
+//     recvData >> spam_type;                                 // unk 0x01 const, may be spam type (mail/chat)
+//     recvData >> spammer_guid;                              // player guid
+//     switch (spam_type)
+//     {
+//         case 0:
+//             recvData >> unk1;                              // const 0
+//             recvData >> unk2;                              // probably mail id
+//             recvData >> unk3;                              // const 0
+//             break;
+//         case 1:
+//             recvData >> unk1;                              // probably language
+//             recvData >> unk2;                              // message type?
+//             recvData >> unk3;                              // probably channel id
+//             recvData >> unk4;                              // time
+//             recvData >> description;                       // spam description string (messagetype, channel name, player name, message)
+//             break;
+//     }
 
-    // NOTE: all chat messages from this spammer automatically ignored by spam reporter until logout in case chat spam.
-    // if it's mail spam - ALL mails from this spammer automatically removed by client
+//     // NOTE: all chat messages from this spammer automatically ignored by spam reporter until logout in case chat spam.
+//     // if it's mail spam - ALL mails from this spammer automatically removed by client
 
-    // Complaint Received message
-    WorldPacket data(SMSG_COMPLAIN_RESULT, 2);
-    data << uint8(0); // value 1 resets CGChat::m_complaintsSystemStatus in client. (unused?)
-    data << uint8(0); // value 0xC generates a "CalendarError" in client.
-    SendPacket(&data);
+//     // Complaint Received message
+//     WorldPacket data(SMSG_COMPLAIN_RESULT, 2);
+//     data << uint8(0); // value 1 resets CGChat::m_complaintsSystemStatus in client. (unused?)
+//     data << uint8(0); // value 0xC generates a "CalendarError" in client.
+//     SendPacket(&data);
 
-    TC_LOG_DEBUG("network", "REPORT SPAM: type %u, guid %u, unk1 %u, unk2 %u, unk3 %u, unk4 %u, message %s", spam_type, GUID_LOPART(spammer_guid), unk1, unk2, unk3, unk4, description.c_str());
-}
+//     TC_LOG_DEBUG("network", "REPORT SPAM: type %u, guid %u, unk1 %u, unk2 %u, unk3 %u, unk4 %u, message %s", spam_type, GUID_LOPART(spammer_guid), unk1, unk2, unk3, unk4, description.c_str());
+// }
 
 void WorldSession::HandleRealmSplitOpcode(WorldPacket& recvData)
 {
@@ -2295,19 +2378,20 @@ void WorldSession::SendBroadcastTextDb2Reply(uint32 entry, ByteBuffer& buffer)
      *  This is a hack fix! Still uses Gossip Id's instead of Broadcast Id's.
      *  Major database changed required at some point.
      */
-
-    GossipText const* pGossip = sObjectMgr->GetGossipText(entry);
-    std::string text = GetPlayer()->GetOverrideText(entry);
-    if (!pGossip && text.empty())
+    LocaleConstant locale = GetSessionDbLocaleIndex();
+    std::string Text_0;
+    std::string Text_1;
+    BroadcastText const* bct = sObjectMgr->GetBroadcastText(entry);
+    if (bct)
+    {
+        Text_0 = bct->GetText(locale, GENDER_MALE, true);
+        Text_1 = bct->GetText(locale, GENDER_FEMALE, true);
+    }
+    else
+    {
         return; // return without buffer for trying load data from db2 stores
-
-    buffer << uint32(entry);
-
-    std::string Text_0 = !text.empty() ? text : pGossip->Options[0].Text_0;
-    std::string Text_1 = !text.empty() ? text : pGossip->Options[0].Text_1;
-
-    int32 locale = GetSessionDbLocaleIndex();
-    if (locale >= 0 && text.empty())
+    }
+    if (locale >= 0)
     {
         if (NpcTextLocale const* localeData = sObjectMgr->GetNpcTextLocale(entry))
         {
@@ -2315,26 +2399,23 @@ void WorldSession::SendBroadcastTextDb2Reply(uint32 entry, ByteBuffer& buffer)
             ObjectMgr::GetLocaleString(localeData->Text_1[0], locale, Text_1);
         }
     }
-
-    buffer << uint32(!text.empty() ? 0 : pGossip->Options[0].Language);
-
+    buffer << uint32(entry);
+    buffer << uint32(!bct ? 0 : bct->LanguageID);
     buffer << uint16(Text_0.length());
     if (Text_0.length())
-        buffer << std::string(Text_0);
-
+        buffer << std::string(Text_0);    
     buffer << uint16(Text_1.length());
     if (Text_1.length())
-        buffer << std::string(Text_1);
-
-    for (uint8 j = 0; j < MAX_GOSSIP_TEXT_EMOTES; ++j)
-        buffer << uint32(!text.empty() ? 0 : pGossip->Options[0].Emotes[j]._Emote);
-
-    for (uint8 j = 0; j < MAX_GOSSIP_TEXT_EMOTES; ++j)
-        buffer << uint32(!text.empty() ? 0 : pGossip->Options[0].Emotes[j]._Delay);
-
-    buffer << uint32(0); // Sound Id
+        buffer << std::string(Text_1); 
+    buffer << uint32(!bct ? 0 : bct->EmoteId1);  
+    buffer << uint32(!bct ? 0 : bct->EmoteId2);
+    buffer << uint32(!bct ? 0 : bct->EmoteId3);
+    buffer << uint32(!bct ? 0 : bct->EmoteDelay1);
+    buffer << uint32(!bct ? 0 : bct->EmoteDelay2);
+    buffer << uint32(!bct ? 0 : bct->EmoteDelay3);
+    buffer << uint32(!bct ? 0 : bct->SoundEntriesID); // Sound Id
     buffer << uint32(0); // UnkMoP1
-    buffer << uint32(0); // UnkMoP2
+    buffer << uint32(0); // UnkMoP2    
 }
 
 void WorldSession::HandleUpdateMissileTrajectory(WorldPacket& recvPacket)
@@ -2561,7 +2642,7 @@ void WorldSession::HandleSelectFactionOpcode(WorldPacket& recvPacket)
 {
     uint32 choice = recvPacket.read<uint32>();
 
-    if (_player->getRace() != RACE_PANDAREN_NEUTRAL)
+    if (_player->GetRace() != RACE_PANDAREN_NEUTRAL)
         return;
 
     if (_player->GetQuestStatus(31450) == QUEST_STATUS_INCOMPLETE)

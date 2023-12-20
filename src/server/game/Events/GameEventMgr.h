@@ -22,7 +22,6 @@
 #include "SharedDefines.h"
 #include "Define.h"
 #include "WorldStateBuilder.h"
-#include <ace/Singleton.h>
 
 #define max_ge_check_delay DAY  // 1 day in seconds
 
@@ -103,13 +102,13 @@ class Quest;
 
 class GameEventMgr
 {
-    friend class ACE_Singleton<GameEventMgr, ACE_Null_Mutex>;
-
     private:
         GameEventMgr();
         ~GameEventMgr() { };
 
     public:
+        static GameEventMgr* instance();
+        
         typedef std::set<uint16> ActiveEvents;
         typedef std::vector<GameEventData> GameEventDataMap;
         ActiveEvents const& GetActiveEventList() const { return m_ActiveEvents; }
@@ -127,11 +126,10 @@ class GameEventMgr
         bool StartEvent(uint16 event_id, bool overwrite = false);
         void StopEvent(uint16 event_id, bool overwrite = false);
         void HandleQuestComplete(uint32 quest_id);  // called on world event type quest completions
-        void HandleWorldEventGossip(Player* player, Creature* c);
         void FillWorldStates(Player* player, WorldStateBuilder& builder);
         uint32 GetNPCFlag(Creature* cr);
-        uint32 GetNpcTextId(uint32 guid);
         uint16 GetEventIdForQuest(Quest const* quest) const;
+
     private:
         void SendWorldStateUpdate(Player* player, uint16 event_id);
         void AddActiveEvent(uint16 event_id) { m_ActiveEvents.insert(event_id); }
@@ -186,13 +184,14 @@ class GameEventMgr
         ActiveEvents m_ActiveEvents;
         std::unordered_map<uint32, uint16> _questToEventLinks;
         bool isSystemInit;
+
     public:
         GameEventGuidMap  mGameEventCreatureGuids;
         GameEventGuidMap  mGameEventGameobjectGuids;
-        std::set<uint32> modifiedHolidays;
+        std::vector<uint32> modifiedHolidays;
 };
 
-#define sGameEventMgr ACE_Singleton<GameEventMgr, ACE_Null_Mutex>::instance()
+#define sGameEventMgr GameEventMgr::instance()
 
 bool IsHolidayActive(HolidayIds id);
 bool IsEventActive(uint16 event_id);

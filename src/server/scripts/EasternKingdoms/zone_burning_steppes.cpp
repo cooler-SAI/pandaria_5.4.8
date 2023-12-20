@@ -22,6 +22,8 @@ SDComment:
 SDCategory: Burning Steppes
 EndScriptData */
 
+#include "Random.h"
+
 enum ScrappedGolemsType
 {
     SPELL_CREATE_WAR_REAVER_PARTS_AB = 89413, // Sieve & Piston
@@ -196,7 +198,7 @@ class npc_burning_steppes_chiseled_golem : public CreatureScript
                 targetGUID = 0;
                 hasDefeat = false;
                 me->SetReactState(REACT_AGGRESSIVE);
-                me->setFaction(1474); // default
+                me->SetFaction(1474); // default
             }
 
             void SetGUID(uint64 guid, int32 /*type*/) override
@@ -208,7 +210,7 @@ class npc_burning_steppes_chiseled_golem : public CreatureScript
             {
                 if (actionId == ACTION_GOLEM_TRAINING)
                 {
-                    me->setFaction(16);
+                    me->SetFaction(16);
 
                     if (Player* target = ObjectAccessor::GetPlayer(*me, targetGUID))
                         AttackStart(target);

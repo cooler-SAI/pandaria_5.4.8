@@ -22,7 +22,6 @@
 #include "Group.h"
 #include "Player.h"
 #include "Config.h"
-#include "CustomLogs.h"
 
 static void GetPlayerInfo(ChatHandler* handler, Player* player)
 {
@@ -199,25 +198,6 @@ public:
         }
         cooldown = now + MINUTE;
 
-        std::string name = TimeToTimestampStr(now) + " - " + player->GetName() + ".log";
-        std::string file = sConfigMgr->GetStringDefault("LogsDir", "") + "/lfg/" + name;
-        LogFile out;
-        out.Open(file.c_str(), "a");
-
-        std::ostringstream ss;
-        ss << "LFG Dump\n";
-        ss << "Player: " << player->GetName() << " (" << player->GetGUIDLow() << ")\n";
-        ss << "Time: " << TimeToTimestampStr(now) << " (" << now << ")\n";
-        ss << "Comment: " << args << "\n\n";
-        for (auto&& manager : sLFGMgr->GetQueueManagers())
-        {
-            ss << "\nQueue " << (uint32)manager.first << ":\n\n";
-            manager.second.OutDebug(ss, 0, false);
-        }
-        ss << "\n-END-";
-        out.Write(ss.str().c_str());
-
-        handler->PSendSysMessage("Дамп сохранён на сервере: %s. Описывая проблему, укажите название этого файла или заскриншотьте этот текст.", name.c_str());
         return true;
     }
 

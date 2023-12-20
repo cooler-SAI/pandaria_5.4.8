@@ -18,12 +18,14 @@
 #ifndef SF_MAP_UPDATER_H_INCLUDED
 #define SF_MAP_UPDATER_H_INCLUDED
 
-#include <ace/Thread_Mutex.h>
-#include <ace/Condition_Thread_Mutex.h>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
-#include "DelayExecutor.h"
+#include "ProducerConsumerQueue.h"
 
 class Map;
+class UpdateRequest;
 
 extern thread_local Map* CurrentMap;
 
@@ -36,25 +38,27 @@ class MapUpdater
 
         friend class MapUpdateRequest;
 
-        int schedule_update(Map& map, ACE_UINT32 diff);
+        int schedule_update(Map& map, uint32 diff);
 
         int wait();
 
-        int activate(size_t num_threads);
+        void activate(size_t num_threads);
 
-        int deactivate();
+        void deactivate();
 
         bool activated();
 
     private:
+        void WorkerThread();
 
-        DelayExecutor m_executor;
-        ACE_Thread_Mutex m_mutex;
-        ACE_Condition_Thread_Mutex m_condition;
+        std::vector<std::thread> _workerThreads;
+        std::atomic<bool> _cancelationToken;        
+        ProducerConsumerQueue<UpdateRequest*> _queue;
+        std::mutex m_mutex;
+        std::condition_variable m_condition;
         size_t pending_requests;
 
         void update_finished();
-        static uint32 calculate_priority(Map& map);
 };
 
 #endif //_MAP_UPDATER_H_INCLUDED

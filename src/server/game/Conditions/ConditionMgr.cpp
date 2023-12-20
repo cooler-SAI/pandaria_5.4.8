@@ -114,19 +114,19 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
         case CONDITION_CLASS:
         {
             if (Unit* unit = object->ToUnit())
-                condMeets = unit->getClassMask() & ConditionValue1;
+                condMeets = unit->GetClassMask() & ConditionValue1;
             break;
         }
         case CONDITION_RACE:
         {
             if (Unit* unit = object->ToUnit())
-                condMeets = unit->getRaceMask() & ConditionValue1;
+                condMeets = unit->GetRaceMask() & ConditionValue1;
             break;
         }
         case CONDITION_GENDER:
         {
             if (Player* player = object->ToPlayer())
-                condMeets = player->getGender() == ConditionValue1;
+                condMeets = player->GetGender() == ConditionValue1;
             break;
         }
         case CONDITION_SKILL:
@@ -145,7 +145,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
                     // One condition (which is not suitable for race) must be failed all the time.
                     if (auto quest = sObjectMgr->GetQuestTemplate(ConditionValue1))
                     {
-                        if (!quest->GetRequiredRaces() || (quest->GetRequiredRaces() & player->getRaceMask()))
+                        if (!quest->GetRequiredRaces() || (quest->GetRequiredRaces() & player->GetRaceMask()))
                             condMeets = player->GetQuestRewardStatus(ConditionValue1);
                         else
                             condMeets = NegativeCondition;
@@ -224,7 +224,7 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
         case CONDITION_LEVEL:
         {
             if (Unit* unit = object->ToUnit())
-                condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), static_cast<uint32>(unit->getLevel()), ConditionValue1);
+                condMeets = CompareValues(static_cast<ComparisionType>(ConditionValue2), static_cast<uint32>(unit->GetLevel()), ConditionValue1);
             break;
         }
         case CONDITION_DRUNKENSTATE:
@@ -452,6 +452,11 @@ bool Condition::Meets(ConditionSourceInfo& sourceInfo)
 
                 condMeets = (!player->GetQuestRewardStatus(obj->QuestID) && player->IsQuestObjectiveComplete(qInfo, *obj));
             }
+            break;
+        }
+        case CONDITION_DIFFICULTY_ID:
+        {
+            condMeets = object->GetMap()->GetDifficulty() == ConditionValue1;
             break;
         }
         case CONDITION_SAI_PHASE:
@@ -1004,6 +1009,12 @@ ConditionList ConditionMgr::GetConditionsForNpcVendorEvent(uint32 creatureId, ui
     return cond;
 }
 
+ConditionMgr* ConditionMgr::instance()
+{
+    static ConditionMgr instance;
+    return &instance;
+}
+
 void ConditionMgr::LoadConditions(bool isReload)
 {
     uint32 oldMSTime = getMSTime();
@@ -1288,7 +1299,7 @@ void ConditionMgr::LoadConditions(bool isReload)
         for (auto&& ai : m_vehicleAIs)
             ai->LoadConditions();
 
-        TC_LOG_INFO("server.loading", ">> Reloaded conditions for %u vehicles in %u ms", m_vehicleAIs.size(), GetMSTimeDiffToNow(oldMSTime));
+        TC_LOG_INFO("server.loading", ">> Reloaded conditions for %lu vehicles in %u ms", m_vehicleAIs.size(), GetMSTimeDiffToNow(oldMSTime));
     }
 }
 
@@ -1315,9 +1326,9 @@ bool ConditionMgr::addToGossipMenus(Condition* cond)
     {
         for (GossipMenusContainer::iterator itr = pMenuBounds.first; itr != pMenuBounds.second; ++itr)
         {
-            if ((*itr).second.entry == cond->SourceGroup && (*itr).second.text_id == uint32(cond->SourceEntry))
+            if ((*itr).second.MenuID == cond->SourceGroup && (*itr).second.TextID == uint32(cond->SourceEntry))
             {
-                (*itr).second.conditions.push_back(cond);
+                (*itr).second.Conditions.push_back(cond);
                 return true;
             }
         }
@@ -1334,7 +1345,7 @@ bool ConditionMgr::addToGossipMenuItems(Condition* cond)
     {
         for (GossipMenuItemsContainer::iterator itr = pMenuItemBounds.first; itr != pMenuItemBounds.second; ++itr)
         {
-            if ((*itr).second.MenuId == cond->SourceGroup && (*itr).second.OptionIndex == uint32(cond->SourceEntry))
+            if ((*itr).second.MenuID == cond->SourceGroup && (*itr).second.OptionID == uint32(cond->SourceEntry))
             {
                 (*itr).second.Conditions.push_back(cond);
                 return true;

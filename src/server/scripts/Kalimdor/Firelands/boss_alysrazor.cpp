@@ -18,6 +18,7 @@
 #include "ScriptPCH.h"
 #include "firelands.h"
 #include "MoveSplineInit.h"
+#include "Random.h"
 
 enum ScriptTexts
 {
@@ -1888,7 +1889,7 @@ class spell_alysrazor_molten_feather_script : public SpellScriptLoader
                     return;
 
                 uint32 auraId = 0;
-                switch (GetHitUnit()->getClass())
+                switch (GetHitUnit()->GetClass())
                 {
                     case CLASS_PRIEST:
                         auraId = SPELL_MOLTEN_FEATHER_PRI;

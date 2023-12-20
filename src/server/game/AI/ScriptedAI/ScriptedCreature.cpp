@@ -109,7 +109,6 @@ bool SummonList::HasEntry(uint32 entry) const
 }
 
 ScriptedAI::ScriptedAI(Creature* creature) : CreatureAI(creature),
-    me(creature),
     IsFleeing(false),
     _evadeCheckCooldown(2500),
     _isCombatMovementAllowed(true)
@@ -589,11 +588,12 @@ void BossAI::_Reset()
     if (!me->IsAlive())
         return;
 
+    me->SetCombatPulseDelay(0);
     me->ResetLootMode();
     events.Reset();
     summons.DespawnAll();
     scheduler.CancelAll();
-    if (instance)
+    if (instance && instance->GetBossState(_bossId) != DONE)
         instance->SetBossState(_bossId, NOT_STARTED);
 }
 
@@ -605,8 +605,13 @@ void BossAI::_JustDied()
     if (instance)
     {
         instance->SetBossState(_bossId, DONE);
-        instance->SaveToDB();
+        instance->SaveToDB(); // will be removed
     }
+}
+
+void BossAI::_JustReachedHome()
+{
+    me->setActive(false);
 }
 
 bool BossAI::_EnterCombat()
@@ -715,7 +720,11 @@ void BossAI::UpdateAI(uint32 diff)
         return;
 
     while (uint32 eventId = events.ExecuteEvent())
+    {
         ExecuteEvent(eventId);
+        if (me->HasUnitState(UNIT_STATE_CASTING))
+            return;
+    }
 
     DoMeleeAttackIfReady();
 }

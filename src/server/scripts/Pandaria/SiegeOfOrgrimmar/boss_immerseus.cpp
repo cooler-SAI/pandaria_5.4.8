@@ -498,7 +498,7 @@ class boss_immerseus : public CreatureScript
                         group->UpdateGuildAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_BE_SPELL_TARGET, SPELL_IMMERSEUS_KILL_CREDIT, 0, 0, me, me);
                 }
 
-                me->setFaction(35);
+                me->SetFaction(35);
                 me->RemoveAllAuras();
                 me->DeleteThreatList();
                 me->CombatStop(true);
@@ -640,12 +640,12 @@ class boss_immerseus : public CreatureScript
 
                                 if (Unit* target = me->GetVictim())
                                     targetGUID = target->GetGUID();
-								
-								scheduler  // Should wait a few seconds on the postision before casting spell 
-									.Schedule(Milliseconds(2000), [this](TaskContext context)
-								{
-									DoCast(me, SPELL_SWIRL_SPRAY, true);
-								});
+                                
+                                scheduler  // Should wait a few seconds on the postision before casting spell 
+                                    .Schedule(Milliseconds(2000), [this](TaskContext context)
+                                {
+                                    DoCast(me, SPELL_SWIRL_SPRAY, true);
+                                });
 
                                 float x, y;
                                 float sOri = Position::NormalizeOrientation(frand(0.0f, 2 * M_PI));

@@ -29,7 +29,7 @@
 #include "GridNotifiers.h"
 #include "MoveSpline.h"
 #include "Player.h"
-
+#include "Random.h"
 
 enum WarriorSpells
 {
@@ -330,12 +330,11 @@ class spell_warr_unbridled_wrath : public SpellScriptLoader
 
             bool checkProc(ProcEventInfo& eventInfo)
             {
-				if (GetCaster()->HasSpell(143268))
-					if (GetCaster()->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED))
-                return true;
-				if (GetCaster()->HasSpell(143268))
-				       if (GetCaster()->HasAuraType(SPELL_AURA_MOD_ROOT))
-						   return true;
+                if (Unit* caster = GetCaster())
+                    if (caster->HasSpell(143268) && (caster->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED) || caster->HasAuraType(SPELL_AURA_MOD_ROOT)))
+                        return true;
+
+                return false;
             }
 
             void onProc(AuraEffect const* /*aurEff*/, ProcEventInfo& eventInfo)
@@ -1275,7 +1274,7 @@ class spell_warr_enrage_raging_blow : public SpellScript
     void HandleHit()
     {
         if (Player* warrior = GetCaster()->ToPlayer())
-            if (warrior->GetTalentSpecialization() == SPEC_WARRIOR_FURY && warrior->getLevel() >= 30)
+            if (warrior->GetTalentSpecialization() == SPEC_WARRIOR_FURY && warrior->GetLevel() >= 30)
                 warrior->CastSpell(warrior, SPELL_WARRIOR_RAGING_BLOW_ENABLER, true);
     }
 
@@ -1376,7 +1375,7 @@ class spell_warr_shield_slam : public SpellScript
 
     void CalculateDamage(SpellEffIndex)
     {
-        uint32 level = GetCaster()->getLevel();
+        uint32 level = GetCaster()->GetLevel();
         float ap = GetCaster()->GetTotalAttackPowerValue(BASE_ATTACK);
         float apmult = 0.35f;
         if (level >= 80)
@@ -1638,7 +1637,7 @@ class spell_warr_shield_visual : public AuraScript
                     spellId = spellWithShield;
 
             if (!spellId)
-                spellId = warrior->getRaceMask() & RACEMASK_ALLIANCE ? spellAlliance : spellHorde;
+                spellId = warrior->GetRaceMask() & RACEMASK_ALLIANCE ? spellAlliance : spellHorde;
 
             warrior->CastSpell(warrior, spellId, true);
         }

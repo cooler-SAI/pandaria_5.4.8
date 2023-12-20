@@ -25,6 +25,7 @@
 #include "Transport.h"
 #include "Group.h"
 #include "Player.h"
+#include "Random.h"
 
 enum Spells
 {
@@ -3779,7 +3780,7 @@ struct npc_ingaluk_roach : public ScriptedAI
     void Reset() override
     {
         SetCombatMovement(false);
-        me->setFaction(14);
+        me->SetFaction(14);
         me->SetReactState(REACT_AGGRESSIVE);
     }
 
@@ -3787,7 +3788,7 @@ struct npc_ingaluk_roach : public ScriptedAI
     {
         if (who && who->ToPlayer())
         {
-            me->setFaction(190); // won`t attack by default with 190, only assist
+            me->SetFaction(190); // won`t attack by default with 190, only assist
             who->ToPlayer()->KilledMonsterCredit(me->GetEntry());
             me->Kill(me);
         }
@@ -3889,7 +3890,7 @@ class spell_reverberating_smash : public SpellScript
     }
 };
 
-class ReverberatingSmashRangePredicate : public std::binary_function<uint32, WorldLocation const*, bool>
+class ReverberatingSmashRangePredicate 
 {
     public:
         ReverberatingSmashRangePredicate(uint32 const& spell_id, WorldLocation const* m_pos) : _spell_id(spell_id), _pos(m_pos) { }
@@ -4315,10 +4316,12 @@ class spell_nalak_throw_spear : public SpellScript
     PrepareSpellScript(spell_nalak_throw_spear);
     SpellCastResult CheckCast()
     {
-		if (Unit* caster = GetCaster())
-			if (Creature* nalak = caster->FindNearestCreature(BOSS_NALAK, 50.0f, true))
-				if (nalak->IsAlive())
-					return SPELL_CAST_OK;
+        if (Unit* caster = GetCaster())
+            if (Creature* nalak = caster->FindNearestCreature(BOSS_NALAK, 50.0f, true))
+                if (nalak->IsAlive())
+                    return SPELL_CAST_OK;
+
+        return SPELL_FAILED_CANT_DO_THAT_RIGHT_NOW;
     }
 
     void Register() override

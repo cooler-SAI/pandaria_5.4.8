@@ -313,7 +313,9 @@ void Map::SwitchGridContainers(Creature* obj, bool on)
     if (!IsGridLoaded(GridCoord(cell.data.Part.grid_x, cell.data.Part.grid_y)))
         return;
 
-    TC_LOG_DEBUG("maps", "Switch object " UI64FMTD " from grid[%u, %u] %u", obj->GetGUID(), cell.data.Part.grid_x, cell.data.Part.grid_y, on);
+    uint32 const grid_x = cell.data.Part.grid_x;
+    uint32 const grid_y = cell.data.Part.grid_y;
+    TC_LOG_DEBUG("maps", "Switch object " UI64FMTD " from grid[%u, %u] %u", obj->GetGUID(), grid_x, grid_y, on);
     NGridType *ngrid = getNGrid(cell.GridX(), cell.GridY());
     ASSERT(ngrid != NULL);
 
@@ -350,7 +352,9 @@ void Map::SwitchGridContainers(GameObject* obj, bool on)
     if (!IsGridLoaded(GridCoord(cell.data.Part.grid_x, cell.data.Part.grid_y)))
         return;
 
-    TC_LOG_DEBUG("maps", "Switch object " UI64FMTD " from grid[%u, %u] %u", obj->GetGUID(), cell.data.Part.grid_x, cell.data.Part.grid_y, on);
+    uint32 const grid_x = cell.data.Part.grid_x;
+    uint32 const grid_y = cell.data.Part.grid_y;
+    TC_LOG_DEBUG("maps", "Switch object " UI64FMTD " from grid[%u, %u] %u", obj->GetGUID(), grid_y, on);
     NGridType *ngrid = getNGrid(cell.GridX(), cell.GridY());
     ASSERT(ngrid != NULL);
 
@@ -387,7 +391,7 @@ void Map::DeleteFromWorld(Player* player)
 
 void Map::EnsureGridCreated(const GridCoord &p)
 {
-    TRINITY_GUARD(ACE_Thread_Mutex, GridLock);
+    std::lock_guard<std::mutex> guard(GridLock);
     EnsureGridCreated_i(p);
 }
 
@@ -753,26 +757,26 @@ void Map::Update(const uint32 t_diff)
 
 void Map::RemovePlayerFromMap(Player* player, bool remove)
 {
-	// Before leaving map, update zone/area for stats
-	player->UpdateZone(MAP_INVALID_ZONE, 0);
-	sScriptMgr->OnPlayerLeaveMap(this, player);
+    // Before leaving map, update zone/area for stats
+    player->UpdateZone(MAP_INVALID_ZONE, 0);
+    sScriptMgr->OnPlayerLeaveMap(this, player);
 
-	player->CombatStop();
+    player->CombatStop();
 
-	bool const inWorld = player->IsInWorld();
-	player->RemoveFromWorld();
-	SendRemoveTransports(player);
+    bool const inWorld = player->IsInWorld();
+    player->RemoveFromWorld();
+    SendRemoveTransports(player);
 
-	if (!inWorld) // if was in world, RemoveFromWorld() called DestroyForNearbyPlayers()
-		player->DestroyForNearbyPlayers(); // previous player->UpdateObjectVisibility(true)
+    if (!inWorld) // if was in world, RemoveFromWorld() called DestroyForNearbyPlayers()
+        player->DestroyForNearbyPlayers(); // previous player->UpdateObjectVisibility(true)
 
-	if (player->IsInGrid())
-		player->RemoveFromGrid();
-	else
-		ASSERT(remove); //maybe deleted in logoutplayer when player is not in a map
+    if (player->IsInGrid())
+        player->RemoveFromGrid();
+    else
+        ASSERT(remove); //maybe deleted in logoutplayer when player is not in a map
 
-	if (remove)
-		DeleteFromWorld(player);
+    if (remove)
+        DeleteFromWorld(player);
 }
 
 
@@ -1167,7 +1171,7 @@ void Map::MoveAllGameObjectsInMoveList()
             {
                 // ... or unload (if respawn grid also not loaded)
 #ifdef TRINITY_DEBUG
-                sLog->outDebug("maps", "GameObject (GUID: %u Entry: %u) cannot be move to unloaded respawn grid.", go->GetGUIDLow(), go->GetEntry());
+                TC_LOG_DEBUG("maps", "GameObject (GUID: %u Entry: %u) cannot be move to unloaded respawn grid.", go->GetGUIDLow(), go->GetEntry());
 #endif
                 AddObjectToRemoveList(go);
             }
@@ -3267,7 +3271,7 @@ bool InstanceMap::AddPlayerToMap(Player* player)
     // Is it needed?
 
     {
-        TRINITY_GUARD(ACE_Thread_Mutex, Lock);
+        std::lock_guard<std::mutex> guard(Lock);
         // Check moved to void WorldSession::HandleMoveWorldportAckOpcode()
         //if (!CanEnter(player))
             //return false;
@@ -3445,7 +3449,7 @@ void InstanceMap::CreateInstanceData(bool load)
     if (load)
     {
         /// @todo make a global storage for this
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_INSTANCE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_INSTANCE);
         stmt->setUInt16(0, uint16(GetId()));
         stmt->setUInt32(1, i_InstanceId);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
@@ -3651,7 +3655,7 @@ bool BattlegroundMap::CanEnter(Player* player)
 bool BattlegroundMap::AddPlayerToMap(Player* player)
 {
     {
-        TRINITY_GUARD(ACE_Thread_Mutex, Lock);
+        std::lock_guard<std::mutex> guard(Lock);
         //Check moved to void WorldSession::HandleMoveWorldportAckOpcode()
         //if (!CanEnter(player))
             //return false;
@@ -3727,7 +3731,7 @@ void Map::SaveCreatureRespawnTime(uint32 dbGuid, time_t respawnTime)
 
     _creatureRespawnTimes[dbGuid] = respawnTime;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CREATURE_RESPAWN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_CREATURE_RESPAWN);
     stmt->setUInt32(0, dbGuid);
     stmt->setUInt32(1, uint32(respawnTime));
     stmt->setUInt16(2, GetId());
@@ -3739,7 +3743,7 @@ void Map::RemoveCreatureRespawnTime(uint32 dbGuid)
 {
     _creatureRespawnTimes.erase(dbGuid);
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CREATURE_RESPAWN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CREATURE_RESPAWN);
     stmt->setUInt32(0, dbGuid);
     stmt->setUInt16(1, GetId());
     stmt->setUInt32(2, GetInstanceId());
@@ -3757,7 +3761,7 @@ void Map::SaveGORespawnTime(uint32 dbGuid, time_t respawnTime)
 
     _goRespawnTimes[dbGuid] = respawnTime;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GO_RESPAWN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GO_RESPAWN);
     stmt->setUInt32(0, dbGuid);
     stmt->setUInt32(1, uint32(respawnTime));
     stmt->setUInt16(2, GetId());
@@ -3769,7 +3773,7 @@ void Map::RemoveGORespawnTime(uint32 dbGuid)
 {
     _goRespawnTimes.erase(dbGuid);
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GO_RESPAWN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GO_RESPAWN);
     stmt->setUInt32(0, dbGuid);
     stmt->setUInt16(1, GetId());
     stmt->setUInt32(2, GetInstanceId());
@@ -3778,7 +3782,7 @@ void Map::RemoveGORespawnTime(uint32 dbGuid)
 
 void Map::LoadRespawnTimes()
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CREATURE_RESPAWNS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CREATURE_RESPAWNS);
     stmt->setUInt16(0, GetId());
     stmt->setUInt32(1, GetInstanceId());
 
@@ -3820,7 +3824,7 @@ void Map::DeleteRespawnTimes()
 
 void Map::DeleteRespawnTimesInDB(uint16 mapId, uint32 instanceId)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CREATURE_RESPAWN_BY_INSTANCE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CREATURE_RESPAWN_BY_INSTANCE);
     stmt->setUInt16(0, mapId);
     stmt->setUInt32(1, instanceId);
     CharacterDatabase.Execute(stmt);

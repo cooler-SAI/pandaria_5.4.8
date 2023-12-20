@@ -29,6 +29,7 @@
 #include "Item.h"
 #include "Language.h"
 #include "Log.h"
+#include "Random.h"
 #include <vector>
 
 BlackMarketMgr::~BlackMarketMgr()
@@ -42,6 +43,12 @@ BlackMarketMgr::~BlackMarketMgr()
 
 BlackMarketMgr::BlackMarketMgr() { }
 
+BlackMarketMgr* BlackMarketMgr::instance()
+{
+    static BlackMarketMgr instance;
+    return &instance;
+}
+
 BlackMarketAuctionTemplate* BlackMarketAuction::GetTemplate() const
 {
     if (BlackMarketAuctionTemplate* bmTemplate = sBlackMarketMgr->GetTemplate(GetTemplateId()))
@@ -50,9 +57,9 @@ BlackMarketAuctionTemplate* BlackMarketAuction::GetTemplate() const
     return nullptr;
 }
 
-void BlackMarketAuction::SaveToDB(SQLTransaction& trans)
+void BlackMarketAuction::SaveToDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_BLACKMARKET_AUCTION);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_BLACKMARKET_AUCTION);
     stmt->setUInt32(0, GetAuctionId());
     stmt->setUInt32(1, GetTemplateId());
     stmt->setUInt32(2, GetStartTime());
@@ -64,16 +71,16 @@ void BlackMarketAuction::SaveToDB(SQLTransaction& trans)
     trans->Append(stmt);
 }
 
-void BlackMarketAuction::DeleteFromDB(SQLTransaction& trans)
+void BlackMarketAuction::DeleteFromDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BLACKMARKET_AUCTION);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BLACKMARKET_AUCTION);
     stmt->setUInt32(0, GetAuctionId());
     trans->Append(stmt);
 }
 
-void BlackMarketAuction::UpdateToDB(SQLTransaction& trans)
+void BlackMarketAuction::UpdateToDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_BLACKMARKET_AUCTION);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_BLACKMARKET_AUCTION);
     stmt->setUInt32(0, GetCurrentBidder());
     stmt->setUInt64(1, GetCurrentBid());
     stmt->setUInt64(2, GetMinIncrement());
@@ -131,7 +138,7 @@ void BlackMarketMgr::LoadAuctions()
     {
         _lastUpdate = time(nullptr); // Set update time before loading
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         do
         {
             Field* fields = result->Fetch();
@@ -170,7 +177,7 @@ void BlackMarketMgr::Update()
 {
     uint32 curTime = time(nullptr);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     // Delete expired auctions
     for (auto&& itr : _auctions)
@@ -204,7 +211,7 @@ uint32 BlackMarketMgr::GetFreeAuctionId()
     return newId;
 }
 
-void BlackMarketMgr::CreateAuctions(uint32 number, SQLTransaction& trans)
+void BlackMarketMgr::CreateAuctions(uint32 number, CharacterDatabaseTransaction trans)
 {
     if (_templates.empty())
         return;
@@ -310,7 +317,7 @@ void BlackMarketMgr::UpdateAuction(BlackMarketAuction* auction, uint64 newPrice,
     if (!minIncrement)
         minIncrement = 10000;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     if (auction->GetCurrentBidder())
         SendAuctionOutbidded(auction, newBidder, trans);
@@ -362,7 +369,7 @@ std::string BlackMarketAuction::BuildAuctionMailBody(uint32 lowGuid)
     return strm.str();
 }
 
-void BlackMarketMgr::SendAuctionOutbidded(BlackMarketAuction* auction, Player* newBidder, SQLTransaction& trans)
+void BlackMarketMgr::SendAuctionOutbidded(BlackMarketAuction* auction, Player* newBidder, CharacterDatabaseTransaction trans)
 {
     uint64 bidder_guid = MAKE_NEW_GUID(auction->GetCurrentBidder(), 0, HIGHGUID_PLAYER);
     Player* bidder = ObjectAccessor::FindPlayerInOrOutOfWorld(bidder_guid);
@@ -386,7 +393,7 @@ void BlackMarketMgr::SendAuctionOutbidded(BlackMarketAuction* auction, Player* n
         .SendMailTo(trans, MailReceiver(bidder, auction->GetCurrentBidder()), auction, MAIL_CHECK_MASK_COPIED);
 }
 
-void BlackMarketMgr::SendAuctionWon(BlackMarketAuction* auction, SQLTransaction& trans)
+void BlackMarketMgr::SendAuctionWon(BlackMarketAuction* auction, CharacterDatabaseTransaction trans)
 {
     uint64 bidder_guid = MAKE_NEW_GUID(auction->GetCurrentBidder(), 0, HIGHGUID_PLAYER);
     Player* bidder = ObjectAccessor::FindPlayerInOrOutOfWorld(bidder_guid);

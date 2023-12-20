@@ -60,7 +60,8 @@
 #include "Guild.h"
 #include "LootLockoutMap.h"
 #include "BattlePetMgr.h"
-#include <ace/Stack_Trace.h>
+#include "TradeData.h"
+#include "Random.h"
 
 extern pEffect SpellEffects[TOTAL_SPELL_EFFECTS];
 
@@ -585,7 +586,7 @@ m_spellValue(new SpellValue(m_spellInfo)), m_researchData(NULL)
 
     if (m_attackType == RANGED_ATTACK)
         // wand case
-        if ((m_caster->getClassMask() & CLASSMASK_WAND_USERS) != 0 && m_caster->GetTypeId() == TYPEID_PLAYER)
+        if ((m_caster->GetClassMask() & CLASSMASK_WAND_USERS) != 0 && m_caster->GetTypeId() == TYPEID_PLAYER)
             if (Item* pItem = m_caster->ToPlayer()->GetWeaponForAttack(RANGED_ATTACK))
                 m_spellSchoolMask = SpellSchoolMask(1 << pItem->GetTemplate()->DamageType);
 
@@ -646,7 +647,7 @@ m_spellValue(new SpellValue(m_spellInfo)), m_researchData(NULL)
 
     m_dropModsPhase = SpellModDropPhase::OnSpellFinish;
 
-    if (GetCaster()->getClass() == CLASS_DEATH_KNIGHT)
+    if (GetCaster()->GetClass() == CLASS_DEATH_KNIGHT)
         if (AuraEffect const* effect = GetCaster()->GetAuraEffect(77616, EFFECT_0))
             m_darkSimulacrum = effect->GetAmount() == GetSpellInfo()->Id;
 }
@@ -1130,10 +1131,12 @@ void Spell::SelectImplicitConeTargets(SpellEffIndex effIndex, SpellImplicitTarge
     float coneOffset = 0;
     if (SpellTargetRestrictionsEntry const* restrictions = m_spellInfo->GetSpellTargetRestrictions())
         if (restrictions->ConeAngle != 0)
+        {
             if (targetType.GetTarget() == TARGET_UNIT_CONE_ENEMY_WITH_OFFSET)
                 coneOffset = M_PI * restrictions->ConeAngle / 180;
             else
-                coneAngle = M_PI * restrictions->ConeAngle / 180;
+                coneAngle = M_PI * restrictions->ConeAngle / 180;            
+        }
 
     float radius = m_spellInfo->Effects[effIndex].CalcRadius(m_caster) * m_spellValue->RadiusMod;
 
@@ -1697,9 +1700,9 @@ void Spell::SelectImplicitChainTargets(SpellEffIndex effIndex, SpellImplicitTarg
         // Chain primary target is added earlier
         CallScriptObjectAreaTargetSelectHandlers(targets, effIndex);
 
-		for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
-			if (Unit* unitTarget = (*itr)->ToUnit())
-				AddUnitTarget(unitTarget, effMask, false);
+        for (std::list<WorldObject*>::iterator itr = targets.begin(); itr != targets.end(); ++itr)
+            if (Unit* unitTarget = (*itr)->ToUnit())
+                AddUnitTarget(unitTarget, effMask, false);
     }
 }
 
@@ -2350,7 +2353,7 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
             if (m_auraScaleMask && ihit->effectMask == m_auraScaleMask && m_caster != target)
             {
                 SpellInfo const* auraSpell = m_spellInfo->GetFirstRankSpell();
-                if (uint32(target->getLevel() + 10) >= auraSpell->SpellLevel)
+                if (uint32(target->GetLevel() + 10) >= auraSpell->SpellLevel)
                     ihit->scaleAura = true;
             }
             return;
@@ -2373,7 +2376,7 @@ void Spell::AddUnitTarget(Unit* target, uint32 effectMask, bool checkIfValid /*=
     if (m_auraScaleMask && targetInfo.effectMask == m_auraScaleMask && m_caster != target)
     {
         SpellInfo const* auraSpell = m_spellInfo->GetFirstRankSpell();
-        if (uint32(target->getLevel() + 10) >= auraSpell->SpellLevel)
+        if (uint32(target->GetLevel() + 10) >= auraSpell->SpellLevel)
             targetInfo.scaleAura = true;
     }
 
@@ -3031,7 +3034,7 @@ SpellMissInfo Spell::DoSpellHitOnUnit(Unit* unit, uint32 effectMask, bool scaleA
 
         if (scaleAura)
         {
-            aurSpellInfo = m_spellInfo->GetAuraRankForLevel(unitTarget->getLevel());
+            aurSpellInfo = m_spellInfo->GetAuraRankForLevel(unitTarget->GetLevel());
             ASSERT(aurSpellInfo);
             for (uint8 i = 0; i < MAX_SPELL_EFFECTS; ++i)
             {
@@ -3462,14 +3465,14 @@ void Spell::prepare(SpellCastTargets const* targets, AuraEffect const* triggered
         {
             player->SetSpellModTakingSpell(this, true);
             // calculate cast time (calculated after first CheckCast check to prevent charge counting for first CheckCast fail)
-            m_casttime = m_spellInfo->CalcCastTime(player->getLevel(), this);
+            m_casttime = m_spellInfo->CalcCastTime(player->GetLevel(), this);
             player->SetSpellModTakingSpell(this, false);
         }
         else
             m_casttime = 0; // Set cast time to 0 if .cheat casttime is enabled.
     }
     else
-        m_casttime = m_spellInfo->CalcCastTime(m_caster->getLevel(), this);
+        m_casttime = m_spellInfo->CalcCastTime(m_caster->GetLevel(), this);
 
     if (_triggeredCastFlags & TRIGGERED_CAST_DIRECTLY)
         m_casttime = 0;
@@ -3850,16 +3853,6 @@ void Spell::cast(bool skipCheck)
                 if (sWorld->IsArenaPrecastSpell(GetSpellInfo()->Id))
                     bg->UpdatePlayerScore(m_caster->ToPlayer(), SCORE_SPELLS_PRECAST, 1);
 
-        // Credit quests
-        SkillLineAbilityMapBounds bounds;
-        if (sWorld->AreprojectDailyQuestsEnabled() &&
-            m_spellInfo->HasAttribute(SPELL_ATTR0_TRADESPELL) && (
-            m_spellInfo->HasEffect(SPELL_EFFECT_CREATE_ITEM) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_CREATE_ITEM_2) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_ENCHANT_ITEM) ||
-            m_spellInfo->HasEffect(SPELL_EFFECT_ENCHANT_ITEM_PRISMATIC)) &&
-            (bounds = sSpellMgr->GetSkillLineAbilityMapBounds(m_spellInfo->Id), bounds.first != bounds.second))
-            m_caster->ToPlayer()->CreditprojectDailyQuest(180012); // project Daily Quest Credit - Items Crafted
     }
 
     SetExecutedCurrently(false);
@@ -4830,7 +4823,7 @@ void Spell::SendSpellGo()
         castFlags |= CAST_FLAG_POWER_LEFT_SELF; // should only be sent to self, but the current messaging doesn't make that possible
 
     if ((m_caster->GetTypeId() == TYPEID_PLAYER)
-        && (m_caster->getClass() == CLASS_DEATH_KNIGHT)
+        && (m_caster->GetClass() == CLASS_DEATH_KNIGHT)
         && m_spellInfo->RuneCostID
         && m_powerType == POWER_RUNES)
     {
@@ -5812,7 +5805,7 @@ SpellCastResult Spell::CheckRuneCost(uint32 runeCostID)
     if (!player)
         return SPELL_CAST_OK;
 
-    if (player->getClass() != CLASS_DEATH_KNIGHT)
+    if (player->GetClass() != CLASS_DEATH_KNIGHT)
         return SPELL_CAST_OK;
 
     SpellRuneCostEntry const* src = sSpellRuneCostStore.LookupEntry(runeCostID);
@@ -5850,7 +5843,7 @@ SpellCastResult Spell::CheckRuneCost(uint32 runeCostID)
 
 void Spell::TakeRunePower(bool didHit)
 {
-    if (m_caster->GetTypeId() != TYPEID_PLAYER || m_caster->getClass() != CLASS_DEATH_KNIGHT)
+    if (m_caster->GetTypeId() != TYPEID_PLAYER || m_caster->GetClass() != CLASS_DEATH_KNIGHT)
         return;
 
     SpellRuneCostEntry const* runeCostData = sSpellRuneCostStore.LookupEntry(m_spellInfo->RuneCostID);
@@ -6450,7 +6443,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 if (!learn_spellproto)
                     return SPELL_FAILED_NOT_KNOWN;
 
-                if (m_spellInfo->SpellLevel > pet->getLevel())
+                if (m_spellInfo->SpellLevel > pet->GetLevel())
                     return SPELL_FAILED_LOWLEVEL;
 
                 break;
@@ -6481,7 +6474,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                     if (!learn_spellproto)
                         return SPELL_FAILED_NOT_KNOWN;
 
-                    if (m_spellInfo->SpellLevel > pet->getLevel())
+                    if (m_spellInfo->SpellLevel > pet->GetLevel())
                         return SPELL_FAILED_LOWLEVEL;
                 }
                 break;
@@ -6584,7 +6577,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                 uint32 skill = creature->GetCreatureTemplate()->GetRequiredLootSkill();
 
                 int32 skillValue = m_caster->ToPlayer()->GetSkillValue(skill);
-                int32 TargetLevel = m_targets.GetUnitTarget()->getLevel();
+                int32 TargetLevel = m_targets.GetUnitTarget()->GetLevel();
                 int32 ReqValue = TargetLevel < 10 ? 0 :
                                  TargetLevel < 20 ? (TargetLevel - 10) * 10 :
                                  TargetLevel < 74 ? TargetLevel * 5 :
@@ -6712,7 +6705,7 @@ SpellCastResult Spell::CheckCast(bool strict)
             {
                 if (m_caster->GetPetGUID())                  //let warlock do a replacement summon
                 {
-                    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->getClass() == CLASS_WARLOCK)
+                    if (m_caster->GetTypeId() == TYPEID_PLAYER && m_caster->GetClass() == CLASS_WARLOCK)
                     {
                         if (strict)                         //starting cast, trigger pet stun (cast by pet so it doesn't attack player)
                             if (Pet* pet = m_caster->ToPlayer()->GetPet())
@@ -6861,7 +6854,7 @@ SpellCastResult Spell::CheckCast(bool strict)
                         return SPELL_FAILED_TARGET_IS_PLAYER_CONTROLLED;
 
                     int32 damage = CalculateDamage(i, target);
-                    if (damage && int32(target->getLevel()) > damage)
+                    if (damage && int32(target->GetLevel()) > damage)
                         return SPELL_FAILED_HIGHLEVEL;
                 }
 
@@ -8034,7 +8027,7 @@ bool Spell::CheckEffectTarget(Unit const* target, uint32 eff) const
             if (target->GetCharmerGUID())
                 return false;
             if (int32 damage = CalculateDamage(eff, target))
-                if ((int32)target->getLevel() > damage)
+                if ((int32)target->GetLevel() > damage)
                     return false;
             break;
         default:
@@ -8174,9 +8167,8 @@ SpellEvent::~SpellEvent()
     }
     else
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.\n%s",
-            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->Id, st.c_str());
+        TC_LOG_ERROR("shitlog", "~SpellEvent: %s %u tried to delete non-deletable spell %u. Was not deleted, causes memory leak.\n",
+            (m_Spell->GetCaster()->GetTypeId() == TYPEID_PLAYER ? "Player" : "Creature"), m_Spell->GetCaster()->GetGUIDLow(), m_Spell->m_spellInfo->Id);
         //ASSERT(false);
     }
 }
@@ -8538,7 +8530,7 @@ SpellCastResult Spell::CanOpenLock(uint32 effIndex, uint32 lockId, SkillType& sk
                     if (m_spellInfo->Effects[effIndex].TargetA.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET || m_spellInfo->Effects[effIndex].TargetB.GetTarget() == TARGET_GAMEOBJECT_ITEM_TARGET)
                     {
                         if (GetSpellInfo()->SpellFamilyName == SPELLFAMILY_ROGUE)
-                            skillValue += GetCaster()->getLevel() * 5;
+                            skillValue += GetCaster()->GetLevel() * 5;
                         else
                             skillValue += m_spellInfo->Effects[effIndex].CalcValue();
                     }
@@ -9180,7 +9172,7 @@ bool WorldObjectSpellTargetCheck::operator()(WorldObject* target)
                     return false;
                 break;
             case TARGET_CHECK_RAID_CLASS:
-                if (_referer->getClass() != unitTarget->getClass())
+                if (_referer->GetClass() != unitTarget->GetClass())
                     return false;
                 // nobreak;
             case TARGET_CHECK_RAID:

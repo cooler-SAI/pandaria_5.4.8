@@ -30,9 +30,9 @@
 #include "AccountMgr.h"
 #include "GuildMgr.h"
 #include "AuctionHouseMgr.h"
-#include "CustomLogs.h"
 #include "Chat.h"
 #include "WordFilterMgr.h"
+#include "Realm.h"
 
 void WorldSession::HandleSendMail(WorldPacket& recvData)
 {
@@ -109,7 +109,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(0, MAIL_SEND, MAIL_ERR_SILENT);
                 return;
@@ -120,13 +120,13 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     Player* player = _player;
 
-    if (player->getLevel() < sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ))
+    if (player->GetLevel() < sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ))
     {
         SendNotification(GetTrinityString(LANG_MAIL_SENDER_REQ), sWorld->getIntConfig(CONFIG_MAIL_LEVEL_REQ));
         return;
     }
 
-	// check msg to bad word
+    // check msg to bad word
     if (sWorld->getBoolConfig(CONFIG_WORD_FILTER_ENABLE))
     {
         std::string badWord = sWordFilterMgr->FindBadWord(subject, true);
@@ -193,7 +193,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         /*
         mailsCount = receiver->GetMailSize();
         */
-        receiverLevel = receiver->getLevel();
+        receiverLevel = receiver->GetLevel();
         receiverAccountId = receiver->GetSession()->GetAccountId();
     }
     else
@@ -212,7 +212,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         }
         */
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_LEVEL);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_LEVEL);
         stmt->setUInt32(0, GUID_LOPART(receiverGuid));
 
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
@@ -249,11 +249,8 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
         }
     }
 
-    uint32 myMemberId = sWorld->GetprojectMemberID(GetAccountId());
-    uint32 receiverMemberId = sWorld->GetprojectMemberID(receiverAccountId);
-
     if (!accountBound && player->GetTeam() != receiverTeam &&  !sWorld->getBoolConfig(CONFIG_ALLOW_TWO_SIDE_INTERACTION_MAIL) &&
-        GetAccountId() != receiverAccountId && myMemberId != receiverMemberId && GetSecurity() == SEC_PLAYER)
+        GetAccountId() != receiverAccountId && GetSecurity() == SEC_PLAYER)
     {
         player->SendMailResult(0, MAIL_SEND, MAIL_ERR_NOT_YOUR_TEAM);
         return;
@@ -329,7 +326,7 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
 
     MailDraft draft(subject, body);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     if (itemCount > 0 || money > 0)
     {
@@ -360,8 +357,6 @@ void WorldSession::HandleSendMail(WorldPacket& recvData)
                 item->DeleteFromInventoryDB(trans);     // deletes item from character's inventory
                 item->SetOwnerGUID(receiverGuid);
                 item->SaveToDB(trans);                  // recursive and not have transaction guard into self, item not in inventory and can be save standalone
-                if (HasFlag(ACC_FLAG_ITEM_LOG))
-                    logs::ItemLog(_player, item, item->GetCount(), "Send by mail to %u", GUID_LOPART(receiverGuid));
                 draft.AddItem(item);
             }
 
@@ -423,7 +418,7 @@ void WorldSession::HandleMailMarkAsRead(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
                 return;// Mail interactions on client don't get locked up when this action is performed, thus no result packet is needed
 
     if (Mail* mail = _player->GetMail(mailId))
@@ -513,9 +508,9 @@ void WorldSession::HandleMailReturnToSender(WorldPacket& recvData)
         return;
     }
     //we can return mail now, so firstly delete the old one
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_MAIL_BY_ID);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_MAIL_BY_ID);
     stmt->setUInt32(0, mailId);
     trans->Append(stmt);
 
@@ -580,7 +575,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_ITEM_TAKEN, MAIL_ERR_SILENT);
                 return;
@@ -608,7 +603,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
     uint8 msg = _player->CanStoreItem(NULL_BAG, NULL_SLOT, dest, it, false);
     if (msg == EQUIP_ERR_OK)
     {
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         m->RemoveItem(itemId);
         m->removedItems.push_back(itemId);
 
@@ -658,40 +653,7 @@ void WorldSession::HandleMailTakeItem(WorldPacket& recvData)
 
         uint32 count = it->GetCount();                      // save counts before store and possible merge with deleting
         it->SetState(ITEM_UNCHANGED);                       // need to set this state, otherwise item cannot be removed later, if neccessary
-        if (player->GetSession()->HasFlag(ACC_FLAG_ITEM_LOG))
-        {
-            if (m->stationery == MAIL_STATIONERY_AUCTION)
-            {
-                Tokenizer tok(m->subject, ':');
-                Tokenizer tok2(m->body, ':');
-                std::ostringstream subj;
-                if (tok.size() == 5)
-                {
-                    uint32 subjID = atol(tok[2]);
-                    switch (subjID)
-                    {
-                        case AUCTION_WON:
-                            if (tok2.size() == 3)
-                                subj << "Buy at auction " << strtoul(tok2[0], NULL, 16);
-                            else
-                                subj << "Unexpected mail body \"" << m->body << '\"';
-                            break;
-                        case AUCTION_EXPIRED:
-                        case AUCTION_CANCELED:
-                            subj << "Returned from auction ";
-                            subj << (subjID == AUCTION_EXPIRED ? "(expired)" : "(canceled)");
-                            break;
-                        default:
-                            subj << "Unexpected mail header " << subjID;
-                            break;
-                    }
-                }
 
-                logs::ItemLog(player, it, it->GetCount(), subj.str().c_str());
-            }
-            else
-                logs::ItemLog(player, it, it->GetCount(), "Take mail item, sender: %u", m->sender);
-        }
         player->MoveItemToInventory(dest, it, true);
 
         player->SaveInventoryAndGoldToDB(trans);
@@ -733,7 +695,7 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_ERR_SILENT);
                 return;
@@ -785,11 +747,8 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
                     break;
             }
         }
-
-        logs::CurrencyTransaction(_player, CurrencyOperation::Auction, guid, m->money, attachments.str().c_str());
     }
-    else
-        logs::CurrencyTransaction(_player, CurrencyOperation::Mail, m->sender, m->money);
+
 
     m->money = 0;
     m->state = MAIL_STATE_CHANGED;
@@ -798,7 +757,7 @@ void WorldSession::HandleMailTakeMoney(WorldPacket& recvData)
     player->SendMailResult(mailId, MAIL_MONEY_TAKEN, MAIL_OK);
 
     // save money and mail to prevent cheating
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     player->SaveGoldToDB(trans);
     player->_SaveMail(trans);
     CharacterDatabase.CommitTransaction(trans);
@@ -813,7 +772,7 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(0, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT); // Incorrect mailAction, but we need to feed something to the client for it to unlock mail interactions
                 return;
@@ -953,12 +912,6 @@ void WorldSession::HandleGetMailList(WorldPacket& recvData)
     // recalculate m_nextMailDelivereTime and unReadMails
     _player->UpdateNextMailTimeAndUnreads();
 
-    if (projectMemberInfo* info = _player->GetSession()->GetprojectMemberInfo())
-    {
-        auto notification = rand() % 2 ? projectMemberInfo::Notification::Mail : projectMemberInfo::Notification::RMT;
-        if (!info->Notify(_player, notification))
-            info->Notify(_player, notification == projectMemberInfo::Notification::Mail ? projectMemberInfo::Notification::RMT : projectMemberInfo::Notification::Mail);
-    }
 }
 
 //used when player copies mail body to his inventory
@@ -989,7 +942,7 @@ void WorldSession::HandleMailCreateTextItem(WorldPacket& recvData)
 
     if (!GetPlayer()->GetGameObjectIfCanInteractWith(mailbox, GAMEOBJECT_TYPE_MAILBOX))
         if (!GetPlayer()->GetNPCIfCanInteractWith(mailbox, UNIT_NPC_FLAG_MAILBOX))
-            if (!IsPremium() || mailbox != GetPlayer()->GetGUID())  // for premium mail command
+            if (mailbox != GetPlayer()->GetGUID())  // for premium mail command
             {
                 GetPlayer()->SendMailResult(mailId, MAIL_MADE_PERMANENT, MAIL_ERR_SILENT);
                 return;
@@ -1100,12 +1053,12 @@ void WorldSession::HandleQueryNextMailTime(WorldPacket& /*recvData*/)
             dataBuffer.WriteByteSeq(senderGuid[0]);
             dataBuffer << float(m->deliver_time - now);
             if (hasNativeRealmAddress)
-                dataBuffer << uint32(realmID);
+                dataBuffer << uint32(realm.Id.Realm);
             dataBuffer << uint32(m->stationery);
             dataBuffer.WriteByteSeq(senderGuid[3]);
             dataBuffer.WriteByteSeq(senderGuid[2]);
             if (hasVirtualRealmAddress)
-                dataBuffer << uint32(realmID);
+                dataBuffer << uint32(realm.Id.Realm);
             dataBuffer.WriteByteSeq(senderGuid[7]);
 
             count++;

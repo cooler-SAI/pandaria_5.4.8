@@ -371,7 +371,7 @@ enum MiscData
     DATA_EXPLOIT_CHECK          = 3,
 };
 
-class NecroticPlagueTargetCheck : public std::unary_function<Unit*, bool>
+class NecroticPlagueTargetCheck 
 {
     public:
         NecroticPlagueTargetCheck(Unit const* obj, uint32 notAura1 = 0, uint32 notAura2 = 0)
@@ -1627,7 +1627,7 @@ class npc_tirion_fordring_tft : public CreatureScript
                     SetEquipmentSlots(true);    // remove glow on ashbringer
             }
 
-            void sGossipSelect(Player* /*player*/, uint32 sender, uint32 action)
+            bool OnGossipSelect(Player* /*player*/, uint32 sender, uint32 action)
             {
                 if (me->GetGossipMenuId() == sender && !action)
                 {
@@ -1636,6 +1636,7 @@ class npc_tirion_fordring_tft : public CreatureScript
                     me->SetWalk(true);
                     me->GetMotionMaster()->MovePoint(POINT_TIRION_INTRO, TirionIntro);
                 }
+                return true;
             }
 
             void JustReachedHome() override
@@ -2044,7 +2045,7 @@ class npc_valkyr_shadowguard : public CreatureScript
 
                                 triggers.sort(Trinity::ObjectDistanceOrderPred(me));
                                 DoCast(target, SPELL_VALKYR_CARRY);
-                                target->ClearUnitState(UNIT_STATE_ON_VEHICLE); // HACK: Target needs to be healable
+                                target->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION); // HACK: Target needs to be healable
                                 _dropPoint.Relocate(triggers.front());
                                 _events.ScheduleEvent(EVENT_MOVE_TO_DROP_POS, 1500);
                             }
@@ -2169,7 +2170,7 @@ class npc_strangulate_vehicle : public CreatureScript
             {
                 me->SetFacingToObject(summoner);
                 DoCast(summoner, SPELL_HARVEST_SOUL_VEHICLE);
-                summoner->ClearUnitState(UNIT_STATE_ON_VEHICLE); // HACK: Target needs to be healable
+                summoner->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION); // HACK: Target needs to be healable
                 _events.Reset();
                 _events.ScheduleEvent(EVENT_MOVE_TO_LICH_KING, 2000);
                 _events.ScheduleEvent(EVENT_TELEPORT, 6000);

@@ -103,18 +103,18 @@ class CharacterBooster
 
     private:
         void _GetCharBoostItems(PreparedItemsMap& itemsToMail, PreparedItemsMap& itemsToEquip) const;
-        std::string _EquipItems(SQLTransaction& trans, PreparedItemsMap itemsToEquip) const;
+        std::string _EquipItems(CharacterDatabaseTransaction trans, PreparedItemsMap itemsToEquip) const;
         void _GetBoostedCharacterData(uint8& raceId, uint8& classId, uint8& level) const;
         void _HandleCharacterBoost() const;
-        void _LearnSpells(SQLTransaction& trans) const;
-        void _PrepareInventory(SQLTransaction& trans) const;
-        uint32 _PrepareMail(SQLTransaction& trans, std::string const subject, std::string const body) const;
-        std::string _SetSpecialization(SQLTransaction& trans, uint8 const classId) const;
-        void _SaveBoostedChar(SQLTransaction& trans, std::string items, uint8 const raceId, uint8 const classId) const;
-        void _SendMail(SQLTransaction& trans, PreparedItemsMap items) const;
-        void _LearnVeteranBonuses(SQLTransaction& trans, uint8 const classId) const;
-        void LearnNonExistedSpell(SQLTransaction& trans, uint32 spell) const;
-        void LearnNonExistedSkill(SQLTransaction& trans, uint32 skill) const;
+        void _LearnSpells(CharacterDatabaseTransaction trans) const;
+        void _PrepareInventory(CharacterDatabaseTransaction trans) const;
+        uint32 _PrepareMail(CharacterDatabaseTransaction trans, std::string const subject, std::string const body) const;
+        std::string _SetSpecialization(CharacterDatabaseTransaction trans, uint8 const classId) const;
+        void _SaveBoostedChar(CharacterDatabaseTransaction trans, std::string items, uint8 const raceId, uint8 const classId) const;
+        void _SendMail(CharacterDatabaseTransaction trans, PreparedItemsMap items) const;
+        void _LearnVeteranBonuses(CharacterDatabaseTransaction trans, uint8 const classId) const;
+        void LearnNonExistedSpell(CharacterDatabaseTransaction trans, uint32 spell) const;
+        void LearnNonExistedSkill(CharacterDatabaseTransaction trans, uint32 skill) const;
         WorldSession* GetSession() const { return m_session; }
 
         CharacterBoostData m_charBoostInfo;

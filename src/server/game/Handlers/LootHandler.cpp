@@ -33,7 +33,9 @@
 #include "ScriptMgr.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
-#include "CustomLogs.h"
+#ifdef ELUNA
+#include "HookMgr.h"
+#endif
 
 void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
 {
@@ -123,7 +125,7 @@ void WorldSession::HandleAutostoreLootItemOpcode(WorldPacket& recvData)
         {
             Creature* creature = GetPlayer()->GetMap()->GetCreature(guid);
 
-            bool lootAllowed = creature && creature->IsAlive() == ((player->getClass() == CLASS_ROGUE || creature->GetEntry() == 56233) && creature->lootForPickPocketed);  // hack, but I dont know how it must work (pickpocket loot should be available for npc 56233)
+            bool lootAllowed = creature && creature->IsAlive() == ((player->GetClass() == CLASS_ROGUE || creature->GetEntry() == 56233) && creature->lootForPickPocketed);  // hack, but I dont know how it must work (pickpocket loot should be available for npc 56233)
             bool isInDistance = creature && creature->IsWithinDistInMap(player, INTERACTION_DISTANCE) || aoeLoot || player->HasAura(126746); // Glyph of Fetch
             if (!lootAllowed || !isInDistance)
             {
@@ -160,7 +162,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 {
     TC_LOG_DEBUG("network", "WORLD: CMSG_LOOT_MONEY");
 
-    CurrencyOperation operation = CurrencyOperation::Null;
     uint32 param = 0;
 
     Player* player = GetPlayer();
@@ -204,7 +205,6 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                     loot = &item->loot;
                     shareMoney = false;
 
-                    operation = CurrencyOperation::LootItem;
                     param = item->GetEntry();
                 }
                 break;
@@ -213,14 +213,13 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
             case HIGHGUID_VEHICLE:
             {
                 Creature* creature = player->GetMap()->GetCreature(guid);
-                bool lootAllowed = creature && creature->IsAlive() == (player->getClass() == CLASS_ROGUE && creature->lootForPickPocketed);
+                bool lootAllowed = creature && creature->IsAlive() == (player->GetClass() == CLASS_ROGUE && creature->lootForPickPocketed);
                 bool isInDistance = creature && creature->IsWithinDistInMap(player, INTERACTION_DISTANCE) || isAoE || player->HasAura(126746); // Glyph of Fetch
                 if (lootAllowed && isInDistance)
                 {
                     loot = &creature->loot;
                     if (creature->IsAlive())
                         shareMoney = false;
-                    operation = CurrencyOperation::LootMob;
                     param = creature->GetEntry();
                 }
                 break;
@@ -255,8 +254,8 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
 
             for (auto&& groupMember : playersNear)
             {
-                if (groupMember->ModifyMoney(goldPerPlayer))
-                    logs::CurrencyTransaction(groupMember, operation, param, int64(goldPerPlayer));
+                groupMember->ModifyMoney(goldPerPlayer);
+
                 groupMember->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, goldPerPlayer);
 
                 if (Guild* guild = sGuildMgr->GetGuildById(groupMember->GetGuildId()))
@@ -269,16 +268,12 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
                 data << uint32(goldPerPlayer);
                 groupMember->GetSession()->SendPacket(&data);
 
-                if (group->IsLogging())
-                    playerNames << (playerNamesStarted ? ", " : (playerNamesStarted = true, "")) << Group::Format(groupMember);
             }
-            if (group->IsLogging())
-                group->LogEvent("Money looted: %s split to %s for %s", Group::FormatMoney(loot->gold).c_str(), Group::FormatMoney(goldPerPlayer).c_str(), playerNames.str().c_str());
         }
         else
         {
-            if (player->ModifyMoney(loot->gold))
-                logs::CurrencyTransaction(player, operation, param, int64(loot->gold));
+            player->ModifyMoney(loot->gold);
+
             player->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_LOOT_MONEY, loot->gold);
 
             if (Guild* guild = sGuildMgr->GetGuildById(player->GetGuildId()))
@@ -291,11 +286,11 @@ void WorldSession::HandleLootMoneyOpcode(WorldPacket& /*recvData*/)
             data << uint32(loot->gold);
             SendPacket(&data);
 
-            if (Group* group = player->GetGroup())
-                if (group->IsLogging())
-                    group->LogEvent("Money looted: %s by %s", Group::FormatMoney(loot->gold).c_str(), Group::Format(player).c_str());
         }
 
+#ifdef ELUNA
+        sHookMgr->OnLootMoney(player, loot->gold);
+#endif
         loot->gold = 0;
 
         // Delete the money loot record from the DB
@@ -528,7 +523,7 @@ void WorldSession::DoLootRelease(uint64 guid)
         }
         else
         {
-            if (pItem->loot.isLooted() || !(proto->Flags & ITEM_PROTO_FLAG_OPENABLE)) // Only delete item if no loot or money (unlooted loot is saved to db) + Fix Exploit 
+            if (pItem->loot.isLooted() || !(proto->Flags & ITEM_FLAG_HAS_LOOT)) // Only delete item if no loot or money (unlooted loot is saved to db) + Fix Exploit 
                 player->DestroyItem(pItem->GetBagSlot(), pItem->GetSlot(), true);
         }
         return;                                             // item can be looted only single player
@@ -537,7 +532,7 @@ void WorldSession::DoLootRelease(uint64 guid)
     {
         Creature* creature = GetPlayer()->GetMap()->GetCreature(guid);
 
-        bool lootAllowed = creature && creature->IsAlive() == (player->getClass() == CLASS_ROGUE && creature->lootForPickPocketed);
+        bool lootAllowed = creature && creature->IsAlive() == (player->GetClass() == CLASS_ROGUE && creature->lootForPickPocketed);
         if (!lootAllowed || (player->GetLootGUID() == guid && !creature->IsWithinDistInMap(_player, INTERACTION_DISTANCE)))
             return;
 
@@ -702,12 +697,10 @@ void WorldSession::HandleLootMasterGiveOpcode(WorldPacket& recvData)
         if (target->HasPendingBind())
             target->BindToInstance();
 
-        if (Group* group = target->GetGroup())
-            if (group->IsLogging() && newitem)
-                group->LogEvent("Master looter gave item: %s to %s", Group::Format(newitem).c_str(), Group::Format(target).c_str());
-
         sScriptMgr->OnItemPickup(target, newitem, loot->GetItemPickupSourceType(), loot->sourceEntry);
-
+#ifdef ELUNA
+        sHookMgr->OnLootItem(target, newitem, item.count, lootguid);
+#endif
         // mark as looted
         item.count = 0;
         item.is_looted = true;

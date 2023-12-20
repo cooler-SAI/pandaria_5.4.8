@@ -19,7 +19,6 @@
 #define TRINITY_OBJECTREGISTRY_H
 
 #include "Define.h"
-#include <ace/Singleton.h>
 
 #include <string>
 #include <vector>
@@ -31,6 +30,12 @@ template<class T, class Key = std::string>
 class ObjectRegistry
 {
     public:
+        static ObjectRegistry* instance()
+        {
+            static ObjectRegistry instance;
+            return &instance;
+        }
+
         typedef std::map<Key, T *> RegistryMapType;
 
         /// Returns a registry item

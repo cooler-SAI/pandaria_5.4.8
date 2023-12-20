@@ -96,8 +96,8 @@ public:
 
     void LoadFromDb(PreparedQueryResult result);
     void LoadSlotsFromDb(PreparedQueryResult result);
-    void SaveToDb(SQLTransaction& trans);
-    void SaveSlotsToDb(SQLTransaction& trans);
+    void SaveToDb(CharacterDatabaseTransaction trans);
+    void SaveSlotsToDb(CharacterDatabaseTransaction trans);
 
     void UnlockLoadoutSlot(uint8 slot);
     bool HasLoadoutSlot(uint8 slot) const;

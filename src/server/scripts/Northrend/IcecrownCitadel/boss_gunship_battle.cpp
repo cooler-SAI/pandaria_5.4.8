@@ -353,7 +353,7 @@ class npc_gunship_boss : public CreatureScript
                 me->SetReactState(REACT_AGGRESSIVE);
                 me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_DISABLE_MOVE);
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-                me->setFaction(AH(1802, 1801));
+                me->SetFaction(AH(1802, 1801));
                 me->m_SightDistance = 50.0f;
                 me->m_CombatDistance = 50.0f;
 
@@ -951,7 +951,7 @@ class npc_gunship_boss : public CreatureScript
                 DoMeleeAttackIfReady();
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == AH(10875, 10954) && action == 0 && me->HasFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP))
@@ -959,6 +959,7 @@ class npc_gunship_boss : public CreatureScript
                     DoAction(ACTION_INTRO_START);
                     me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
                 }
+                return true;
             }
 
         private:
@@ -1874,11 +1875,12 @@ class npc_zafod_boombox : public CreatureScript
                 DoCastAOE(SPELL_REMOVE_ROCKET_PACK, true);
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == 10885 && action == 0 && !player->HasItemCount(49278, 1, true))
                     player->AddItem(49278, 1);
+                return true;
             }
         };
 

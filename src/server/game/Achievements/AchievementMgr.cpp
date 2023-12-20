@@ -36,6 +36,7 @@
 #include "MapManager.h"
 #include "ObjectMgr.h"
 #include "Player.h"
+#include "Realm.h"
 #include "ReputationMgr.h"
 #include "ScriptMgr.h"
 #include "SpellMgr.h"
@@ -45,7 +46,6 @@
 #include "PetBattle.h"
 #include "Battleground.h"
 #include "BattlegroundSA.h"
-#include <ace/Stack_Trace.h>
 
 namespace Trinity
 {
@@ -319,17 +319,17 @@ bool AchievementCriteriaData::Meets(uint32 criteria_id, Player const* source, Un
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_T_PLAYER_CLASS_RACE:
             if (!target || target->GetTypeId() != TYPEID_PLAYER)
                 return false;
-            if (classRace.class_id && classRace.class_id != target->ToPlayer()->getClass())
+            if (classRace.class_id && classRace.class_id != target->ToPlayer()->GetClass())
                 return false;
-            if (classRace.race_id && classRace.race_id != target->ToPlayer()->getRace())
+            if (classRace.race_id && classRace.race_id != target->ToPlayer()->GetRace())
                 return false;
             return true;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_S_PLAYER_CLASS_RACE:
             if (!source || source->GetTypeId() != TYPEID_PLAYER)
                 return false;
-            if (classRace.class_id && classRace.class_id != source->ToPlayer()->getClass())
+            if (classRace.class_id && classRace.class_id != source->ToPlayer()->GetClass())
                 return false;
-            if (classRace.race_id && classRace.race_id != source->ToPlayer()->getRace())
+            if (classRace.race_id && classRace.race_id != source->ToPlayer()->GetRace())
                 return false;
             return true;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_T_PLAYER_LESS_HEALTH:
@@ -351,11 +351,11 @@ bool AchievementCriteriaData::Meets(uint32 criteria_id, Player const* source, Un
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_T_LEVEL:
             if (!target)
                 return false;
-            return target->getLevel() >= level.minlevel;
+            return target->GetLevel() >= level.minlevel;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_T_GENDER:
             if (!target)
                 return false;
-            return target->getGender() == gender.gender;
+            return target->GetGender() == gender.gender;
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_SCRIPT:
             return sScriptMgr->OnCriteriaCheck(ScriptId, const_cast<Player*>(source), const_cast<Unit*>(target));
         case ACHIEVEMENT_CRITERIA_DATA_TYPE_MAP_PLAYER_COUNT:
@@ -595,9 +595,9 @@ void PlayerAchievementMgrBase::ResetCriterias(CriteriaStartTypes type, uint32 as
 
 void PlayerAchievementMgr::DeleteFromDB(uint32 lowguid)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT);
     stmt->setUInt32(0, lowguid);
     trans->Append(stmt);
 
@@ -610,9 +610,9 @@ void PlayerAchievementMgr::DeleteFromDB(uint32 lowguid)
 
 void GuildAchievementMgr::DeleteFromDB(uint32 lowguid)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GUILD_ACHIEVEMENTS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_GUILD_ACHIEVEMENTS);
     stmt->setUInt32(0, lowguid);
     trans->Append(stmt);
 
@@ -623,14 +623,14 @@ void GuildAchievementMgr::DeleteFromDB(uint32 lowguid)
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
+void PlayerAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     for (auto&& it : m_completedAchievements)
     {
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_BY_ACHIEVEMENT);
         stmt->setUInt16(0, it.first);
         stmt->setUInt32(1, GetOwner()->GetGUID());
         trans->Append(stmt);
@@ -649,7 +649,7 @@ void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_BY_CRITERIA);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_ACHIEVEMENT_PROGRESS_BY_CRITERIA);
         stmt->setUInt32(0, GetOwner()->GetGUID());
         stmt->setUInt16(1, it.first);
         trans->Append(stmt);
@@ -667,9 +667,9 @@ void PlayerAchievementMgr::SaveToDB(SQLTransaction& trans)
     }
 }
 
-void GuildAchievementMgr::SaveToDB(SQLTransaction& trans)
+void GuildAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt;
+    CharacterDatabasePreparedStatement* stmt;
     std::ostringstream guidstr;
     for (auto&& it : m_completedAchievements)
     {
@@ -714,14 +714,14 @@ void GuildAchievementMgr::SaveToDB(SQLTransaction& trans)
     }
 }
 
-void AccountAchievementMgr::SaveToDB(SQLTransaction& trans)
+void AccountAchievementMgr::SaveToDB(CharacterDatabaseTransaction trans)
 {
     for (auto&& it : m_completedAchievements)
     {
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT);
         stmt->setUInt32(0, GetOwner()->GetSession()->GetAccountId());
         stmt->setUInt16(1, it.first);
         stmt->setUInt32(2, uint32(it.second.Date));
@@ -736,7 +736,7 @@ void AccountAchievementMgr::SaveToDB(SQLTransaction& trans)
         if (!it.second.Changed)
             continue;
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT_PROGRESS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_ACHIEVEMENT_PROGRESS);
         stmt->setUInt32(0, GetOwner()->GetSession()->GetAccountId());
         stmt->setUInt16(1, it.first);
         stmt->setUInt32(2, it.second.Counter);
@@ -757,7 +757,7 @@ void PlayerAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pre
         {
             uint32 index;
             if (achievement->ID == 1793 || achievement->ID == 8397)
-                index = GetOwner()->getGender() == GENDER_MALE ? 0 : 1;
+                index = GetOwner()->GetGender() == GENDER_MALE ? 0 : 1;
             else
                 index = GetOwner()->GetTeam() == ALLIANCE ? 0 : 1;
             if (uint32 titleId = reward->TitleId[index])
@@ -826,7 +826,7 @@ void PlayerAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pre
                 // we will remove not existed criteria for all characters
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `character_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
 
@@ -850,10 +850,10 @@ void PlayerAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pre
 
     // After loading
 
-    for (auto&& achievementId : sAchievementMgr->GetAchievementsWithTitle(Player::TeamForRace(GetOwner()->getRace())))
+    for (auto&& achievementId : sAchievementMgr->GetAchievementsWithTitle(Player::TeamForRace(GetOwner()->GetRace())))
         if (AchievementEntry const* achievement = sAchievementMgr->GetAchievement(achievementId))
             if (AchievementReward const* reward = sAchievementMgr->GetAchievementReward(achievement))
-                if (uint32 titleId = reward->TitleId[Player::TeamForRace(GetOwner()->getRace()) == ALLIANCE ? 0 : 1])
+                if (uint32 titleId = reward->TitleId[Player::TeamForRace(GetOwner()->GetRace()) == ALLIANCE ? 0 : 1])
                     if (CharTitlesEntry const* titleEntry = sCharTitlesStore.LookupEntry(titleId))
                         if (GetOwner()->HasTitle(titleEntry) && !GetOwner()->HasAchieved(achievementId, !titleEntry->Unk1))
                             GetOwner()->SetTitle(titleEntry, true);
@@ -897,7 +897,7 @@ void AccountAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Pr
                 // we will remove not existed criteria for all characters
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `account_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
                 continue;
@@ -958,7 +958,7 @@ void GuildAchievementMgr::LoadFromDB(PreparedQueryResult achievementResult, Prep
                 // we will remove not existed criteria for all guilds
                 TC_LOG_ERROR("achievement", "Non-existing achievement criteria %u data removed from table `guild_achievement_progress`.", id);
 
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA_GUILD);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEV_PROGRESS_CRITERIA_GUILD);
                 stmt->setUInt16(0, uint16(id));
                 CharacterDatabase.Execute(stmt);
                 continue;
@@ -1145,9 +1145,9 @@ void AchievementMgr::SendAchievementEarned(AchievementEntry const* achievement, 
     data.WriteByteSeq(guid[1]);
     data.WriteByteSeq(guid2[0]);
     data.WriteByteSeq(guid[5]);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteByteSeq(guid[5]);
-    data << uint32(realmID);
+    data << uint32(realm.Id.Realm);
     data.WriteByteSeq(guid2[2]);
     referencePlayer->SendMessageToSetInRange(&data, sWorld->getFloatConfig(CONFIG_LISTEN_RANGE_SAY), true);
 
@@ -1442,15 +1442,6 @@ static const uint32 achievIdForDungeon[][4] =
  */
 void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, uint64 miscValue1, uint64 miscValue2, uint64 miscValue3, Unit const* unit, Player* referencePlayer)
 {
-    if (referencePlayer && CurrentMap)
-    {
-        if (referencePlayer->GetMap() != CurrentMap)
-        {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "AchievementMgr::UpdateAchievementCriteria, player: %u, m_currMap: %u, CurrentMap: %u\n%s", referencePlayer->GetGUIDLow(), referencePlayer->GetMap()->GetId(), CurrentMap->GetId(), st.c_str());
-            return;
-        }
-    }
 
     if (type >= ACHIEVEMENT_CRITERIA_TYPE_TOTAL)
     {
@@ -1599,7 +1590,7 @@ void AchievementMgr::UpdateAchievementCriteria(AchievementCriteriaTypes type, ui
                 SetCriteriaProgress(achievementCriteria, miscValue1, referencePlayer, PROGRESS_HIGHEST);
                 break;
             case ACHIEVEMENT_CRITERIA_TYPE_REACH_LEVEL:
-                SetCriteriaProgress(achievementCriteria, referencePlayer->getLevel(), referencePlayer, PROGRESS_HIGHEST);
+                SetCriteriaProgress(achievementCriteria, referencePlayer->GetLevel(), referencePlayer, PROGRESS_HIGHEST);
                 break;
             case ACHIEVEMENT_CRITERIA_TYPE_REACH_SKILL_LEVEL:
                 if (uint32 skillvalue = referencePlayer->GetBaseSkillValue(achievementCriteria->Entry->Asset.SkillID))
@@ -2432,7 +2423,7 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement, P
     //! condition fields to the condition system.
     uint32 index;
     if (achievement->ID == 1793 || achievement->ID == 8397)
-        index = referencePlayer->getGender() == GENDER_MALE ? 0 : 1;
+        index = referencePlayer->GetGender() == GENDER_MALE ? 0 : 1;
     else
         index = referencePlayer->GetTeam() == ALLIANCE ? 0 : 1;
     if (uint32 titleId = reward->TitleId[index])
@@ -2449,23 +2440,22 @@ void AchievementMgr::CompletedAchievement(AchievementEntry const* achievement, P
     {
         Item* item = reward->ItemId ? Item::CreateItem(reward->ItemId, 1, referencePlayer) : NULL;
 
-        int loc_idx = referencePlayer->GetSession()->GetSessionDbLocaleIndex();
-
         // subject and text
         std::string subject = reward->Subject;
         std::string text = reward->Text;
-        if (loc_idx >= 0)
+        LocaleConstant localeConstant = referencePlayer->GetSession()->GetSessionDbLocaleIndex();
+        if (localeConstant != LOCALE_enUS)
         {
             if (AchievementRewardLocale const* loc = sAchievementMgr->GetAchievementRewardLocale(achievement))
             {
-                ObjectMgr::GetLocaleString(loc->Subject, loc_idx, subject);
-                ObjectMgr::GetLocaleString(loc->Text, loc_idx, text);
+                ObjectMgr::GetLocaleString(loc->Subject, localeConstant, subject);
+                ObjectMgr::GetLocaleString(loc->Text, localeConstant, text);
             }
         }
 
         MailDraft draft(subject, text);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         if (item)
         {
             // save new item before send
@@ -2536,7 +2526,7 @@ void PlayerAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
     data << uint32(0);
     SendPacket(&data);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->PAppend("DELETE FROM character_achievement WHERE achievement = %u AND guid = %u", entry->ID, player->GetGUIDLow());
     m_completedAchievements.erase(entry->ID);
 
@@ -2564,12 +2554,12 @@ void PlayerAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 
 void AccountAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 {
-    CALL_NOT_IMPLEMENTED();
+    //CALL_NOT_IMPLEMENTED();
 }
 
 void GuildAchievementMgr::RemoveAchievement(AchievementEntry const* entry)
 {
-    CALL_NOT_IMPLEMENTED();
+    //CALL_NOT_IMPLEMENTED();
 }
 
 struct VisibleAchievementPred
@@ -2740,10 +2730,10 @@ void PlayerAchievementMgr::SendAllAchievementData() const
             data.WriteBit(guid[3]);
 
             completedData << uint32(it.first);                      // achievement Id
-            completedData << uint32(achievement->Flags & ACHIEVEMENT_FLAG_ACCOUNT ? 0 : realmID);
+            completedData << uint32(achievement->Flags & ACHIEVEMENT_FLAG_ACCOUNT ? 0 : realm.Id.Realm);
             completedData.WriteByteSeq(guid[5]);
             completedData.WriteByteSeq(guid[7]);
-            completedData << uint32(achievement->Flags & ACHIEVEMENT_FLAG_ACCOUNT ? 0 : realmID);
+            completedData << uint32(achievement->Flags & ACHIEVEMENT_FLAG_ACCOUNT ? 0 : realm.Id.Realm);
             completedData.AppendPackedTime(it.second.Date);         // achievement date
             completedData.WriteByteSeq(guid[0]);
             completedData.WriteByteSeq(guid[4]);
@@ -3580,19 +3570,19 @@ bool AchievementMgr::AdditionalRequirementsSatisfied(ModifierTreeNode const* tre
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_ARENA_TYPE:
                 return reqValue == miscValue2;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_SOURCE_RACE: // 25
-                if (referencePlayer->getRace() != reqValue)
+                if (referencePlayer->GetRace() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_SOURCE_CLASS: // 26
-                if (referencePlayer->getClass() != reqValue)
+                if (referencePlayer->GetClass() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_TARGET_RACE: // 27
-                if (!unit || unit->GetTypeId() != TYPEID_PLAYER || unit->getRace() != reqValue)
+                if (!unit || unit->GetTypeId() != TYPEID_PLAYER || unit->GetRace() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_TARGET_CLASS: // 28
-                if (!unit || unit->GetTypeId() != TYPEID_PLAYER || unit->getClass() != reqValue)
+                if (!unit || unit->GetTypeId() != TYPEID_PLAYER || unit->GetClass() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_MAX_GROUP_MEMBERS: // 29
@@ -3637,11 +3627,11 @@ bool AchievementMgr::AdditionalRequirementsSatisfied(ModifierTreeNode const* tre
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_SOURCE_LEVEL: // 39
-                if (referencePlayer->getLevel() != reqValue)
+                if (referencePlayer->GetLevel() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_TARGET_LEVEL: // 40
-                if (!unit || unit->getLevel() != reqValue)
+                if (!unit || unit->GetLevel() != reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_TARGET_ZONE: // 41
@@ -3713,7 +3703,7 @@ bool AchievementMgr::AdditionalRequirementsSatisfied(ModifierTreeNode const* tre
                     return ModifierTreeRequirementsSatisfied(tree, miscValue1, miscValue2, unit, referencePlayer);
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_TARGET_MIN_LEVEL:
-                if (!unit || unit->getLevel() < reqValue)
+                if (!unit || unit->GetLevel() < reqValue)
                     return false;
                 break;
             case ACHIEVEMENT_CRITERIA_ADDITIONAL_CONDITION_BATTLE_PET_FAMILY:
@@ -4322,7 +4312,7 @@ void AchievementGlobalMgr::LoadCompletedAchievements()
             // Remove non existent achievements from all characters
             TC_LOG_ERROR("achievement", "Non-existing achievement %u data removed from table `character_achievement`.", achievementId);
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_INVALID_ACHIEVMENT);
             stmt->setUInt16(0, uint16(achievementId));
             CharacterDatabase.Execute(stmt);
 
@@ -4461,14 +4451,12 @@ void AchievementGlobalMgr::LoadRewardLocales()
 
     m_achievementRewardLocales.clear();                       // need for reload case
 
-    QueryResult result = WorldDatabase.Query("SELECT entry, subject_loc1, text_loc1, subject_loc2, text_loc2, subject_loc3, text_loc3, subject_loc4, text_loc4, "
-                                             "subject_loc5, text_loc5, subject_loc6, text_loc6, subject_loc7, text_loc7, subject_loc8, text_loc8, "
-                                             "subject_loc9, text_loc9, subject_loc10, text_loc10, subject_loc11, text_loc11 "
-                                             " FROM locales_achievement_reward");
+    //                                               0   1       2        3
+    QueryResult result = WorldDatabase.Query("SELECT ID, Locale, Subject, Body FROM achievement_reward_locale");
 
     if (!result)
     {
-        TC_LOG_INFO("server.loading", ">> Loaded 0 achievement reward locale strings.  DB table `locales_achievement_reward` is empty");
+        TC_LOG_INFO("server.loading", ">> Loaded 0 achievement reward locale strings.  DB table `achievement_reward_locale` is empty.");
         return;
     }
 
@@ -4476,26 +4464,25 @@ void AchievementGlobalMgr::LoadRewardLocales()
     {
         Field* fields = result->Fetch();
 
-        uint32 entry = fields[0].GetUInt32();
+        uint32 id               = fields[0].GetUInt32();
+        std::string localeName  = fields[1].GetString();
 
-        if (m_achievementRewards.find(entry) == m_achievementRewards.end())
+        LocaleConstant locale = GetLocaleByName(localeName);
+        if (locale == LOCALE_enUS)
+            continue;
+
+        if (m_achievementRewards.find(id) == m_achievementRewards.end())
         {
-            TC_LOG_ERROR("sql.sql", "Table `locales_achievement_reward` (Entry: %u) has locale strings for non-existing achievement reward.", entry);
+            TC_LOG_ERROR("sql.sql", "Table `achievement_reward_locale` (ID: %u) contains locale strings for a non-existing achievement reward.", id);
             continue;
         }
 
-        AchievementRewardLocale& data = m_achievementRewardLocales[entry];
+        AchievementRewardLocale& data = m_achievementRewardLocales[id];
+        ObjectMgr::AddLocaleString(fields[2].GetString(), locale, data.Subject);
+        ObjectMgr::AddLocaleString(fields[3].GetString(), locale, data.Text);
+    } while (result->NextRow());
 
-        for (int i = 1; i < TOTAL_LOCALES; ++i)
-        {
-            LocaleConstant locale = (LocaleConstant) i;
-            ObjectMgr::AddLocaleString(fields[1 + 2 * (i - 1)].GetString(), locale, data.Subject);
-            ObjectMgr::AddLocaleString(fields[1 + 2 * (i - 1) + 1].GetString(), locale, data.Text);
-        }
-    }
-    while (result->NextRow());
-
-    TC_LOG_INFO("server.loading", ">> Loaded %lu achievement reward locale strings in %u ms", (unsigned long)m_achievementRewardLocales.size(), GetMSTimeDiffToNow(oldMSTime));
+    TC_LOG_INFO("server.loading", ">> Loaded %u achievement reward locale strings in %u ms.", uint32(m_achievementRewardLocales.size()), GetMSTimeDiffToNow(oldMSTime));
 }
 
 AchievementEntry const* AchievementGlobalMgr::GetAchievement(uint32 achievementId) const

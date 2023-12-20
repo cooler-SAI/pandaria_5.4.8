@@ -18,9 +18,7 @@
 #ifndef SF_LFGMGR_H
 #define SF_LFGMGR_H
 
-#include <ace/Singleton.h>
 #include "DBCStructure.h"
-#include "Field.h"
 #include "LFG.h"
 #include "LFGQueue.h"
 #include "LFGGroupData.h"
@@ -34,16 +32,6 @@ class Quest;
 
 namespace lfg
 {
-struct QueueAnnounceContextLFG
-{
-    using Show = QueueAnnounceContext::Show;
-
-    uint32 DungeonId;
-    LfgRolesMap const& Queuers;
-
-    static bool IsEnabled();
-    void Announce() const;
-};
 
 enum LfgOptions
 {

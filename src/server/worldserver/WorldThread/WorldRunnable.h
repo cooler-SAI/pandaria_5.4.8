@@ -22,8 +22,10 @@
 #ifndef __WORLDRUNNABLE_H
 #define __WORLDRUNNABLE_H
 
+#include "Threading/Threading.h"
+
 /// Heartbeat thread for the World
-class WorldRunnable : public ACE_Based::Runnable
+class WorldRunnable : public MopCore::Runnable
 {
     public:
         void run() override;

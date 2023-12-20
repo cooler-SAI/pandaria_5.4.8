@@ -31,6 +31,7 @@ enum Quests
     QUEST_EARL_OF_EVILSCERATION = 27867,
     QUEST_TWILIGHT_TERROR       = 27868,
     QUEST_ONLY_HOMES_WE_HAVE    = 27804,
+    QUEST_TOTAL_WAR                = 27747,
 };
 
 enum Creatures
@@ -155,10 +156,10 @@ struct npc_dunwald_victim : public ScriptedAI
 {
     npc_dunwald_victim(Creature* creature) : ScriptedAI(creature) { }
 
-    void sGossipHello(Player* player) override
+    bool OnGossipHello(Player* player) override
     {
         if (player->GetQuestStatus(27642) != QUEST_STATUS_INCOMPLETE && !plrs_credited.empty() && std::find_if(plrs_credited.begin(), plrs_credited.end(), std::bind(std::equal_to<uint64>(), std::bind(&dunwald_victim_credit_store::player_guid, std::placeholders::_1), player->GetGUID())) != plrs_credited.end())
-            return;
+            return false;
 
         dunwald_victim_credit_store temp_player;
         temp_player.player_guid = player->GetGUID();
@@ -166,6 +167,7 @@ struct npc_dunwald_victim : public ScriptedAI
         plrs_credited.push_back(temp_player);
 
         player->KilledMonsterCredit(46609);
+        return true;
     }
 
     void UpdateAI(uint32 diff) override
@@ -1359,6 +1361,26 @@ class spell_twilight_douse_fire : public SpellScript
     }
 };
 
+// 206195 Thundermar Ale Keg
+class gob_thundermar_ale_keg : public GameObjectScript
+{
+    public:
+        gob_thundermar_ale_keg() : GameObjectScript("gob_thundermar_ale_keg") { }
+
+        bool OnReportUse(Player* player, GameObject* go) override
+        {
+            if (player->GetQuestStatus(QUEST_TOTAL_WAR) == QUEST_STATUS_INCOMPLETE)
+            {
+                player->KilledMonsterCredit(46551);
+                go->ForcedDespawn();
+                return true;
+            }
+
+            go->CastSpell(player, 86855);
+            return true;
+        }
+};
+ 
 void AddSC_twilight_highlands()
 {
     new creature_script<npc_dunwald_victim>("npc_dunwald_victim");
@@ -1374,4 +1396,5 @@ void AddSC_twilight_highlands()
 
     new spell_script<spell_twilight_activate_pools>("spell_twilight_activate_pools");
     new spell_script<spell_twilight_douse_fire>("spell_twilight_douse_fire");
+    new gob_thundermar_ale_keg();
 }

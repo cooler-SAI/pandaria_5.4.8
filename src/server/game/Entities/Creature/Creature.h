@@ -23,8 +23,8 @@
 #include "UpdateMask.h"
 #include "ItemPrototype.h"
 #include "LootMgr.h"
-#include "DatabaseEnv.h"
 #include "Cell.h"
+#include "GridObject.h"
 
 #include <list>
 
@@ -232,13 +232,7 @@ struct CreatureLocale
 {
     StringVector Name;
     StringVector FemaleName;
-    StringVector SubName;
-};
-
-struct GossipMenuItemsLocale
-{
-    StringVector OptionText;
-    StringVector BoxText;
+    StringVector Title;
 };
 
 struct PointOfInterestLocale
@@ -441,6 +435,10 @@ typedef std::map<uint32, time_t> CreatureSpellCooldowns;
 
 #define MAX_VENDOR_ITEMS 150                                // Limitation in 4.x.x item count in SMSG_LIST_INVENTORY
 
+//used for handling non-repeatable random texts
+typedef std::vector<uint8> CreatureTextRepeatIds;
+typedef std::unordered_map<uint8, CreatureTextRepeatIds> CreatureTextRepeatGroup;
+
 class Creature : public Unit, public GridObject<Creature>, public MapObject
 {
     public:
@@ -448,11 +446,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         explicit Creature(bool isWorldObject = false);
         virtual ~Creature();
 
-        void AddToWorld();
-        void RemoveFromWorld();
+        void AddToWorld() override;
+        void RemoveFromWorld() override;
 
-        void SetObjectScale(float scale);
-        void SetDisplayId(uint32 modelId);
+        void SetObjectScale(float scale) override;
+        void SetDisplayId(uint32 modelId) override;
 
         void DisappearAndDie();
 
@@ -463,7 +461,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
 
         uint32 GetDBTableGUIDLow() const { return m_DBTableGuid; }
 
-        void Update(uint32 time);                         // overwrited Unit::Update
+        void Update(uint32 time) override;         // overwrited Unit::Update
         void GetRespawnPosition(float &x, float &y, float &z, float* ori = NULL, float* dist =NULL) const;
 
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
@@ -472,9 +470,10 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool IsCivilian() const { return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_CIVILIAN; }
         bool IsTrigger() const { return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_TRIGGER; }
         bool IsGuard() const { return GetCreatureTemplate()->flags_extra & CREATURE_FLAG_EXTRA_GUARD; }
+        
         bool CanWalk() const { return GetInhabitType() & INHABIT_GROUND; }
         bool CanSwim() const { return GetInhabitType() & INHABIT_WATER || IsPet(); }
-        bool CanFly()  const { return GetInhabitType() & INHABIT_AIR; }
+        bool CanFly() const override { return GetInhabitType() & INHABIT_AIR; }
 
         // Used to dynamically change allowed path generator and movement flags behavior during scripts.
         // Can be used to allow ground-only creatures to temporarily fly, restrict flying creatures to the ground etc.
@@ -499,13 +498,13 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool isCanTrainingAndResetTalentsOf(Player* player) const;
         bool CanCreatureAttack(Unit const* victim, bool force = true) const;
         bool IsImmunedToSpell(SpellInfo const* spellInfo, uint32 effectMask) const override;
-        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const; // override Unit::IsImmunedToSpellEffect
+        bool IsImmunedToSpellEffect(SpellInfo const* spellInfo, uint32 index) const override; // override Unit::IsImmunedToSpellEffect
         bool isElite() const;
         bool isWorldBoss() const;
 
         bool IsDungeonBoss() const;
 
-        uint8 getLevelForTarget(WorldObject const* target) const; // overwrite Unit::getLevelForTarget for boss level support
+        uint8 GetLevelForTarget(WorldObject const* target) const override; // overwrite Unit::getLevelForTarget for boss level support
 
         bool IsInEvadeMode() const { return HasUnitState(UNIT_STATE_EVADE); }
 
@@ -579,7 +578,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         // override WorldObject function for proper name localization
         std::string const& GetNameForLocaleIdx(LocaleConstant locale_idx) const;
 
-        void setDeathState(DeathState s);                   // override virtual Unit::setDeathState
+        void setDeathState(DeathState s) override;                   // override virtual Unit::setDeathState
 
         bool LoadFromDB(uint32 guid, Map* map) { return LoadCreatureFromDB(guid, map, false); }
         bool LoadCreatureFromDB(uint32 guid, Map* map, bool addToMap = true);
@@ -662,6 +661,15 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         float GetWanderDistance() const { return m_wanderDistance; }
         void SetWanderDistance(float dist) { m_wanderDistance = dist; }
 
+        void DoImmediateBoundaryCheck() { m_boundaryCheckTime = 0; }
+        uint32 GetCombatPulseDelay() const { return m_combatPulseDelay; }
+        void SetCombatPulseDelay(uint32 delay) // (secs) interval at which the creature pulses the entire zone into combat (only works in dungeons)
+        {
+            m_combatPulseDelay = delay;
+            if (m_combatPulseTime == 0 || m_combatPulseTime > delay)
+                m_combatPulseTime = delay;
+        }
+
         float GetWalkMode() const { return m_WalkMode; }
 
         uint32 m_groupLootTimer;                            // (msecs)timer used for group loot
@@ -672,8 +680,8 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void SetInCombatWithZone();
         void SetCombatDistance(float dist) { m_CombatDistance = dist < 5.0f ? 5.0f : dist; }
 
-        bool hasQuest(uint32 quest_id) const;
-        bool hasInvolvedQuest(uint32 quest_id)  const;
+        bool hasQuest(uint32 quest_id) const override;
+        bool hasInvolvedQuest(uint32 quest_id)  const override;
 
         bool isRegeneratingHealth() { return m_regenHealth; }
         void setRegeneratingHealth(bool regenHealth) { m_regenHealth = regenHealth; }
@@ -731,6 +739,11 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         void FocusTarget(Spell const* focusSpell, WorldObject const* target);
         void ReleaseFocus(Spell const* focusSpell);
 
+        // TC CreatureText
+        CreatureTextRepeatIds GetTextRepeatGroup(uint8 textGroup);
+        void SetTextRepeatId(uint8 textGroup, uint8 id);
+        void ClearTextRepeatGroup(uint8 textGroup);
+
         void ApplyInstanceAuraIfNeeded();
 
         void RecalculateDynamicHealth(uint32 newHealth);
@@ -764,6 +777,9 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         uint32 m_corpseDelay;                               // (secs) delay between death and corpse disappearance
         TimeValue m_pickpocketLootRestore;
         float m_wanderDistance;
+        uint32 m_boundaryCheckTime;                         // (msecs) remaining time for next evade boundary check
+        uint32 m_combatPulseTime;                           // (msecs) remaining time for next zone-in-combat pulse
+        uint32 m_combatPulseDelay;                          // (secs) how often the creature puts the entire zone in combat (only works in dungeons)        
         float m_WalkMode;
 
         ReactStates m_reactState;                           // for AI, not charmInfo
@@ -815,6 +831,7 @@ class Creature : public Unit, public GridObject<Creature>, public MapObject
         bool TriggerJustRespawned;
 
         Spell const* _focusSpell;   ///> Locks the target during spell cast for proper facing
+        CreatureTextRepeatGroup m_textRepeat;
 };
 
 class AssistDelayEvent : public BasicEvent

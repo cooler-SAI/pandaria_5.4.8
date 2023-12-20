@@ -36,6 +36,12 @@ WaypointMgr::~WaypointMgr()
     _waypointStore.clear();
 }
 
+WaypointMgr* WaypointMgr::instance()
+{
+    static WaypointMgr instance;
+    return &instance;
+}
+
 void WaypointMgr::Load()
 {
     uint32 oldMSTime = getMSTime();
@@ -96,7 +102,7 @@ void WaypointMgr::ReloadPath(uint32 id)
         _waypointStore.erase(itr);
     }
 
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_WAYPOINT_DATA_BY_ID);
+    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_WAYPOINT_DATA_BY_ID);
 
     stmt->setUInt32(0, id);
 

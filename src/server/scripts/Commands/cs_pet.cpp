@@ -88,9 +88,9 @@ public:
         creatureTarget->SetHealth(0); // just for nice GM-mode view
 
         pet->SetUInt64Value(UNIT_FIELD_CREATED_BY, player->GetGUID());
-        pet->SetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE, player->getFaction());
+        pet->SetUInt32Value(UNIT_FIELD_FACTION_TEMPLATE, player->GetFaction());
 
-        if (!pet->InitStatsForLevel(creatureTarget->getLevel()))
+        if (!pet->InitStatsForLevel(creatureTarget->GetLevel()))
         {
             TC_LOG_ERROR("misc", "InitStatsForLevel() in EffectTameCreature failed! Pet deleted.");
             handler->PSendSysMessage("Error 2");
@@ -99,7 +99,7 @@ public:
         }
 
         // prepare visual effect for levelup
-        pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->getLevel()-1);
+        pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->GetLevel()-1);
 
         pet->GetCharmInfo()->SetPetNumber(sObjectMgr->GeneratePetNumber(), true);
         // this enables pet details window (Shift+P)
@@ -109,13 +109,13 @@ public:
         pet->GetMap()->AddToMap(pet->ToCreature());
 
         // visual effect for levelup
-        pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->getLevel());
+        pet->SetUInt32Value(UNIT_FIELD_LEVEL, creatureTarget->GetLevel());
 
         player->SetMinion(pet, true);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         pet->SavePetToDB(trans);
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHAR_PET_SLOT_BY_ID);
         stmt->setUInt8(0, newPetSlot);
         stmt->setUInt32(1, player->GetGUIDLow());
         stmt->setUInt32(2, pet->GetCharmInfo()->GetPetNumber());

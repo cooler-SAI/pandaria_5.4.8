@@ -21,6 +21,7 @@
 #include "Common.h"
 #include "BigNumber.h"
 #include "RealmSocket.h"
+#include <mutex>
 
 class ACE_INET_Addr;
 struct Realm;
@@ -54,7 +55,7 @@ public:
     void _SetVSFields(const std::string& rI);
 
     FILE* pPatch;
-    ACE_Thread_Mutex patcherLock;
+    std::mutex patcherLock;
 
 private:
     RealmSocket& socket_;
@@ -74,6 +75,7 @@ private:
     // between enUS and enGB, which is important for the patch system
     std::string _localizationName;
     std::string _os;
+    std::string _ipCountry;
     uint16 _build;
     uint8 _expversion;
     AccountTypes _accountSecurityLevel;

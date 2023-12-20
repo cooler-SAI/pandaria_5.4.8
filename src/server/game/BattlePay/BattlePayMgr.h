@@ -18,7 +18,6 @@
 #ifndef BATTLE_PAY_MGR_H
 #define BATTLE_PAY_MGR_H
 
-#include <ace/Singleton.h>
 #include "Common.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
@@ -278,13 +277,16 @@ typedef std::unordered_map<uint32, BattlePayShopEntryLocale> BattlePayShopEntryL
 
 class BattlePayMgr
 {
-    friend class ACE_Singleton<BattlePayMgr, ACE_Null_Mutex>;
+
+    private:
+         BattlePayMgr();
+        ~BattlePayMgr();       
 
     public:
-        BattlePayMgr();
-        ~BattlePayMgr();
 
-		void SendPointsBalance(WorldSession* session);
+        static BattlePayMgr* instance();
+
+        void SendPointsBalance(WorldSession* session);
         void UpdatePointsBalance(WorldSession* session, uint64 points);
         bool HasPointsBalance(WorldSession* session, uint64 points);
         void Update(uint32 diff);
@@ -355,6 +357,6 @@ class BattlePayMgr
         void LoadEntryLocalesFromDb();
 };
 
-#define sBattlePayMgr ACE_Singleton<BattlePayMgr, ACE_Null_Mutex>::instance()
+#define sBattlePayMgr BattlePayMgr::instance()
 
 #endif

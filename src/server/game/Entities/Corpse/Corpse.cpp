@@ -97,11 +97,11 @@ bool Corpse::Create(uint32 guidlow, Player* owner)
 void Corpse::SaveToDB()
 {
     // prevent DB data inconsistence problems and duplicates
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     DeleteFromDB(trans);
 
     uint16 index = 0;
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CORPSE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_CORPSE);
     stmt->setUInt32(index++, GetGUIDLow());                                           // corpseGuid
     stmt->setUInt32(index++, GUID_LOPART(GetOwnerGUID()));                            // guid
     stmt->setFloat (index++, GetPositionX());                                         // posX
@@ -138,9 +138,9 @@ void Corpse::DeleteBonesFromWorld()
     AddObjectToRemoveList();
 }
 
-void Corpse::DeleteFromDB(SQLTransaction& trans)
+void Corpse::DeleteFromDB(CharacterDatabaseTransaction trans)
 {
-    PreparedStatement* stmt = NULL;
+    CharacterDatabasePreparedStatement* stmt = NULL;
     if (GetType() == CORPSE_BONES)
     {
         // Only specific bones

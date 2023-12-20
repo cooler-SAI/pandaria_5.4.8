@@ -84,7 +84,7 @@ enum Events
     EVENT_RAGE_ABILITY,
     EVENT_CALL_KORKRON,
     EVENT_EXECUTE,
-	EVENT_SPELLS_BASE,
+    EVENT_SPELLS_BASE,
 
     // Kork`ron
     EVENT_IRON_STORM,
@@ -479,9 +479,9 @@ class boss_general_nazgrim : public CreatureScript
                             if (!HandleSelectSpellByRagePower()) // Reschedule if not enough power for ability
                                 events.ScheduleEvent(EVENT_RAGE_ABILITY, 0.5 * IN_MILLISECONDS);
                             break;
-						case EVENT_SPELLS_BASE:
-							HandleSelectSpellByRagePower();
-							   events.ScheduleEvent(EVENT_SPELLS_BASE, 10 * IN_MILLISECONDS);
+                        case EVENT_SPELLS_BASE:
+                            HandleSelectSpellByRagePower();
+                               events.ScheduleEvent(EVENT_SPELLS_BASE, 10 * IN_MILLISECONDS);
                     }
                 }
 
@@ -590,7 +590,9 @@ class boss_general_nazgrim : public CreatureScript
 
                     // Select some 2 spawn positions
                     std::vector<uint32> korkronPosList = { 0, 1, 2, 3, 4 };
-                    std::random_shuffle(korkronPosList.begin(), korkronPosList.end());
+                    std::random_device rd;
+                    std::mt19937 g(rd());
+                    std::shuffle(korkronPosList.begin(), korkronPosList.end(), g);                    
                     korkronPosList.resize(4);
 
                     if (IsHeroic())
@@ -1574,7 +1576,7 @@ class spell_nazgrim_heroic_shockwave : public SpellScript
 };
 
 // TARGET_UNIT_CONE_UNK_130 working wrong
-class AftershockPredicate : public std::unary_function<Unit*, bool>
+class AftershockPredicate 
 {
     public:
         AftershockPredicate(Unit* const m_caster) : _caster(m_caster) { }

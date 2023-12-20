@@ -20,6 +20,7 @@
 #include "zulfarrak.h"
 #include "Player.h"
 #include "TemporarySummon.h"
+#include "Random.h"
 
 enum Misc
 {

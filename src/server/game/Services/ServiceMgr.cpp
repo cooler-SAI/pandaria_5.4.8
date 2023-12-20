@@ -22,7 +22,6 @@
 #include "Chat.h"
 #include "AchievementMgr.h"
 #include "Config.h"
-#include "CustomLogs.h"
 #include "Guild.h"
 
 ServiceMgr::ServiceHandler ServiceMgr::_serviceMethods[ISERVICE_END] = 
@@ -66,7 +65,7 @@ void ServiceMgr::AddService(Player* target, uint32 guid, ServiceEntry& entry)
 
     if (target)
     {
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         trans->Append(query.c_str());
         ExecuteService(target, entry, trans);
         CharacterDatabase.CommitTransaction(trans);
@@ -77,7 +76,7 @@ void ServiceMgr::AddService(Player* target, uint32 guid, ServiceEntry& entry)
     }
 }
 
-void ServiceMgr::ExecuteService(Player* player, ServiceEntry const& entry, SQLTransaction const& trans)
+void ServiceMgr::ExecuteService(Player* player, ServiceEntry const& entry, CharacterDatabaseTransaction trans)
 {
     if (!entry.Service || entry.Service >= ISERVICE_END)
         return;
@@ -160,7 +159,7 @@ void ServiceMgr::HandleReplaceSkill(Player* player, uint32 oldSkill, uint32 newS
     player->RemoveSpell(oldProf->Rank[0].SpellID);
 
     int32 rank = 7;
-    while (rank > 0 && newProf->Rank[rank].Level > player->getLevel())
+    while (rank > 0 && newProf->Rank[rank].Level > player->GetLevel())
         --rank;
     uint32 maxValue = (rank + 1) * 75;
     value = std::min(value, maxValue);
@@ -271,7 +270,7 @@ void ServiceMgr::RemoveOldSkillsFromDB(uint32 guid, uint8 classID)
     if (classID > 11)
         return;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     ReclassData data = _reclassData[classID];
 
@@ -351,8 +350,8 @@ void ServiceMgr::ExecutedServices(uint32 guid, uint8 type, std::string oldData, 
 
 void ServiceMgr::AddSpecificPlayerData(uint32 guid, uint32 oldRace, uint32 race, uint32 playerClass, Player* player, bool add, bool remove)
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt;
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt;
 
     const uint32 raceQuests[MAX_RACES][120] =
     {
@@ -602,9 +601,9 @@ void ServiceMgr::_LoadPremium()
 Creature* ServiceMgr::GetPremiumAuc(Player *player)
 {
     uint8 faction;
-    if (player->getRaceMask() & RACEMASK_ALLIANCE)
+    if (player->GetRaceMask() & RACEMASK_ALLIANCE)
         faction = TEAM_ALLIANCE;
-    else if (player->getRaceMask() & RACEMASK_HORDE)
+    else if (player->GetRaceMask() & RACEMASK_HORDE)
         faction = TEAM_HORDE;
     else // just in case
         return nullptr;
@@ -687,7 +686,7 @@ struct MountAchievementFix : public RetroactiveFix
 
         MailDraft draft(subject, text);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         if (item)
         {
             item->SaveToDB(trans);

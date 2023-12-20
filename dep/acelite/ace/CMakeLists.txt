@@ -418,7 +418,6 @@ set(ace_STAT_SRCS
 
 if (USE_COREPCH)
   set(ace_PCH_HDR PrecompiledHeaders/WinAcePCH.h)
-  set(ace_PCH_SRC PrecompiledHeaders/WinAcePCH.cpp)
 endif()
 
 include_directories(
@@ -456,7 +455,7 @@ endif()
 
 # Generate precompiled header
 if( USE_COREPCH )
-  add_cxx_pch(ace ${ace_PCH_HDR} ${ace_PCH_SRC})
+  target_precompile_headers(ace PRIVATE ${ace_PCH_HDR}) 
 endif()
 
 install(TARGETS ace RUNTIME DESTINATION "${CMAKE_INSTALL_PREFIX}")

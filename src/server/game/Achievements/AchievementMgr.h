@@ -22,8 +22,6 @@
 #include <string>
 
 #include "Common.h"
-#include <ace/Singleton.h>
-#include "DatabaseEnv.h"
 #include "DBCEnums.h"
 #include "DBCStores.h"
 
@@ -397,8 +395,8 @@ class PlayerAchievementMgr final : public PlayerAchievementMgrBase
         void Reset();
         static void DeleteFromDB(uint32 lowguid);
         void LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult);
-        void SaveToDB(SQLTransaction& trans);
-        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const;
+        void SaveToDB(CharacterDatabaseTransaction trans);
+        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const override;
 
         // ONLY FOR COMMAND AND TESTS. DO NOT USE!
         void RemoveAchievement(AchievementEntry const* entry);
@@ -416,8 +414,8 @@ class AccountAchievementMgr final : public PlayerAchievementMgrBase
         void SetCurrentPlayer(Player* player) { m_owner = player; }
         uint32 GetAchievementPoints() const override;
         void LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult);
-        void SaveToDB(SQLTransaction& trans);
-        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const;
+        void SaveToDB(CharacterDatabaseTransaction trans);
+        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const override;
 
         void RemoveAchievement(AchievementEntry const* entry);
         void SendAllAchievementData() const;
@@ -437,12 +435,12 @@ class GuildAchievementMgr final : public AchievementMgr
 
         static void DeleteFromDB(uint32 lowguid);
         void LoadFromDB(PreparedQueryResult achievementResult, PreparedQueryResult criteriaResult);
-        void SaveToDB(SQLTransaction& trans);
+        void SaveToDB(CharacterDatabaseTransaction trans);
         void SendAchievementEarned(AchievementEntry const* achievement) const;
-        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const;
+        void SendCriteriaUpdate(CriteriaEntry const* entry, CriteriaProgress const* progress, uint32 timeElapsed, bool timedCompleted) const override;
         void SendAllTrackedCriterias(Player* receiver, std::set<uint32> const& trackedCriterias) const;
 
-        void CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer);
+        void CompletedAchievement(AchievementEntry const* achievement, Player* referencePlayer) override;
         void RemoveAchievement(AchievementEntry const* entry);
         void SendAllAchievementData(Player* receiver) const;
         void SendAchievementInfo(Player* receiver, uint32 achievementId = 0) const;

@@ -68,6 +68,12 @@ BattlegroundMgr::~BattlegroundMgr()
     DeleteAllBattlegrounds();
 }
 
+BattlegroundMgr* BattlegroundMgr::instance()
+{
+    static BattlegroundMgr instance;
+    return &instance;
+}
+
 void BattlegroundMgr::DeleteAllBattlegrounds()
 {
     for (BattlegroundDataContainer::iterator itr1 = bgDataStore.begin(); itr1 != bgDataStore.end(); ++itr1)
@@ -1141,7 +1147,7 @@ void BattlegroundMgr::BuildBattlegroundListPacket(WorldPacket* data, ObjectGuid 
     if (it == bgDataStore.end())
         return;
 
-    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(it->second.m_Battlegrounds.begin()->second->GetMapId(), player->getLevel());
+    PvPDifficultyEntry const* bracketEntry = GetBattlegroundBracketByLevel(it->second.m_Battlegrounds.begin()->second->GetMapId(), player->GetLevel());
     if (!bracketEntry)
         return;
 
@@ -1608,9 +1614,9 @@ void BattlegroundMgr::ApplyDeserter(uint64 guid, uint32 duration)
     {
         uint32 guidLow = GUID_LOPART(guid);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_NAME_DATA);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_NAME_DATA);
         stmt->setUInt32(0, guidLow);
         if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
         {
@@ -1651,7 +1657,7 @@ void BattlegroundMgr::EnqueueNewGameStat(ArenaGameStatistic const& stat)
     GenerateNewGameStatId();
 }
 
-void BattlegroundMgr::PrepareNewGameStat(SQLTransaction& trans, ArenaGameStatistic const& stat, uint32 id)
+void BattlegroundMgr::PrepareNewGameStat(LoginDatabaseTransaction trans, ArenaGameStatistic const& stat, uint32 id)
 {
     for (auto&& it : stat.Data)
     {
@@ -1688,37 +1694,37 @@ void BattlegroundMgr::RemovePlayerFromQueue(Player* player, BattlegroundQueueTyp
 
 void BattlegroundMgr::GenerateNewGameStatId()
 {
-    SQLQueryHolder* holder = new SQLQueryHolder();
-    holder->SetSize(2);
-    holder->SetPQuery(0, "INSERT INTO arena_game_id (realm_id) VALUES (%u)", realmID);
-    holder->SetQuery(1, "SELECT LAST_INSERT_ID()");
-    auto task = LoginDatabase.Async(holder);
-    task->ContinueWith([=](SQLQueryHolder* holder)
-    {
-        QueryResult result = holder->GetResult(1);
-        if (!result)
-        {
-            TC_LOG_ERROR("battleground", "BattlegroundMgr::GenerateNewGameStatId - Coudn't select max game id");
-            m_resultQueue.pop_front();
-            ScheduleNextGameStat();
-        }
-        else
-        {
-            SQLTransaction trans = LoginDatabase.BeginTransaction();
-            uint32 id = (*result)[0].GetUInt32();
-            auto& stat = m_resultQueue.front();
-            PrepareNewGameStat(trans, stat, id);
-            auto task = LoginDatabase.Async(trans);
-            task->ContinueWith([=](bool result)
-            {
-                if (!result)
-                    TC_LOG_ERROR("battleground", "BattlegroundMgr::InsertNewGameStat - Transaction faield");
-                ScheduleNextGameStat();
-            });
-            m_resultQueue.pop_front();
-            LoginDatabase.PExecute("DELETE FROM arena_game_id WHERE game_id < %u and realm_id = %u", id, realmID);
-        }
-    });
+    // SQLQueryHolder<LoginDatabaseConnection>* holder = new SQLQueryHolder();
+    // holder->SetSize(2);
+    // holder->SetPQuery(0, "INSERT INTO arena_game_id (realm_id) VALUES (%u)", realmID);
+    // holder->SetQuery(1, "SELECT LAST_INSERT_ID()");
+    // auto task = LoginDatabase.Async(holder);
+    // task->ContinueWith([=](SQLQueryHolder* holder)
+    // {
+    //     QueryResult result = holder->GetResult(1);
+    //     if (!result)
+    //     {
+    //         TC_LOG_ERROR("battleground", "BattlegroundMgr::GenerateNewGameStatId - Coudn't select max game id");
+    //         m_resultQueue.pop_front();
+    //         ScheduleNextGameStat();
+    //     }
+    //     else
+    //     {
+    //         LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
+    //         uint32 id = (*result)[0].GetUInt32();
+    //         auto& stat = m_resultQueue.front();
+    //         PrepareNewGameStat(trans, stat, id);
+    //         auto task = LoginDatabase.Async(trans);
+    //         task->ContinueWith([=](bool result)
+    //         {
+    //             if (!result)
+    //                 TC_LOG_ERROR("battleground", "BattlegroundMgr::InsertNewGameStat - Transaction faield");
+    //             ScheduleNextGameStat();
+    //         });
+    //         m_resultQueue.pop_front();
+    //         LoginDatabase.PExecute("DELETE FROM arena_game_id WHERE game_id < %u and realm_id = %u", id, realmID);
+    //     }
+    // });
 }
 
 void BattlegroundMgr::ScheduleNextGameStat()

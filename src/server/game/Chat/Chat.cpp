@@ -31,6 +31,7 @@
 #include "Log.h"
 #include "Opcodes.h"
 #include "Player.h"
+#include "Realm.h"
 #include "UpdateMask.h"
 #include "SpellMgr.h"
 #include "ScriptMgr.h"
@@ -49,7 +50,7 @@ std::vector<ChatCommand> const& ChatHandler::getCommandTable()
         std::vector<ChatCommand> cmds = sScriptMgr->GetChatCommands();
         commandTableCache.swap(cmds);
 
-        PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_COMMANDS);
+        WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_COMMANDS);
         PreparedQueryResult result = WorldDatabase.Query(stmt);
         if (result)
         {
@@ -123,7 +124,7 @@ bool ChatHandler::HasLowerSecurityAccount(WorldSession* target, uint32 target_ac
     if (target)
         target_sec = target->GetSecurity();
     else if (target_account)
-        target_sec = AccountMgr::GetSecurity(target_account, realmID);
+        target_sec = AccountMgr::GetSecurity(target_account, realm.Id.Realm);
     else
         return true;                                        // caller must report error for (target == NULL && target_account == 0)
 
@@ -631,7 +632,9 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
                                   uint32 achievementId /*= 0*/, bool gmMessage /*= false*/, std::string const& channelName /*= ""*/,
                                   std::string const& addonPrefix /*= ""*/)
 {
+    size_t receiverGUIDPos = 0;
     bool hasAchievementId = (chatType == CHAT_MSG_ACHIEVEMENT || chatType == CHAT_MSG_GUILD_ACHIEVEMENT) && achievementId;
+    bool hasLanguage = (language > Language::LANG_UNIVERSAL);
     bool hasSenderName = false;
     bool hasReceiverName = false;
     bool hasChannelName = false;
@@ -692,8 +695,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     ObjectGuid guildGUID = hasGuildGUID && sender && sender->GetGuildId() ? MAKE_NEW_GUID(sender->GetGuildId(), 0, HIGHGUID_GUILD) : 0;
     ObjectGuid groupGUID = hasGroupGUID && sender && sender->GetGroup() ? sender->GetGroup()->GetGUID() : 0;
 
-    uint32 realmId1 = realmID;
-    uint32 realmId2 = realmID;
+    uint32 realmId1 = realm.Id.Realm;
+    // uint32 realmId2 = realmID;
 
     data.Initialize(SMSG_MESSAGECHAT);
     data.WriteBit(!hasSenderName);
@@ -723,6 +726,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
 
     data.WriteBit(0); // Fake Bit
 
+    receiverGUIDPos = data.bitwpos();
+
     data.WriteBit(receiverGUID[7]);
     data.WriteBit(receiverGUID[6]);
     data.WriteBit(receiverGUID[1]);
@@ -733,7 +738,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteBit(receiverGUID[5]);
 
     data.WriteBit(0); // Fake Bit
-    data.WriteBit(!language);
+    data.WriteBit(!hasLanguage);
     data.WriteBit(!hasPrefix);
 
     data.WriteBit(senderGUID[0]);
@@ -759,7 +764,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     if (hasPrefix)
         data.WriteBits(addonPrefix.length(), 5);
 
-    data.WriteBit(!realmId2); // RealmID ?
+    data.WriteBit(1); // RealmID ?
 
     if (hasReceiverName)
         data.WriteBits(receiverName.length(), 11);
@@ -818,6 +823,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteByteSeq(groupGUID[5]);
     data.WriteByteSeq(groupGUID[7]);
 
+    // receiverGUIDPos = data.bitwpos(); 
+
     data.WriteByteSeq(receiverGUID[2]);
     data.WriteByteSeq(receiverGUID[5]);
     data.WriteByteSeq(receiverGUID[3]);
@@ -827,11 +834,8 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     data.WriteByteSeq(receiverGUID[1]);
     data.WriteByteSeq(receiverGUID[0]);
 
-    if (language)
+    if (hasLanguage)
         data << uint8(language);
-
-    if (realmId2)
-        data << uint32(realmId2);
 
     if (message.length())
         data.WriteString(message);
@@ -842,10 +846,7 @@ size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Languag
     if (hasSenderName)
         data.WriteString(senderName);
 
-    if (realmId1)
-        data << uint32(realmId1);
-
-    return data.wpos();
+    return receiverGUIDPos;
 }
 
 size_t ChatHandler::BuildChatPacket(WorldPacket& data, ChatMsg chatType, Language language, WorldObject const* sender, WorldObject const* receiver, std::string const& message,
@@ -1364,17 +1365,17 @@ std::string ChatHandler::GetNameLink(Player* chr) const
     return playerLink(chr->GetName());
 }
 
-CommandHolder ChatHandler::CreateCommandHolder(TaskBase* task)
-{
-    GetSession()->NewAction(task);
-    return CommandHolder{ new ChatCommandHolder{ new ChatHandler{*this} } };
-}
+// CommandHolder ChatHandler::CreateCommandHolder(TaskBase* task)
+// {
+//     GetSession()->NewAction(task);
+//     return CommandHolder{ new ChatCommandHolder{ new ChatHandler{*this} } };
+// }
 
-CommandHolder CliHandler::CreateCommandHolder(TaskBase* task)
-{
-    m_holder->Delay(new CliHandler{ *this });
-    return m_hptr;
-}
+// CommandHolder CliHandler::CreateCommandHolder(TaskBase* task)
+// {
+//     m_holder->Delay(new CliHandler{ *this });
+//     return m_hptr;
+// }
 
 void CliCommandHolder::FinishCommand(bool success)
 {

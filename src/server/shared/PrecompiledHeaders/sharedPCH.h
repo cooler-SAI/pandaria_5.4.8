@@ -17,10 +17,12 @@
  
 //add here most rarely modified headers to speed up debug build compilation
 
+#include <ace/Guard_T.h>
 #include "Common.h"
-#include "Log.h"
-#include "DatabaseWorker.h"
-#include "SQLOperation.h"
 #include "Errors.h"
+#include "Log.h"
 #include "TypeList.h"
-#include "TaskScheduler.h"
+#include "Util.h"
+#include <memory>
+#include <string>
+#include <vector>

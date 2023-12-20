@@ -197,7 +197,7 @@ class npc_aysa_wind_temple_escort : public CreatureScript
                         }
 
                         SetEscortPaused(true);
-                        me->DespawnOrUnsummon(10000);
+                        me->DespawnOrUnsummon(10000); // need check time in retail
                         break;
                     }
                     default:

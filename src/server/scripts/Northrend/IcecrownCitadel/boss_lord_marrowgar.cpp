@@ -21,6 +21,7 @@
 #include "SpellAuras.h"
 #include "MapManager.h"
 #include "icecrown_citadel.h"
+#include "Random.h"
 
 enum ScriptTexts
 {
@@ -94,7 +95,7 @@ enum Actions
     ACTION_TALK_ENTER_ZONE        = 2
 };
 
-class BoneSpikeTargetSelector : public std::unary_function<Unit*, bool>
+class BoneSpikeTargetSelector 
 {
     public:
         BoneSpikeTargetSelector(UnitAI* ai) : _ai(ai) { }
@@ -118,7 +119,7 @@ class BoneSpikeTargetSelector : public std::unary_function<Unit*, bool>
         UnitAI* _ai;
 };
 
-class BoneStormTargetSelector : public std::unary_function<Unit*, bool>
+class BoneStormTargetSelector 
 {
     public:
         BoneStormTargetSelector(WorldObject const* source, bool ignoreDistance) : _source(source), _ignoreDistance(ignoreDistance) { }
@@ -600,8 +601,8 @@ class npc_bone_spike : public CreatureScript
                 DoCast(summoner, SPELL_IMPALED);
                 summoner->CastSpell(me, SPELL_RIDE_VEHICLE, true);
                 _events.ScheduleEvent(EVENT_FAIL_BONED, 8000);
-                if (summoner->HasUnitState(UNIT_STATE_ON_VEHICLE))
-                    summoner->ClearUnitState(UNIT_STATE_ON_VEHICLE);
+                if (summoner->HasUnitState(UNIT_STATE_FOLLOW_FORMATION))
+                    summoner->ClearUnitState(UNIT_STATE_FOLLOW_FORMATION);
                 _hasTrappedUnit = true;
             }
 

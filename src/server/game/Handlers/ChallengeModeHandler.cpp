@@ -22,6 +22,7 @@
 #include "Group.h"
 #include "LFGMgr.h"
 #include "SpellHistory.h"
+#include "Realm.h"
 
 void WorldSession::HandleGetChallengeModeRewards(WorldPacket& /*recvData*/)
 {
@@ -101,15 +102,15 @@ void WorldSession::HandleChallengeModeRequestLeaders(WorldPacket& recvData)
 
             guildBuffer.WriteGuidBytes(guid, 3);
             guildBuffer << uint32(guildChallenge->Members[j].SpecId);
-            guildBuffer << uint32(realmID);
+            guildBuffer << uint32(realm.Id.Realm);
             guildBuffer.WriteGuidBytes(guid, 1, 5, 0);
-            guildBuffer << uint32(realmID);
+            guildBuffer << uint32(realm.Id.Realm);
             guildBuffer.WriteGuidBytes(guid, 4, 7, 6, 2);
         }
 
         guildBuffer << uint32(guildChallenge->AttemptId);
         guildBuffer << uint32(guildChallenge->MedalEarned);
-        guildBuffer << uint32(realmID);
+        guildBuffer << uint32(realm.Id.Realm);
         guildBuffer << uint32(guildChallenge->CompletionTime);
         guildBuffer << uint32(guildChallenge->CompletionDate);
     }
@@ -128,14 +129,14 @@ void WorldSession::HandleChallengeModeRequestLeaders(WorldPacket& recvData)
             data.WriteGuidMask(guid, 5, 3, 0, 1, 2, 4, 6, 7);
 
             realmBuffer.WriteGuidBytes(guid, 4, 3, 6, 7, 2, 1);
-            realmBuffer << uint32(realmID);
+            realmBuffer << uint32(realm.Id.Realm);
             realmBuffer << uint32(groupChallenge->Members[j].SpecId);
-            realmBuffer << uint32(realmID);
+            realmBuffer << uint32(realm.Id.Realm);
             realmBuffer.WriteGuidBytes(guid, 0, 5);
         }
 
         realmBuffer << uint32(groupChallenge->CompletionDate);
-        realmBuffer << uint32(realmID);
+        realmBuffer << uint32(realm.Id.Realm);
         realmBuffer << uint32(groupChallenge->AttemptId);
         realmBuffer << uint32(groupChallenge->CompletionTime);
         realmBuffer << uint32(groupChallenge->MedalEarned);

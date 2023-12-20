@@ -25,7 +25,6 @@ source_group(localdir FILES ${sources_Localdir})
 
 if (USE_COREPCH)
   set(authserver_PCH_HDR PrecompiledHeaders/authPCH.h)
-  set(authserver_PCH_SRC PrecompiledHeaders/authPCH.cpp)
 endif()
 
 set(authserver_SRCS
@@ -50,32 +49,38 @@ if( WIN32 )
 endif()
 
 include_directories(
-  ${CMAKE_BINARY_DIR}
-  ${CMAKE_SOURCE_DIR}/src/server/shared
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Database
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Debugging
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Cryptography
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Cryptography/Authentication
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Logging
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
-  ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/Authentication
-  ${CMAKE_CURRENT_SOURCE_DIR}/Realms
-  ${CMAKE_CURRENT_SOURCE_DIR}/Server
-  ${ACE_INCLUDE_DIR}
-  ${MYSQL_INCLUDE_DIR}
-  ${OPENSSL_INCLUDE_DIR}
+  PUBLIC
+    ${CMAKE_BINARY_DIR}
+    ${OPENSSL_INCLUDE_DIR}
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/common
+    ${CMAKE_SOURCE_DIR}/src/common/Asio
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography
+    ${CMAKE_SOURCE_DIR}/src/common/Cryptography/Authentication 
+    ${CMAKE_SOURCE_DIR}/src/common/Debugging 
+    ${CMAKE_SOURCE_DIR}/src/common/IPLocation
+    ${CMAKE_SOURCE_DIR}/src/common/Logging
+    ${CMAKE_SOURCE_DIR}/src/common/Threading
+    ${CMAKE_SOURCE_DIR}/src/common/Utilities  
+    ${CMAKE_SOURCE_DIR}/src/server/database
+    ${CMAKE_SOURCE_DIR}/src/server/database/Database
+    ${CMAKE_SOURCE_DIR}/src/server/database/Logging
+    ${CMAKE_SOURCE_DIR}/src/server/shared
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Packets
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Threading
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Realms
+    ${CMAKE_SOURCE_DIR}/src/server/shared/Utilities
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/Authentication
+    ${CMAKE_CURRENT_SOURCE_DIR}/Server
+    ${ACE_INCLUDE_DIR}
+    ${MYSQL_INCLUDE_DIR}
+    ${Boost_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/dep/fmt/include
 )
-
-if (Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
-endif()
 
 add_executable(authserver
   ${authserver_SRCS}
-  ${authserver_PCH_SRC}
 )
 
 add_dependencies(authserver revision.h)
@@ -87,10 +92,14 @@ if( NOT WIN32 )
 endif()
 
 target_link_libraries(authserver
+  common
   shared
+  database
+  ${JEMALLOC_LIBRARY}
   ${MYSQL_LIBRARY}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
+  ${CMAKE_DL_LIBS}
   ${ACE_LIBRARY}
   ${Boost_LIBRARIES}
 )
@@ -119,5 +128,5 @@ endif()
 
 # Generate precompiled header
 if (USE_COREPCH)
-  add_cxx_pch(authserver ${authserver_PCH_HDR} ${authserver_PCH_SRC})
+  target_precompile_headers(authserver PRIVATE ${authserver_PCH_HDR}) 
 endif()

@@ -222,9 +222,10 @@ class npc_morridune : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+            bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
             {
                 DoCast(player, SPELL_TELEPORT_DARNASSUS);
+                return true;
             }
         };
 

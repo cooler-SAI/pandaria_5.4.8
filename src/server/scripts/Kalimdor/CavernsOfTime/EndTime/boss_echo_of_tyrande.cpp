@@ -18,6 +18,7 @@
 #include "ScriptPCH.h"
 #include "end_time.h"
 #include "MoveSplineInit.h"
+#include "Random.h"
 
 enum Yells
 {

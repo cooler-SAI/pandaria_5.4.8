@@ -20,6 +20,54 @@
 
 #include "Define.h"
 
+#define CONTACT_DISTANCE            0.5f
+#define INTERACTION_DISTANCE        5.0f
+#define PETBATTLE_INTERACTION_DIST  20.0f
+#define ATTACK_DISTANCE             5.0f
+#define MAX_VISIBILITY_DISTANCE     SIZE_OF_GRIDS           // max distance for visible objects
+#define SIGHT_RANGE_UNIT            50.0f
+#define DEFAULT_VISIBILITY_DISTANCE 90.0f                   // default visible distance, 90 yards on continents
+#define DEFAULT_VISIBILITY_INSTANCE 170.0f                  // default visible distance in instances, 170 yards
+#define DEFAULT_VISIBILITY_BGARENAS 533.0f                  // default visible distance in BG/Arenas, roughly 533 yards
+
+#define DEFAULT_WORLD_OBJECT_SIZE   0.388999998569489f      // player size, also currently used (correctly?) for any non Unit world objects
+#define DEFAULT_COMBAT_REACH        1.5f
+#define MIN_MELEE_REACH             2.0f
+#define NOMINAL_MELEE_RANGE         5.0f
+#define MELEE_RANGE                 (NOMINAL_MELEE_RANGE - MIN_MELEE_REACH * 2) //center to center for players
+
+enum TempSummonType
+{
+    TEMPSUMMON_TIMED_OR_DEAD_DESPAWN       = 1,             // despawns after a specified time OR when the creature disappears
+    TEMPSUMMON_TIMED_OR_CORPSE_DESPAWN     = 2,             // despawns after a specified time OR when the creature dies
+    TEMPSUMMON_TIMED_DESPAWN               = 3,             // despawns after a specified time
+    TEMPSUMMON_TIMED_DESPAWN_OUT_OF_COMBAT = 4,             // despawns after a specified time after the creature is out of combat
+    TEMPSUMMON_CORPSE_DESPAWN              = 5,             // despawns instantly after death
+    TEMPSUMMON_CORPSE_TIMED_DESPAWN        = 6,             // despawns after a specified time after death
+    TEMPSUMMON_DEAD_DESPAWN                = 7,             // despawns when the creature disappears
+    TEMPSUMMON_MANUAL_DESPAWN              = 8              // despawns when UnSummon() is called
+};
+
+enum PhaseMasks
+{
+    PHASEMASK_NORMAL   = 0x00000001,
+    PHASEMASK_ANYWHERE = 0xFFFFFFFF
+};
+
+enum NotifyFlags
+{
+    NOTIFY_NONE                     = 0x00,
+    NOTIFY_AI_RELOCATION            = 0x01,
+    NOTIFY_VISIBILITY_CHANGED       = 0x02,
+    NOTIFY_ALL                      = 0xFF
+};
+
+enum GOSummonType
+{
+   GO_SUMMON_TIMED_OR_CORPSE_DESPAWN = 0,    // despawns after a specified time OR when the summoner dies
+   GO_SUMMON_TIMED_DESPAWN = 1     // despawns after a specified time
+};
+
 enum HighGuid
 {
     HIGHGUID_ITEM           = 0x400,                       // blizz 4000
@@ -45,13 +93,6 @@ enum HighGuid
 };
 
 // used for creating values for respawn for example
-inline uint64 MAKE_PAIR64(uint32 l, uint32 h);
-inline uint32 PAIR64_HIPART(uint64 x);
-inline uint32 PAIR64_LOPART(uint64 x);
-inline uint16 MAKE_PAIR16(uint8 l, uint8 h);
-inline uint32 MAKE_PAIR32(uint16 l, uint16 h);
-inline uint16 PAIR32_HIPART(uint32 x);
-inline uint16 PAIR32_LOPART(uint32 x);
 
 inline bool IS_EMPTY_GUID(uint64 guid);
 inline bool IS_CREATURE_GUID(uint64 guid);
@@ -84,37 +125,37 @@ inline uint32 GUID_LOPART(uint64 x);
 inline bool IsGuidHaveEnPart(uint64 guid);
 inline char const* GetLogNameForGuid(uint64 guid);
 
-uint64 MAKE_PAIR64(uint32 l, uint32 h)
+inline uint64 MAKE_PAIR64(uint32 l, uint32 h)
 {
     return uint64(l | (uint64(h) << 32));
 }
 
-uint32 PAIR64_HIPART(uint64 x)
+inline uint32 PAIR64_HIPART(uint64 x)
 {
     return (uint32)((x >> 32) & UI64LIT(0x00000000FFFFFFFF));
 }
 
-uint32 PAIR64_LOPART(uint64 x)
+inline uint32 PAIR64_LOPART(uint64 x)
 {
     return (uint32)(x & UI64LIT(0x00000000FFFFFFFF));
 }
 
-uint16 MAKE_PAIR16(uint8 l, uint8 h)
+inline uint16 MAKE_PAIR16(uint8 l, uint8 h)
 {
     return uint16(l | (uint16(h) << 8));
 }
 
-uint32 MAKE_PAIR32(uint16 l, uint16 h)
+inline uint32 MAKE_PAIR32(uint16 l, uint16 h)
 {
     return uint32(l | (uint32(h) << 16));
 }
 
-uint16 PAIR32_HIPART(uint32 x)
+inline uint16 PAIR32_HIPART(uint32 x)
 {
     return (uint16)((x >> 16) & 0x0000FFFF);
 }
 
-uint16 PAIR32_LOPART(uint32 x)
+inline uint16 PAIR32_LOPART(uint32 x)
 {
     return (uint16)(x & 0x0000FFFF);
 }

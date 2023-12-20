@@ -52,8 +52,7 @@
 #include "BattlefieldMgr.h"
 #include "Chat.h"
 #include "Transport.h"
-#include "timeless_isle.h"
-#include <ace/Stack_Trace.h>
+// #include "timeless_isle.h" remove hack , fix in future
 
 #define STEALTH_VISIBILITY_UPDATE_TIMER 500
 
@@ -350,6 +349,44 @@ void Object::DestroyForPlayer(Player* target, bool onDeath) const
     data.WriteByteSeq(guid[5]);
 
     target->GetSession()->SendPacket(&data);
+}
+
+int32 Object::GetInt32Value(uint16 index) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
+    return m_int32Values[index];
+}
+
+uint32 Object::GetUInt32Value(uint16 index) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
+    return m_uint32Values[index];
+}
+
+uint64 Object::GetUInt64Value(uint16 index) const
+{
+    ASSERT(index + 1 < m_valuesCount || PrintIndexError(index, false));
+    return *((uint64*)&(m_uint32Values[index]));
+}
+
+float Object::GetFloatValue(uint16 index) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
+    return m_floatValues[index];
+}
+
+uint8 Object::GetByteValue(uint16 index, uint8 offset) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
+    ASSERT(offset < 4);
+    return *(((uint8*)&m_uint32Values[index])+offset);
+}
+
+uint16 Object::GetUInt16Value(uint16 index, uint8 offset) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, false));
+    ASSERT(offset < 2);
+    return *(((uint16*)&m_uint32Values[index])+offset);
 }
 
 uint32 Object::GetDynamicUInt32Value(uint32 tab, uint16 index) const
@@ -1174,6 +1211,12 @@ void Object::ToggleFlag(uint16 index, uint32 flag)
         SetFlag(index, flag);
 }
 
+bool Object::HasFlag(uint16 index, uint32 flag) const
+{
+    ASSERT(index < m_valuesCount || PrintIndexError(index, true));
+    return (m_uint32Values[index] & flag) != 0;    
+}
+
 void Object::ApplyModFlag(uint16 index, uint32 flag, bool apply)
 {
     if (apply) SetFlag(index, flag); else RemoveFlag(index, flag);
@@ -1275,67 +1318,6 @@ bool Object::PrintIndexError(uint32 index, bool set) const
     return false;
 }
 
-void Object::IndexGetAssertFailed(uint32 index) const
-{
-    PrintIndexError(index, false);
-    std::abort();
-}
-
-bool Position::operator==(Position const &a)
-{
-    return (G3D::fuzzyEq(a.m_positionX, m_positionX) &&
-            G3D::fuzzyEq(a.m_positionY, m_positionY) &&
-            G3D::fuzzyEq(a.m_positionZ, m_positionZ) &&
-            G3D::fuzzyEq(a.m_orientation, m_orientation));
-}
-
-bool Position::HasInLine(WorldObject const* target, float width) const
-{
-    if (!HasInArc(M_PI, target))
-        return false;
-    width += target->GetObjectSize();
-    float angle = GetRelativeAngle(target);
-    return fabs(sin(angle)) * GetExactDist2d(target->GetPositionX(), target->GetPositionY()) < width;
-}
-
-std::string Position::ToString() const
-{
-    std::stringstream sstr;
-    sstr << "X: " << m_positionX << " Y: " << m_positionY << " Z: " << m_positionZ << " O: " << m_orientation;
-    return sstr.str();
-}
-
-ByteBuffer& operator>>(ByteBuffer& buf, Position::PositionXYZOStreamer const& streamer)
-{
-    float x, y, z, o;
-    buf >> x >> y >> z >> o;
-    streamer.m_pos->Relocate(x, y, z, o);
-    return buf;
-}
-ByteBuffer& operator<<(ByteBuffer& buf, Position::PositionXYZStreamer const& streamer)
-{
-    float x, y, z;
-    streamer.m_pos->GetPosition(x, y, z);
-    buf << x << y << z;
-    return buf;
-}
-
-ByteBuffer& operator>>(ByteBuffer& buf, Position::PositionXYZStreamer const& streamer)
-{
-    float x, y, z;
-    buf >> x >> y >> z;
-    streamer.m_pos->Relocate(x, y, z);
-    return buf;
-}
-
-ByteBuffer& operator<<(ByteBuffer& buf, Position::PositionXYZOStreamer const& streamer)
-{
-    float x, y, z, o;
-    streamer.m_pos->GetPosition(x, y, z, o);
-    buf << x << y << z << o;
-    return buf;
-}
-
 void MovementInfo::OutDebug()
 {
     TC_LOG_INFO("misc", "MOVEMENT INFO");
@@ -1371,9 +1353,9 @@ void MovementInfo::OutDebug()
         TC_LOG_INFO("misc", "splineElevation: %f", splineElevation);
 }
 
-WorldObject::WorldObject(bool isWorldObject): WorldLocation(),
-m_name(""), m_isActive(false), m_isWorldObject(isWorldObject), m_zoneScript(NULL),
-m_transport(NULL), m_currMap(NULL), m_InstanceId(0),
+WorldObject::WorldObject(bool isWorldObject): Object(), WorldLocation(),
+m_name(""), m_isActive(false), m_isWorldObject(isWorldObject), m_zoneScript(nullptr),
+m_transport(nullptr), m_currMap(nullptr), m_InstanceId(0),
 m_phaseMask(PHASEMASK_NORMAL), m_explicitSeerGuid(),
 m_stealthVisibilityUpdateTimer(STEALTH_VISIBILITY_UPDATE_TIMER)
 {
@@ -1464,6 +1446,13 @@ void WorldObject::_Create(uint32 guidlow, HighGuid guidhigh, uint32 phaseMask)
     Object::_Create(guidlow, 0, guidhigh);
     m_phaseMask = phaseMask;
 }
+
+// void WorldObject::AddToWorld()
+// {
+//     Object::AddToWorld();
+//     //GetMap()->GetZoneAndAreaId(GetPhaseMask(), m_zoneId, m_areaId, GetPositionX(), GetPositionY(), GetPositionZ());
+//     GetMap()->GetZoneAndAreaId(GetZoneId(), GetAreaId(), m_positionX, m_positionY, m_positionZ);
+// }
 
 void WorldObject::RemoveFromWorld()
 {
@@ -2205,10 +2194,11 @@ bool WorldObject::CanNeverSee(WorldObject const* obj) const
     Player const* player = ToPlayer();
     if (obj->GetTypeId() == TYPEID_GAMEOBJECT && player && !player->IsGameMaster())
     {
-        auto itr = timelessRareChestsMap.find(obj->GetEntry());
-        if (itr != timelessRareChestsMap.end())
-            if (player->GetQuestStatus(itr->second) == QUEST_STATUS_REWARDED || player->IsWeeklyQuestDone(itr->second) || player->IsDailyQuestDone(itr->second))
-                return true;
+        // remove hack , fix in future
+        // auto itr = timelessRareChestsMap.find(obj->GetEntry());
+        // if (itr != timelessRareChestsMap.end())
+        //     if (player->GetQuestStatus(itr->second) == QUEST_STATUS_REWARDED || player->IsWeeklyQuestDone(itr->second) || player->IsDailyQuestDone(itr->second))
+        //         return true;
     }
 
     if (GetMap() != obj->GetMap() || !InSamePhase(obj))
@@ -2310,13 +2300,13 @@ bool WorldObject::CanDetectStealthOf(WorldObject const* obj) const
         // Level difference: 5 point / level, starting from level 1.
         // There may be spells for this and the starting points too, but
         // not in the DBCs of the client.
-        detectionValue += int32(getLevelForTarget(obj) - 1) * 5;
+        detectionValue += int32(GetLevelForTarget(obj) - 1) * 5;
 
         // Apply modifiers
         detectionValue += m_stealthDetect.GetValue(StealthType(i));
         if (go)
             if (Unit* owner = go->GetOwner())
-                detectionValue -= int32(owner->getLevelForTarget(this) - 1) * 5;
+                detectionValue -= int32(owner->GetLevelForTarget(this) - 1) * 5;
 
         detectionValue -= obj->m_stealth.GetValue(StealthType(i));
 
@@ -2620,8 +2610,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropert
 {
     if (!Trinity::IsValidMapCoord(pos.GetPositionX(), pos.GetPositionY()))
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Map::SummonCreature entry: %u, spell: %u, x: %f, y: %f\n%s", entry, spellId, pos.GetPositionX(), pos.GetPositionY(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Map::SummonCreature entry: %u, spell: %u, x: %f, y: %f\n", entry, spellId, pos.GetPositionX(), pos.GetPositionY());
         return nullptr;
     }
 
@@ -2737,8 +2726,7 @@ TempSummon* Map::SummonCreature(uint32 entry, Position const& pos, SummonPropert
             summoner->AddSummon(summon);
         else if (summoner->FindMap() != summon->FindMap()) // Okay, owner isn't in world, just some shit in scripts on instance unload/etc or summon was despawned (yeah, its's possible)
         {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "Map::SummonCreature spellId: %u, owner (" UI64FMTD ", entry: %u) map: %u (instance: %u), summon (" UI64FMTD ", entry: %u, in world: %u) map: %u (instance: %u)\n%s", spellId, summoner->GetGUID(), summoner->GetEntry(), summoner->GetMap()->GetId(), summoner->GetInstanceId(), summon->GetGUID(), summon->GetEntry(), summon->IsInWorld(), summon->GetMap()->GetId(), summon->GetInstanceId(), st.c_str());
+            TC_LOG_ERROR("shitlog", "Map::SummonCreature spellId: %u, owner (" UI64FMTD ", entry: %u) map: %u (instance: %u), summon (" UI64FMTD ", entry: %u, in world: %u) map: %u (instance: %u)\n", spellId, summoner->GetGUID(), summoner->GetEntry(), summoner->GetMap()->GetId(), summoner->GetInstanceId(), summon->GetGUID(), summon->GetEntry(), summon->IsInWorld(), summon->GetMap()->GetId(), summon->GetInstanceId());
         }
     }
 
@@ -2808,7 +2796,7 @@ TempSummon* WorldObject::SummonCreature(uint32 id, float x, float y, float z, fl
     return SummonCreature(id, pos, spwtype, despwtime, 0, visibleBySummonerOnly);
 }
 
-GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime)
+GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float z, float ang, G3D::Quat const& rotation, uint32 respawnTime, GOSummonType summonType)
 {
     if (!IsInWorld())
         return NULL;
@@ -2831,7 +2819,7 @@ GameObject* WorldObject::SummonGameObject(uint32 entry, float x, float y, float 
     go->AddToTransportIfNeeded(GetTransport());
 
     go->SetRespawnTime(respawnTime);
-    if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT) //not sure how to handle this
+    if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT && summonType == GO_SUMMON_TIMED_OR_CORPSE_DESPAWN) //not sure how to handle this
         ToUnit()->AddGameObject(go);
     else
         go->SetSpawnedByDefault(false);
@@ -2850,8 +2838,8 @@ Creature* WorldObject::SummonTrigger(float x, float y, float z, float ang, uint3
     //summon->SetName(GetName());
     if (GetTypeId() == TYPEID_PLAYER || GetTypeId() == TYPEID_UNIT)
     {
-        summon->setFaction(((Unit*)this)->getFaction());
-        summon->SetLevel(((Unit*)this)->getLevel());
+        summon->SetFaction(((Unit*)this)->GetFaction());
+        summon->SetLevel(((Unit*)this)->GetLevel());
     }
 
     if (GetAI)
@@ -3737,9 +3725,8 @@ void WorldObject::AddToUpdate()
 
     if (m_currMap != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "WorldObject::AddToUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, InWorld: %u, position: { %f, %f, %f }.\nStack trace:\n%s",
-            m_currMap->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), IsInWorld(), GetPositionX(), GetPositionY(), GetPositionZ(), st.c_str());
+        TC_LOG_ERROR("shitlog", "WorldObject::AddToUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, InWorld: %u, position: { %f, %f, %f }.\nStack trace:\n",
+            m_currMap->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), IsInWorld(), GetPositionX(), GetPositionY(), GetPositionZ());
         return;
     }
 
@@ -3758,9 +3745,8 @@ void WorldObject::RemoveFromUpdate()
 
     if (m_currMap != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "WorldObject::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, InWorld: %u, position: { %f, %f, %f }.\nStack trace:\n%s",
-            m_currMap->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), IsInWorld(), GetPositionX(), GetPositionY(), GetPositionZ(), st.c_str());
+        TC_LOG_ERROR("shitlog", "WorldObject::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, InWorld: %u, position: { %f, %f, %f }.\nStack trace:\n",
+            m_currMap->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), IsInWorld(), GetPositionX(), GetPositionY(), GetPositionZ());
         return;
     }
 

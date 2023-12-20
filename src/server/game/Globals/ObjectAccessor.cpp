@@ -35,12 +35,47 @@
 #include "Vehicle.h"
 #include "World.h"
 #include "WorldPacket.h"
-#include <ace/Stack_Trace.h>
 #include <cmath>
+#include "AreaTrigger.h"
+
+template<class T>
+void HashMapHolder<T>::Insert(T* o)
+{
+    std::unique_lock<std::shared_mutex> lock(*GetLock());
+    m_objectMap[o->GetGUID()] = o;
+}
+
+template<class T>
+void HashMapHolder<T>::Remove(T* o)
+{
+    std::unique_lock<std::shared_mutex> lock(*GetLock());
+    m_objectMap.erase(o->GetGUID());
+}
+
+template<class T>
+T* HashMapHolder<T>::Find(uint64 guid)
+{
+    std::shared_lock<std::shared_mutex> lock(*GetLock());
+    typename MapType::iterator itr = m_objectMap.find(guid);
+    return (itr != m_objectMap.end()) ? itr->second : nullptr;
+}
+
+template<class T>
+std::shared_mutex* HashMapHolder<T>::GetLock()
+{
+    static std::shared_mutex _lock;
+    return &_lock;
+}
 
 ObjectAccessor::ObjectAccessor() { }
 
 ObjectAccessor::~ObjectAccessor() { }
+
+ObjectAccessor* ObjectAccessor::instance()
+{
+    static ObjectAccessor instance;
+    return &instance;
+}
 
 template<class T> T* ObjectAccessor::GetObjectInWorld(uint32 mapid, float x, float y, uint64 guid, T* /*fake*/)
 {
@@ -213,13 +248,11 @@ Player* ObjectAccessor::FindPlayerInOrOutOfWorld(uint64 guid)
 
 Creature* ObjectAccessor::FindCreature(uint64 guid)
 {
-    ENSURE_WORLD_THREAD();
     return GetObjectInWorld(guid, (Creature*)nullptr);
 }
 
 GameObject* ObjectAccessor::FindGameObject(uint64 guid)
 {
-    ENSURE_WORLD_THREAD();
     return GetObjectInWorld(guid, (GameObject*)nullptr);
 }
 
@@ -235,7 +268,7 @@ DynamicObject* ObjectAccessor::FindDynamicObject(uint64 guid)
 
 Player* ObjectAccessor::FindPlayerByName(std::string const& name)
 {
-    TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+    std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
     std::string nameStr = name;
     std::transform(nameStr.begin(), nameStr.end(), nameStr.begin(), ::tolower);
     HashMapHolder<Player>::MapType const& m = GetPlayers();
@@ -254,7 +287,7 @@ Player* ObjectAccessor::FindPlayerByName(std::string const& name)
 
 void ObjectAccessor::SaveAllPlayers()
 {
-    TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+    std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Creature>::GetLock());
     HashMapHolder<Player>::MapType const& m = GetPlayers();
     for (HashMapHolder<Player>::MapType::const_iterator itr = m.begin(); itr != m.end(); ++itr)
         itr->second->SaveToDB();
@@ -262,7 +295,7 @@ void ObjectAccessor::SaveAllPlayers()
 
 Corpse* ObjectAccessor::GetCorpseForPlayerGUID(uint64 guid)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, i_corpseLock);
+    std::shared_lock<std::shared_mutex> lock(i_corpseLock);
 
     Player2CorpsesMapType::iterator iter = i_player2corpse.find(guid);
     if (iter == i_player2corpse.end())
@@ -295,7 +328,7 @@ void ObjectAccessor::RemoveCorpse(Corpse* corpse)
 
     // Critical section
     {
-        TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, i_corpseLock);
+        std::unique_lock<std::shared_mutex> guard(i_corpseLock);
 
         Player2CorpsesMapType::iterator iter = i_player2corpse.find(corpse->GetOwnerGUID());
         if (iter == i_player2corpse.end()) /// @todo Fix this
@@ -315,7 +348,7 @@ void ObjectAccessor::AddCorpse(Corpse* corpse)
 
     // Critical section
     {
-        TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, i_corpseLock);
+        std::unique_lock<std::shared_mutex> guard(i_corpseLock);
 
         ASSERT(i_player2corpse.find(corpse->GetOwnerGUID()) == i_player2corpse.end());
         i_player2corpse[corpse->GetOwnerGUID()] = corpse;
@@ -328,7 +361,7 @@ void ObjectAccessor::AddCorpse(Corpse* corpse)
 
 void ObjectAccessor::AddCorpsesToGrid(GridCoord const& gridpair, GridType& grid, Map* map)
 {
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, i_corpseLock);
+    std::shared_lock<std::shared_mutex> lock(i_corpseLock);
 
     for (Player2CorpsesMapType::iterator iter = i_player2corpse.begin(); iter != i_player2corpse.end(); ++iter)
     {
@@ -369,7 +402,7 @@ Corpse* ObjectAccessor::ConvertCorpseForPlayer(uint64 player_guid, bool insignia
     RemoveCorpse(corpse);
 
     // remove corpse from DB
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     corpse->DeleteFromDB(trans);
     CharacterDatabase.CommitTransaction(trans);
 
@@ -441,7 +474,6 @@ void ObjectAccessor::UnloadAll()
 /// Define the static members of HashMapHolder
 
 template <class T> std::unordered_map< uint64, T* > HashMapHolder<T>::m_objectMap;
-template <class T> typename HashMapHolder<T>::LockType HashMapHolder<T>::i_lock;
 
 /// Global definitions for the hashmap storage
 
@@ -451,6 +483,7 @@ template class HashMapHolder<GameObject>;
 template class HashMapHolder<DynamicObject>;
 template class HashMapHolder<Creature>;
 template class HashMapHolder<Corpse>;
+template class HashMapHolder<AreaTrigger>;
 
 template Player* ObjectAccessor::GetObjectInWorld<Player>(uint32 mapid, float x, float y, uint64 guid, Player* /*fake*/);
 template Pet* ObjectAccessor::GetObjectInWorld<Pet>(uint32 mapid, float x, float y, uint64 guid, Pet* /*fake*/);
@@ -458,3 +491,4 @@ template Creature* ObjectAccessor::GetObjectInWorld<Creature>(uint32 mapid, floa
 template Corpse* ObjectAccessor::GetObjectInWorld<Corpse>(uint32 mapid, float x, float y, uint64 guid, Corpse* /*fake*/);
 template GameObject* ObjectAccessor::GetObjectInWorld<GameObject>(uint32 mapid, float x, float y, uint64 guid, GameObject* /*fake*/);
 template DynamicObject* ObjectAccessor::GetObjectInWorld<DynamicObject>(uint32 mapid, float x, float y, uint64 guid, DynamicObject* /*fake*/);
+template AreaTrigger* ObjectAccessor::GetObjectInWorld<AreaTrigger>(uint32 mapid, float x, float y, uint64 guid, AreaTrigger* /*fake*/);

@@ -142,12 +142,12 @@ class MailDraft
         MailDraft& AddCOD(uint32 COD) { m_COD = COD; return *this; }
 
     public:                                                 // finishers
-        void SendReturnToSender(uint32 sender_acc, uint32 sender_guid, uint32 receiver_guid, SQLTransaction& trans);
-        void SendMailTo(SQLTransaction& trans, MailReceiver const& receiver, MailSender const& sender, MailCheckMask checked = MAIL_CHECK_MASK_NONE, uint32 deliver_delay = 0);
+        void SendReturnToSender(uint32 sender_acc, uint32 sender_guid, uint32 receiver_guid, CharacterDatabaseTransaction trans);
+        void SendMailTo(CharacterDatabaseTransaction trans, MailReceiver const& receiver, MailSender const& sender, MailCheckMask checked = MAIL_CHECK_MASK_NONE, uint32 deliver_delay = 0);
 
     protected:
-        void deleteIncludedItems(SQLTransaction& trans, bool inDB = false);
-        void prepareItems(Player* receiver, SQLTransaction& trans);                // called from SendMailTo for generate mailTemplateBase items
+        void deleteIncludedItems(CharacterDatabaseTransaction trans, bool inDB = false);
+        void prepareItems(Player* receiver, CharacterDatabaseTransaction trans);                // called from SendMailTo for generate mailTemplateBase items
 
         uint16      m_mailTemplateId;
         bool        m_mailTemplateItemsNeed;
@@ -166,10 +166,10 @@ public:
     LostItemsMailDraft() : MailDraft("", "") { }
 
     MailDraft& AddCOD(uint32) = delete;
-    void SendReturnToSender(uint32, uint32, uint32, SQLTransaction&) = delete;
-    void SendMailTo(SQLTransaction&, MailReceiver const&, MailSender const&, MailCheckMask, uint32) = delete;
+    void SendReturnToSender(uint32, uint32, uint32, CharacterDatabaseTransaction) = delete;
+    void SendMailTo(CharacterDatabaseTransaction, MailReceiver const&, MailSender const&, MailCheckMask, uint32) = delete;
 
-    void SendMailTo(SQLTransaction& trans, Player* player);
+    void SendMailTo(CharacterDatabaseTransaction trans, Player* player);
 };
 
 struct MailItemInfo

@@ -25,7 +25,9 @@ EndScriptData */
 #include "AccountMgr.h"
 #include "Chat.h"
 #include "Language.h"
+#include "IPLocation.h"
 #include "Player.h"
+#include "Realm.h"
 #include "ScriptMgr.h"
 #include "ServiceBoost.h"
 
@@ -42,6 +44,7 @@ public:
         };      
         static std::vector<ChatCommand> accountLockCommandTable =
         {
+            { "country",        SEC_ADMINISTRATOR,      true,   &HandleAccountLockCountryCommand    },
             { "ip",             SEC_ADMINISTRATOR,      true,   &HandleAccountLockIpCommand         },
         };
 
@@ -93,7 +96,7 @@ public:
             return false;
         }
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPANSION);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPANSION);
 
         stmt->setUInt8(0, uint8(expansion));
         stmt->setUInt32(1, accountId);
@@ -217,7 +220,8 @@ public:
     static bool HandleAccountOnlineListCommand(ChatHandler* handler, char const* /*args*/)
     {
         ///- Get the list of accounts ID logged to the realm
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_ONLINE);
+        LoginDatabasePreparedStatement* lstmt = nullptr;
 
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -241,9 +245,9 @@ public:
 
             ///- Get the username, last IP and GM level of each account
             // No SQL injection. account is uint32.
-            stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO);
-            stmt->setUInt32(0, account);
-            PreparedQueryResult resultLogin = LoginDatabase.Query(stmt);
+            lstmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_INFO);
+            lstmt->setUInt32(0, account);
+            PreparedQueryResult resultLogin = LoginDatabase.Query(lstmt);
 
             if (resultLogin)
             {
@@ -275,7 +279,7 @@ public:
 
         if (!param.empty())
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK);
 
             if (param == "on")
             {
@@ -298,6 +302,53 @@ public:
         handler->SetSentErrorMessage(true);
         return false;
     }
+
+    static bool HandleAccountLockCountryCommand(ChatHandler* handler, char const* args)
+    {
+        if (!*args)
+        {
+            handler->SendSysMessage(LANG_USE_BOL);
+            handler->SetSentErrorMessage(true);
+            return false;
+        }
+
+        std::string param = (char*)args;
+
+        if (!param.empty())
+        {
+            if (param == "on")
+            {
+                if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(handler->GetSession()->GetRemoteAddress()))
+                {
+                    auto* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_COUNTRY);
+                    stmt->setString(0, location->CountryCode);
+                    stmt->setUInt32(1, handler->GetSession()->GetAccountId());
+                    LoginDatabase.Execute(stmt);
+                    handler->PSendSysMessage(LANG_COMMAND_ACCLOCKLOCKED);
+                }
+                else
+                {
+                    handler->PSendSysMessage("No IP2Location information - account not locked");
+                    handler->SetSentErrorMessage(true);
+                    return false;
+                }
+            }
+            else if (param == "off")
+            {
+                auto* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_LOCK_COUNTRY);
+                stmt->setString(0, "00");
+                stmt->setUInt32(1, handler->GetSession()->GetAccountId());
+                LoginDatabase.Execute(stmt);
+                handler->PSendSysMessage(LANG_COMMAND_ACCLOCKUNLOCKED);
+            }
+            return true;
+        }
+
+        handler->SendSysMessage(LANG_USE_BOL);
+        handler->SetSentErrorMessage(true);
+        return false;        
+    }
+
 
     static bool HandleAccountEmailCommand(ChatHandler* handler, char const* args)
     {
@@ -544,7 +595,7 @@ public:
         if (expansion < 0 || uint8(expansion) > sWorld->getIntConfig(CONFIG_EXPANSION))
             return false;
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPANSION);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_EXPANSION);
 
         stmt->setUInt8(0, expansion);
         stmt->setUInt32(1, accountId);
@@ -627,7 +678,7 @@ public:
         // Check and abort if the target gm has a higher rank on one of the realms and the new realm is -1
         if (gmRealmID == -1 && !AccountMgr::IsConsoleAccount(playerSecurity))
         {
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_ACCESS_GMLEVEL_TEST);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_ACCESS_GMLEVEL_TEST);
 
             stmt->setUInt32(0, targetAccountId);
             stmt->setUInt8(1, uint8(gm));

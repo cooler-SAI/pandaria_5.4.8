@@ -733,13 +733,13 @@ struct npc_darkspear_jailor : public ScriptedAI
 
     bool firstJailor = false;
 
-    void sGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
+    bool OnGossipSelect(Player* player, uint32 /*sender*/, uint32 /*action*/) override
     {
         player->CLOSE_GOSSIP_MENU();
         player->KilledMonsterCredit(NPC_JAILOR);
 
         if (!me->FindNearestCreature(NPC_SCOUT, 30.0f)) // not ready yet
-            return;
+            return false;
 
         firstJailor = false;
         if (me->FindNearestCreature(38243, 30.0f, true))
@@ -749,6 +749,7 @@ struct npc_darkspear_jailor : public ScriptedAI
         me->SetWalk(false);
         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
         me->GetMotionMaster()->MovePoint(1, questPos[firstJailor ? 0 : 2]);
+        return true;
     }
 
     void MovementInform(uint32 type, uint32 pointId) override

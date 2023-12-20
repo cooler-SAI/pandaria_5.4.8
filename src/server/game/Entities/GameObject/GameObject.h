@@ -22,13 +22,14 @@
 #include "SharedDefines.h"
 #include "Unit.h"
 #include "Object.h"
+#include "GridObject.h"
 #include "LootMgr.h"
-#include "DatabaseEnv.h"
 #include "DBCStores.h"
 
 class GameObjectAI;
 class Group;
 class Transport;
+enum SpellTargetCheckTypes : uint8;
 
 #define MAX_GAMEOBJECT_QUEST_ITEMS 6
 
@@ -719,6 +720,11 @@ struct TransportAnimation;
 
 union GameObjectValue
 {
+    //6 GAMEOBJECT_TYPE_TRAP
+    struct
+    {
+        SpellTargetCheckTypes TargetSearcherCheckType;
+    } Trap;
     //11 GAMEOBJECT_TYPE_TRANSPORT
     struct
     {
@@ -978,7 +984,7 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
         uint8 getLevelForTarget(WorldObject const* target) const
         {
             if (Unit* owner = GetOwner())
-                return owner->getLevelForTarget(target);
+                return owner->GetLevelForTarget(target);
 
             return 1;
         }
@@ -1034,9 +1040,9 @@ class GameObject : public WorldObject, public GridObject<GameObject>, public Map
 
         // Event handler
         EventProcessor m_Events;
-
-    protected:
         bool AIM_Initialize();
+    protected:
+        
         void UpdateModel();                                 // updates model in case displayId were changed
         uint32      m_spellId;
         time_t      m_respawnTime;                          // (secs) time of next respawn (or despawn if GO have owner()),

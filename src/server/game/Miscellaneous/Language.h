@@ -18,6 +18,13 @@
 #ifndef SF_LANGUAGE_H
 #define SF_LANGUAGE_H
 
+enum BroadcastTextIds
+{
+    BROADCAST_TEXT_ACHIEVEMENT_EARNED     = 29245,
+    BROADCAST_TEXT_CALL_FOR_HELP          = 2541,
+    BROADCAST_TEXT_FLEE_FOR_ASSIST        = 1150
+};
+
 enum TrinityStrings
 {
     // for chat commands
@@ -956,8 +963,27 @@ enum TrinityStrings
     LANG_LIST_MAIL_INFO_3               = 1154,
     LANG_LIST_MAIL_INFO_ITEM            = 1155,
     LANG_LIST_MAIL_NOT_FOUND            = 1156,
-
-    // Room for more level 3              1157-1184 not used
+    LANG_AHBOT_RELOAD_OK                = 1157,
+    LANG_AHBOT_STATUS_BAR_CONSOLE       = 1158,
+    LANG_AHBOT_STATUS_MIDBAR_CONSOLE    = 1159,
+    LANG_AHBOT_STATUS_TITLE1_CONSOLE    = 1160,
+    LANG_AHBOT_STATUS_TITLE1_CHAT       = 1161,
+    LANG_AHBOT_STATUS_FORMAT_CONSOLE    = 1162,
+    LANG_AHBOT_STATUS_FORMAT_CHAT       = 1163,
+    LANG_AHBOT_STATUS_ITEM_COUNT        = 1164,
+    LANG_AHBOT_STATUS_ITEM_RATIO        = 1165,
+    LANG_AHBOT_STATUS_TITLE2_CONSOLE    = 1166,
+    LANG_AHBOT_STATUS_TITLE2_CHAT       = 1167,
+    LANG_AHBOT_QUALITY_GRAY             = 1168,
+    LANG_AHBOT_QUALITY_WHITE            = 1169,
+    LANG_AHBOT_QUALITY_GREEN            = 1170,
+    LANG_AHBOT_QUALITY_BLUE             = 1171,
+    LANG_AHBOT_QUALITY_PURPLE           = 1172,
+    LANG_AHBOT_QUALITY_ORANGE           = 1173,
+    LANG_AHBOT_QUALITY_YELLOW           = 1174,
+    LANG_AHBOT_ITEMS_AMOUNT             = 1175,
+    LANG_AHBOT_ITEMS_RATIO              = 1176,
+    // Room for more level 3              1177-1184 not used
 
     LANG_ACCOUNT_BNET_LINKED            = 1185,
     LANG_ACCOUNT_OR_BNET_DOES_NOT_EXIST = 1186,
@@ -1529,11 +1555,10 @@ enum TrinityStrings
     LANG_BG_REWARD_TITLE_RICH               = 12529,
     LANG_BG_REWARD_BODY                     = 12530,
 
-	// Word filter
+    // Word filter
     LANG_WORD_FILTER_FOUND_BAD_WORD_IN_CHAT = 21000,
     LANG_WORD_FILTER_FOUND_BAD_WORD_IN_MAIL = 21001,
 
-    // `db_script_string` table index     2000000000-2000009999 (MIN_DB_SCRIPT_STRING_ID-MAX_DB_SCRIPT_STRING_ID)
     // For other tables maybe             2000010000-2147483647 (max index)
 };
 #endif

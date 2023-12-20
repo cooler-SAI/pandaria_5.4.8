@@ -243,11 +243,11 @@ class Item : public Object
         bool IsBoundAccountWide() const { return (GetTemplate()->Flags & ITEM_PROTO_FLAG_BIND_TO_ACCOUNT) != 0; }
         bool IsBindedNotWith(Player const* player) const;
         bool IsBoundByEnchant() const;
-        virtual void SaveToDB(SQLTransaction& trans);
+        virtual void SaveToDB(CharacterDatabaseTransaction trans);
         virtual bool LoadFromDB(uint32 guid, uint64 ownerGuid, Field* fields, uint32 entry, Player* owner = nullptr);
-        static void DeleteFromDB(SQLTransaction& trans, uint32 itemGuid);
-        virtual void DeleteFromDB(SQLTransaction& trans);
-        static void DeleteFromInventoryDB(SQLTransaction& trans, uint32 itemGuid);
+        static void DeleteFromDB(CharacterDatabaseTransaction trans, uint32 itemGuid);
+        virtual void DeleteFromDB(CharacterDatabaseTransaction trans);
+        static void DeleteFromInventoryDB(CharacterDatabaseTransaction trans, uint32 itemGuid);
 
         // Lootable items and their contents
         void ItemContainerSaveLootToDB();
@@ -257,9 +257,9 @@ class Item : public Object
         void ItemContainerDeleteLootMoneyFromDB();
         void ItemContainerDeleteLootMoneyAndLootItemsFromDB();
 
-        void DeleteFromInventoryDB(SQLTransaction& trans);
+        void DeleteFromInventoryDB(CharacterDatabaseTransaction trans);
         void SaveRefundDataToDB();
-        void DeleteRefundDataFromDB(SQLTransaction& trans);
+        void DeleteRefundDataFromDB(CharacterDatabaseTransaction* trans);
 
         Bag* ToBag() { if (IsBag()) return reinterpret_cast<Bag*>(this); else return NULL; }
         const Bag* ToBag() const { if (IsBag()) return reinterpret_cast<const Bag*>(this); else return NULL; }
@@ -350,7 +350,7 @@ class Item : public Object
         bool IsRangedWeapon() const { return GetTemplate()->IsRangedWeapon(); }
 
         // Item Refund system
-        void SetNotRefundable(Player* owner, bool changestate = true, SQLTransaction trans = nullptr);
+        void SetNotRefundable(Player* owner, bool changestate = true, CharacterDatabaseTransaction* trans = nullptr);
         void SetRefundRecipient(uint32 pGuidLow) { m_refundRecipient = pGuidLow; }
         void SetPaidMoney(uint32 money) { m_paidMoney = money; }
         void SetPaidExtendedCost(uint32 iece) { m_paidExtendedCost = iece; }

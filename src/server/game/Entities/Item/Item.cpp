@@ -28,7 +28,7 @@
 #include "Player.h"
 #include "Opcodes.h"
 #include "WorldSession.h"
-#include <ace/Stack_Trace.h>
+#include "DatabaseEnv.h"
 
 void AddItemsSetItem(Player* player, Item* item)
 {
@@ -334,7 +334,7 @@ void Item::UpdateDuration(Player* owner, uint32 diff)
     SetState(ITEM_CHANGED, owner);                          // save new time in database
 }
 
-void Item::SaveToDB(SQLTransaction& trans)
+void Item::SaveToDB(CharacterDatabaseTransaction trans)
 {
     bool isInTransaction = trans != nullptr;
     if (!isInTransaction)
@@ -347,7 +347,7 @@ void Item::SaveToDB(SQLTransaction& trans)
         case ITEM_CHANGED:
         {
             uint8 index = 0;
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(uState == ITEM_NEW ? CHAR_REP_ITEM_INSTANCE : CHAR_UPD_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(uState == ITEM_NEW ? CHAR_REP_ITEM_INSTANCE : CHAR_UPD_ITEM_INSTANCE);
             stmt->setUInt32(  index, GetEntry());
             stmt->setUInt32(++index, GUID_LOPART(GetOwnerGUID()));
             stmt->setUInt32(++index, GUID_LOPART(GetUInt64Value(ITEM_FIELD_CREATOR)));
@@ -398,7 +398,7 @@ void Item::SaveToDB(SQLTransaction& trans)
         }
         case ITEM_REMOVED:
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
             stmt->setUInt32(0, guid);
             trans->Append(stmt);
 
@@ -409,7 +409,7 @@ void Item::SaveToDB(SQLTransaction& trans)
                 trans->Append(stmt);
             }
 
-            DeleteRefundDataFromDB(trans);
+            // DeleteRefundDataFromDB(trans);
 
             if (!isInTransaction)
                 CharacterDatabase.CommitTransaction(trans);
@@ -472,8 +472,8 @@ bool Item::LoadFromDB(uint32 guid, uint64 ownerGuid, Field* fields, uint32 entry
             SetSpellCharges(i, atoi(tokens[i]));
 
     SetUInt32Value(ITEM_FIELD_DYNAMIC_FLAGS, fields[5].GetUInt32());
-    // Remove bind flag for items vs NO_BIND set
-    if (IsSoulBound() && proto->Bonding == NO_BIND)
+    // Remove bind flag for items vs BIND_NONE set
+    if (IsSoulBound() && proto->Bonding == BIND_NONE)
     {
         ApplyModFlag(ITEM_FIELD_DYNAMIC_FLAGS, ITEM_FLAG_SOULBOUND, false);
         need_save = true;
@@ -572,7 +572,7 @@ bool Item::LoadFromDB(uint32 guid, uint64 ownerGuid, Field* fields, uint32 entry
 
     if (need_save)                                           // normal item changed state set not work at loading
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ITEM_INSTANCE_ON_LOAD);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ITEM_INSTANCE_ON_LOAD);
         stmt->setUInt32(0, GetUInt32Value(ITEM_FIELD_EXPIRATION));
         stmt->setUInt32(1, GetUInt32Value(ITEM_FIELD_DYNAMIC_FLAGS));
         stmt->setUInt32(2, GetUInt32Value(ITEM_FIELD_DURABILITY));
@@ -593,14 +593,14 @@ bool Item::LoadFromDB(uint32 guid, uint64 ownerGuid, Field* fields, uint32 entry
 }
 
 /*static*/
-void Item::DeleteFromDB(SQLTransaction& trans, uint32 itemGuid)
+void Item::DeleteFromDB(CharacterDatabaseTransaction trans, uint32 itemGuid)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
     stmt->setUInt32(0, itemGuid);
     trans->Append(stmt);
 }
 
-void Item::DeleteFromDB(SQLTransaction& trans)
+void Item::DeleteFromDB(CharacterDatabaseTransaction trans)
 {
     DeleteFromDB(trans, GetGUIDLow());
 
@@ -610,14 +610,14 @@ void Item::DeleteFromDB(SQLTransaction& trans)
 }
 
 /*static*/
-void Item::DeleteFromInventoryDB(SQLTransaction& trans, uint32 itemGuid)
+void Item::DeleteFromInventoryDB(CharacterDatabaseTransaction trans, uint32 itemGuid)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_INVENTORY_BY_ITEM);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHAR_INVENTORY_BY_ITEM);
     stmt->setUInt32(0, itemGuid);
     trans->Append(stmt);
 }
 
-void Item::DeleteFromInventoryDB(SQLTransaction& trans)
+void Item::DeleteFromInventoryDB(CharacterDatabaseTransaction trans)
 {
     DeleteFromInventoryDB(trans, GetGUIDLow());
 }
@@ -1237,14 +1237,14 @@ void Item::BuildUpdate(UpdateDataMapType& data_map)
 
 void Item::SaveRefundDataToDB()
 {
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_REFUND_INSTANCE);
-    stmt->setUInt32(0, GetGUIDLow());
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_REFUND_INSTANCE);
+    stmt->setUInt32(0, GetGUID());
     trans->Append(stmt);
 
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_ITEM_REFUND_INSTANCE);
-    stmt->setUInt32(0, GetGUIDLow());
+    stmt->setUInt32(0, GetGUID());
     stmt->setUInt32(1, GetRefundRecipient());
     stmt->setUInt32(2, GetPaidMoney());
     stmt->setUInt16(3, uint16(GetPaidExtendedCost()));
@@ -1253,22 +1253,18 @@ void Item::SaveRefundDataToDB()
     CharacterDatabase.CommitTransaction(trans);
 }
 
-void Item::DeleteRefundDataFromDB(SQLTransaction& trans)
+void Item::DeleteRefundDataFromDB(CharacterDatabaseTransaction* trans)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_REFUND_INSTANCE);
-    stmt->setUInt32(0, GetGUIDLow());
-
     if (trans)
     {
-        trans->Append(stmt);
-    }
-    else
-    {
-        CharacterDatabase.Execute(stmt);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_REFUND_INSTANCE);
+        stmt->setUInt32(0, GetGUID());
+        (*trans)->Append(stmt);
+
     }
 }
 
-void Item::SetNotRefundable(Player* owner, bool changestate, SQLTransaction trans)
+void Item::SetNotRefundable(Player* owner, bool changestate /*=true*/, CharacterDatabaseTransaction* trans /*=nullptr*/)
 {
     if (!HasFlag(ITEM_FIELD_DYNAMIC_FLAGS, ITEM_FLAG_REFUNDABLE))
         return;
@@ -1306,7 +1302,7 @@ void Item::ClearSoulboundTradeable(Player* currentOwner)
 
     allowedGUIDs.clear();
     SetState(ITEM_CHANGED, currentOwner);
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_BOP_TRADE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_BOP_TRADE);
     stmt->setUInt32(0, GetGUIDLow());
     CharacterDatabase.Execute(stmt);
 }
@@ -1564,14 +1560,14 @@ void Item::ItemContainerSaveLootToDB()
         return;
 
     uint32 container_id = GetGUIDLow();
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     loot.containerID = container_id; // Save this for when a LootItem is removed
 
     // Save money
     if (loot.gold > 0)
     {
-        PreparedStatement* stmt_money = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
+        CharacterDatabasePreparedStatement* stmt_money = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
         stmt_money->setUInt32(0, container_id);
         trans->Append(stmt_money);
 
@@ -1584,7 +1580,7 @@ void Item::ItemContainerSaveLootToDB()
     // Save items
     if (!loot.isLooted())
     {
-        PreparedStatement* stmt_items = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEMS);
+        CharacterDatabasePreparedStatement* stmt_items = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEMS);
         stmt_items->setUInt32(0, container_id);
         trans->Append(stmt_items);
 
@@ -1629,7 +1625,7 @@ bool Item::ItemContainerLoadLootFromDB()
     loot.containerID = container_id;
 
     // First, see if there was any money loot. This gets added directly to the container.
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ITEMCONTAINER_MONEY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ITEMCONTAINER_MONEY);
     stmt->setUInt32(0, container_id);
     PreparedQueryResult money_result = CharacterDatabase.Query(stmt);
 
@@ -1700,9 +1696,9 @@ void Item::ItemContainerDeleteLootItemsFromDB()
 {
     // Deletes items associated with an openable item from the DB
     uint32 containerId = GetGUIDLow();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEMS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEMS);
     stmt->setUInt32(0, containerId);
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->Append(stmt);
     CharacterDatabase.CommitTransaction(trans);
 }
@@ -1711,10 +1707,10 @@ void Item::ItemContainerDeleteLootItemFromDB(uint32 itemID)
 {
     // Deletes a single item associated with an openable item from the DB
     uint32 containerId = GetGUIDLow();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEM);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_ITEM);
     stmt->setUInt32(0, containerId);
     stmt->setUInt32(1, itemID);
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->Append(stmt);
     CharacterDatabase.CommitTransaction(trans);
 }
@@ -1723,9 +1719,9 @@ void Item::ItemContainerDeleteLootMoneyFromDB()
 {
     // Deletes the money loot associated with an openable item from the DB
     uint32 containerId = GetGUIDLow();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEMCONTAINER_MONEY);
     stmt->setUInt32(0, containerId);
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->Append(stmt);
     CharacterDatabase.CommitTransaction(trans);
 }
@@ -1877,26 +1873,23 @@ void Item::AddToUpdate()
     {
         if (GetOwnerGUID() != 0) // TODO: this is guild bank...no complaints...so, no need to update ?
         {
-            ACE_Stack_Trace st;
-            TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner not found, guid %u, entry %u, owner %u\n%s",
-                GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+            TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner not found, guid %u, entry %u, owner %u\n",
+                GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         }
         return;
     }
 
     if (!owner->FindMap())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner hasn't map, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::AddToUpdate - owner hasn't map, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (owner->FindMap() != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
         TC_LOG_ERROR("shitlog", "Item::AddToUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n%s",
-            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld(), st.c_str());
+            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld());
         return;
     }
 
@@ -1909,25 +1902,22 @@ void Item::RemoveFromUpdate()
     Player* owner = ObjectAccessor::FindPlayerInOrOutOfWorld(GetOwnerGUID());   // player can be out of world - logout, teleport to cross-server
     if (!owner)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner not found, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner not found, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (!owner->FindMap())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner hasn't map, guid %u, entry %u, owner %u\n%s",
-            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - owner hasn't map, guid %u, entry %u, owner %u\n",
+            GetGUIDLow(), GetEntry(), GUID_LOPART(GetOwnerGUID()));
         return;
     }
 
     if (owner->FindMap() != CurrentMap && CurrentMap)
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n%s",
-            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Item::RemoveFromUpdate - invalid map, m_currMap ID %u, CurrentMap ID: %u. Object type: %u, entry: %u, GUID: %u, owner: %u (InWorld: %u).\nStack trace:\n",
+            owner->FindMap()->GetId(), CurrentMap->GetId(), uint32(GetTypeId()), GetEntry(), GetGUIDLow(), GUID_LOPART(GetOwnerGUID()), owner->IsInWorld());
         return;
     }
 

@@ -19,7 +19,7 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 #include "Log.h"
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
 #include "Util.h"
 #include "WardenCheckMgr.h"
 #include "Warden.h"
@@ -33,6 +33,12 @@ WardenCheckMgr::~WardenCheckMgr()
 
     for (CheckResultContainer::iterator itr = CheckResultStore.begin(); itr != CheckResultStore.end(); ++itr)
         delete itr->second;
+}
+
+WardenCheckMgr* WardenCheckMgr::instance()
+{
+    static WardenCheckMgr instance;
+    return &instance;
 }
 
 void WardenCheckMgr::LoadWardenChecks(bool reload)

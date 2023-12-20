@@ -55,7 +55,12 @@ enum TransmogTrinityStrings // Language.h might have same entries, appears when 
 
 class Transmogrification
 {
+private:
+    Transmogrification();
+    ~Transmogrification();
+
 public:
+    static Transmogrification* instance();
     typedef std::unordered_map<uint64, uint64> transmogData;
     typedef std::unordered_map<uint64, transmogData> transmogMap;
     transmogMap entryMap; // entryMap[pGUID][iGUID] = entry
@@ -139,7 +144,7 @@ public:
     std::string GetItemLink(uint32 entry, WorldSession* session) const;
     uint32 GetFakeEntry(uint64 itemGUID) const;
     void UpdateItem(Player* player, Item* item, uint32 newItemId) const;
-    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, SQLTransaction* trans = NULL);
+    void DeleteFakeEntry(Player* player, uint8 slot, Item* itemTransmogrified, CharacterDatabaseTransaction trans = nullptr);
     void SetFakeEntry(Player* player, uint32 newEntry, uint8 slot, Item* itemTransmogrified);
 
     TransmogTrinityStrings Transmogrify(Player* player, uint64 itemGUID, uint8 slot, /*uint32 newEntry, */bool no_cost = false);
@@ -149,7 +154,7 @@ public:
     // bool CanTransmogrify(Item const* item);
     uint32 GetSpecialPrice(ItemTemplate const* proto) const;
 
-    void DeleteFakeFromDB(uint64 itemGUID, SQLTransaction* trans = NULL);
+    void DeleteFakeFromDB(uint64 itemGUID, CharacterDatabaseTransaction trans = nullptr);
     float GetScaledCostModifier() const;
     int32 GetCopperCost() const;
 
@@ -166,6 +171,6 @@ public:
     bool GetEnableSetInfo() const;
     uint32 GetSetNpcText() const;
 };
-#define sTransmogrification ACE_Singleton<Transmogrification, ACE_Null_Mutex>::instance()
+#define sTransmogrification Transmogrification::instance()
 
 #endif

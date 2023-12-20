@@ -28,16 +28,15 @@
 class Master
 {
     public:
+        static Master* instance();
         int Run();
+        bool LoadRealmInfo();
 
     private:
-        bool _StartDB();
-        void _StopDB();
-
         void ClearOnlineAccounts();
 };
 
-#define sMaster ACE_Singleton<Master, ACE_Null_Mutex>::instance()
+#define sMaster Master::instance()
 
 #endif
 

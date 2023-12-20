@@ -22,7 +22,6 @@
 #include "DBCEnums.h"
 #include "Battleground.h"
 #include "EventProcessor.h"
-#include "CustomLogs.h"
 #include <deque>
 
 //this container can't be deque, because deque doesn't like removing the last element - if you remove it, it invalidates next iterator and crash appears
@@ -72,30 +71,6 @@ enum BattlegroundQueueGroupTypes
     BG_QUEUE_NORMAL_HORDE       = 3
 };
 #define BG_QUEUE_GROUP_TYPES_COUNT 4
-
-struct QueueAnnounceContext
-{
-    enum class Show : uint32
-    {
-        Never,
-        WhileInSameQueue,
-        WhileQueued,
-        Always,
-    };
-
-    bool Enter;
-    GroupQueueInfo const& GroupInfo;
-    BattlegroundBracketId BracketId;
-    bool IsPremade;
-    bool IsSolo;
-    SoloQueueRole SoloSpec;
-    uint32 QueuedA;
-    uint32 QueuedH;
-    std::string ArenaTeamName;
-
-    static bool IsEnabled(BattlegroundTypeId bgTypeId, bool isRated, bool isSolo);
-    void Announce() const;
-};
 
 class Battleground;
 class BattlegroundQueue
@@ -281,7 +256,6 @@ public:
     static BattlegroundBracketId GetSoloQueueBracketId();
 
 private:
-    LogFile m_log;
     std::ostringstream m_buff;
     uint32 m_dynamicUpdateCount = 0;
     std::vector<SoloGroup>  m_all;

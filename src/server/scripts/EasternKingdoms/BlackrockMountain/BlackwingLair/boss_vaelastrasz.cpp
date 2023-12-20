@@ -70,7 +70,7 @@ public:
         boss_vaelAI(Creature* creature) : BossAI(creature, BOSS_VAELASTRAZ)
         {
             creature->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
-            creature->setFaction(35);
+            creature->SetFaction(35);
             creature->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
         }
 
@@ -144,7 +144,7 @@ public:
                             events.ScheduleEvent(EVENT_SPEECH_4, 16000);
                             break;
                         case EVENT_SPEECH_4:
-                            me->setFaction(103);
+                            me->SetFaction(103);
                             if (PlayerGUID && Unit::GetUnit(*me, PlayerGUID))
                                 AttackStart(Unit::GetUnit(*me, PlayerGUID));;
                             break;
@@ -215,13 +215,14 @@ public:
             DoMeleeAttackIfReady();
         }
 
-        void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+        bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
         {
             if (sender == GOSSIP_ID && action == 0)
             {
                 player->CLOSE_GOSSIP_MENU();
                 BeginSpeech(player);
             }
+            return true;
         }
 
         private:

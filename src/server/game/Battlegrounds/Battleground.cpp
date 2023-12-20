@@ -40,6 +40,7 @@
 #include "Pet.h"
 #include "AchievementMgr.h"
 #include "BattlegroundTOK.h"
+#include "Realm.h"
 
 namespace Trinity
 {
@@ -1257,7 +1258,7 @@ void Battleground::EndBattleground(uint32 winner)
 
             if (player)
             {
-                classID = player->getClass();
+                classID = player->GetClass();
             }
             else
             {
@@ -1285,7 +1286,7 @@ void Battleground::EndBattleground(uint32 winner)
 
             uint8 arenaType = IsRatedBG() ? 10 : ArenaTeam::GetTypeBySlot(at->GetSlot());
 
-            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ARENA_GAMES);
+            LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ARENA_GAMES);
             int32 index = 1;        // gameid is not known at this time.
             stmt->setInt64(  index, (at->GetSlot() + 1) * 100000000000LL + GUID_LOPART(it.first));
             stmt->setInt32(++index, GUID_LOPART(it.first));
@@ -1310,59 +1311,13 @@ void Battleground::EndBattleground(uint32 winner)
             stmt->setUInt8(++index, classID);
             stmt->setUInt16(++index, sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
             stmt->setUInt8(++index, arenaType);
-            stmt->setUInt8(++index, realmID);
+            stmt->setUInt8(++index, realm.Id.Realm);
             stmt->setUInt16(++index, mmr);
             stat.Data.push_back(stmt);
         }
         sBattlegroundMgr->EnqueueNewGameStat(stat);
     }
 
-    if (sWorld->AreprojectDailyQuestsEnabled())
-    {
-        for (BattlegroundPlayerMap::iterator itr = m_Players.begin(); itr != m_Players.end(); ++itr)
-        {
-            if (Player* player = _GetPlayer(itr, "EndBattleground"))
-            {
-                bool won = itr->second.Team == winner;
-                if (winnerArenaTeam && loserArenaTeam && winnerArenaTeam != loserArenaTeam || // ARENA_NORMAL
-                    GetStatus() == STATUS_WAIT_JOIN ||                                        // ARENA_TIMEOUT
-                    m_winner == WINNER_NONE ||                                                // ARENA_NO_WINNERS
-                    m_Players.empty())                                                        // ARENA_NO_WINNERS
-                {
-                    if (GetArenaType() == ARENA_TYPE_3v3)
-                        player->CreditprojectDailyQuest(180015); // project Daily Quest Credit - 3v3 Arena Participation
-                    if (won)
-                        player->CreditprojectDailyQuest(180003); // project Daily Quest Credit - Any Arena Victory
-                    player->CreditprojectDailyQuest(180002); // project Daily Quest Credit - Any Arena Participation
-                }
-                else // BG_DEFAULT
-                {
-                    if (IsArena()) // Unrated arenas end up here.
-                        break;
-                    if (won)
-                        player->CreditprojectDailyQuest(180001); // project Daily Quest Credit - Any Battleground Victory
-                    player->CreditprojectDailyQuest(180000); // project Daily Quest Credit - Any Battleground Participation
-                    player->CreditprojectDailyQuest(180100 + GetTypeID()); // project Daily Quest Credit - * Participation
-                    auto itr = PlayerScores.find(player->GetGUID());
-                    if (itr != PlayerScores.end() && itr->second)
-                    {
-                        if (uint32 damage = itr->second->DamageDone / 1000)
-                            player->CreditprojectDailyQuest(180004, damage); // project Daily Quest Credit - Battleground Damage Dealt
-                        if (uint32 heal = itr->second->HealingDone / 1000)
-                            player->CreditprojectDailyQuest(180005, heal); // project Daily Quest Credit - Battleground Damage Healed
-                        if (uint32 kills = itr->second->HonorableKills)
-                            player->CreditprojectDailyQuest(180009, kills); // project Daily Quest Credit - Battleground Honorable Kill
-                    }
-                    if (IsRatedBG())
-                    {
-                        if (won)
-                            player->CreditprojectDailyQuest(180019); // project Daily Quest Credit - Solo 3v3 Arena Victory
-                        player->CreditprojectDailyQuest(180020); // project Daily Quest Credit - Solo 3v3 Arena Participation
-                    }
-                }
-            }
-        }
-    }
 }
 
 uint32 Battleground::GetBonusHonorFromKill(uint32 kills) const
@@ -1430,7 +1385,7 @@ void Battleground::RemovePlayerAtLeave(uint64 guid, bool Transport, bool SendPac
                 deserter = true; // player already removed
 
         if (IsSoloQueueMatch())
-            player->setFactionForRace(player->getRace());
+            player->setFactionForRace(player->GetRace());
     }
 
     RemovePlayer(player, guid, team);                           // BG subclass specific code
@@ -1645,7 +1600,7 @@ void Battleground::AddPlayer(Player* player)
             SendPacketToTeam(team, &data);
 
         if (IsSoloQueueMatch() && sWorld->getBoolConfig(CONFIG_SOLO_QUEUE_INTERFACTIONAL_TEAMS))
-            player->setFaction(team == ALLIANCE ? 1 : 2);
+            player->SetFaction(team == ALLIANCE ? 1 : 2);
     }
     else
     {
@@ -1722,7 +1677,7 @@ void Battleground::EventPlayerLoggedIn(Player* player)
         player->CastSpell(player, spell, true);
     }
     if (IsSoloQueueMatch() && sWorld->getBoolConfig(CONFIG_SOLO_QUEUE_INTERFACTIONAL_TEAMS))
-        player->setFaction(player->GetBGTeam() == ALLIANCE ? 1 : 2);
+        player->SetFaction(player->GetBGTeam() == ALLIANCE ? 1 : 2);
 
     PlayerAddedToBGCheckIfBGIsRunning(player);
     // if battleground is starting, then add preparation aura
@@ -2763,7 +2718,7 @@ void Battleground::RemovePlayer(Player* player, uint64 guid, uint32 team)
         return;
     if (sWorld->getBoolConfig(CONFIG_BATTLEGROUND_IGNORE_FACTION))
     {
-        player->setFactionForRace(player->getRace());
+        player->setFactionForRace(player->GetRace());
         player->InitDisplayIds();
         player->RemoveAurasDueToSpell(200002);
         player->RemoveAurasDueToSpell(200003);

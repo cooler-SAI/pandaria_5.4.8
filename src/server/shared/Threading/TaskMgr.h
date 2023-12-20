@@ -20,45 +20,10 @@
 
 #include "Common.h"
 #include "Timer.h"
+#include "LockedQueue.h"
 #include <memory>
-#include <boost/asio.hpp>
-#include <boost/thread.hpp>
 
-class ThreadPool
-{
-    typedef std::unique_ptr<boost::asio::io_service::work> worker;
-    typedef boost::asio::io_service service;
-    typedef boost::thread_group pool;
-public:
-    ThreadPool(size_t threads)
-        : _worker(new worker::element_type{ _service })
-    {
-        while (threads--)
-        {
-            auto worker = boost::bind(&service::run, &(this->_service));
-            _pool.add_thread(new boost::thread(worker));
-        }
-    }
-
-    void Stop()
-    {
-        _worker.reset();
-        _pool.join_all();
-        _service.stop();
-    }
-
-    template<class F>
-    void Enqueue(F f)
-    {
-        _service.post(f);
-    }
-
-private:
-    service _service;
-    worker  _worker;
-    pool    _pool;
-};
-
+class ThreadPool;
 class TaskBase;
 class CallbackTask;
 
@@ -71,11 +36,7 @@ public:
 
     //! Not singleton.
     //! Just global accessor for main thread scheduler.
-    static TaskMgr* Default()
-    {
-        static TaskMgr _default;
-        return &_default;
-    }
+    static TaskMgr* Default();
 
     //! Set time (in milliseconds) for executing task cycle.
     //! No garantees that it will be max time of Update() call.
@@ -98,21 +59,16 @@ public:
     void ScheduleInvocation(std::function<void()> func);
     void ScheduleInvocation(TaskBase* task);
 
-    static void Async(std::function<void()> func)
-    {
-        _pool.Enqueue(func);
-    }
-    static void Stop()
-    {
-        _pool.Stop();
-    }
+    static void Async(std::function<void()> func);
+
+    static void Stop();
 
 private:
     typedef std::shared_ptr<TaskBase> TaskObject;
-    ACE_Based::LockedQueue<TaskObject, ACE_Thread_Mutex> _queue;
+    LockedQueue<TaskObject> _queue;
     std::list<TaskObject> _tasks;
     std::chrono::milliseconds _max = std::chrono::milliseconds(25);
-    static ThreadPool _pool;
+    static std::unique_ptr<ThreadPool> _pool;
 };
 
 //! Object linked to task.

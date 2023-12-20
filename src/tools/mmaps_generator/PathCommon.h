@@ -24,7 +24,6 @@
 #include <vector>
 #include <ace/OS_NS_sys_time.h>
 
-#include "Define.h"
 
 #ifndef _WIN32
     #include <stddef.h>
@@ -34,20 +33,6 @@
 #ifdef __linux__
     #include <errno.h>
 #endif
-
-enum NavTerrain
-{
-    NAV_EMPTY   = 0x00,
-    NAV_GROUND  = 0x01,
-    NAV_MAGMA   = 0x02,
-    NAV_SLIME   = 0x04,
-    NAV_WATER   = 0x08,
-    NAV_UNUSED1 = 0x10,
-    NAV_UNUSED2 = 0x20,
-    NAV_UNUSED3 = 0x40,
-    NAV_UNUSED4 = 0x80
-    // we only have 8 bits
-};
 
 namespace MMAP
 {
@@ -119,9 +104,9 @@ namespace MMAP
         while (dirp)
         {
             errno = 0;
-            if ((dp = readdir(dirp)) != NULL)
+            if ((dp = readdir(dirp)) != nullptr)
             {
-                if (matchWildcardFilter(filter.c_str(), dp->d_name))
+                if (strcmp(dp->d_name, ".") != 0 && strcmp(dp->d_name, "..") != 0 && matchWildcardFilter(filter.c_str(), dp->d_name))
                     fileList.push_back(std::string(dp->d_name));
             }
             else
@@ -137,25 +122,6 @@ namespace MMAP
         return LISTFILE_OK;
     }
 
-    inline uint32 getMSTime()
-    {
-        static const ACE_Time_Value ApplicationStartTime = ACE_OS::gettimeofday();
-        return (ACE_OS::gettimeofday() - ApplicationStartTime).msec();
-    }
-
-    inline uint32 getMSTimeDiff(uint32 oldMSTime, uint32 newMSTime)
-    {
-        // getMSTime() have limited data range and this is case when it overflow in this tick
-        if (oldMSTime > newMSTime)
-            return (0xFFFFFFFF - oldMSTime) + newMSTime;
-        else
-            return newMSTime - oldMSTime;
-    }
-
-    inline uint32 GetMSTimeDiffToNow(uint32 oldMSTime)
-    {
-        return getMSTimeDiff(oldMSTime, getMSTime());
-    }
 }
 
 #endif

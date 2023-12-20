@@ -23,7 +23,7 @@
 #include "ObjectAccessor.h"
 #include "World.h"
 #include "WorldSocketMgr.h"
-#include "Database/DatabaseEnv.h"
+#include "DatabaseEnv.h"
 #include "ScriptMgr.h"
 #include "BattlegroundMgr.h"
 #include "MapManager.h"
@@ -40,21 +40,6 @@
 #include "ServiceWin32.h"
 extern int m_ServiceStatus;
 #endif
-
-void AppenderDB::_write(LogMessage const& message)
-{
-    // Avoid infinite loop, PExecute triggers Logging with "sql.sql" type
-    if (!enabled || message.type.find("sql") == 0)
-        return;
-
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_LOG);
-    stmt->setUInt64(0, message.mtime);
-    stmt->setUInt32(1, realmId);
-    stmt->setString(2, message.type);
-    //stmt->setUInt8(3, uint8(message.level));
-    stmt->setString(3, message.text);
-    LoginDatabase.Execute(stmt);
-}
 
 /// Heartbeat for the World
 void WorldRunnable::run()
@@ -85,7 +70,7 @@ void WorldRunnable::run()
         if (diff <= WORLD_SLEEP_CONST+prevSleepTime)
         {
             prevSleepTime = WORLD_SLEEP_CONST+prevSleepTime-diff;
-            ACE_Based::Thread::Sleep(prevSleepTime);
+            MopCore::Thread::Sleep(prevSleepTime);
         }
         else
             prevSleepTime = 0;
@@ -111,12 +96,12 @@ void WorldRunnable::run()
     // unload battleground templates before different singletons destroyed
     sBattlegroundMgr->DeleteAllBattlegrounds();
 
-    sWorldSocketMgr->StopNetwork();
+    sWorldSocketMgr.StopNetwork();
 
     sMapMgr->UnloadAll();                     // unload all grids (including locked in memory)
     sObjectAccessor->UnloadAll();             // unload 'i_player2corpse' storage and remove from world
     sScriptMgr->Unload();
     sOutdoorPvPMgr->Die();
 
-    TaskMgr::Stop();
+    //TaskMgr::Stop();
 }

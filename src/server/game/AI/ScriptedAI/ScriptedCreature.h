@@ -37,9 +37,7 @@ class SummonList
     typedef StorageType::size_type size_type;
     typedef StorageType::value_type value_type;
 
-    explicit SummonList(Creature* creature)
-        : me(creature)
-    { }
+    explicit SummonList(Creature* creature) : me(creature) { }
 
     // And here we see a problem of original inheritance approach. People started
     // to exploit presence of std::list members, so I have to provide wrappers
@@ -77,6 +75,11 @@ class SummonList
     size_type size() const
     {
         return storage_.size();
+    }
+
+    void clear()
+    {
+        storage_.clear();
     }
 
     uint64 front()
@@ -152,8 +155,7 @@ class DummyEntryCheckPredicate
 struct ScriptedAI : public CreatureAI
 {
     explicit ScriptedAI(Creature* creature);
-    virtual ~ScriptedAI()
-    { }
+    virtual ~ScriptedAI() { }
 
     // *************
     //CreatureAI Functions
@@ -161,40 +163,8 @@ struct ScriptedAI : public CreatureAI
 
     void AttackStartNoMove(Unit* target);
 
-    // Called at any Damage from any attacker (before damage apply)
-    void DamageTaken(Unit* /*attacker*/, uint32& /*damage*/)
-    { }
-
     //Called at World update tick
-    virtual void UpdateAI(uint32 diff);
-
-    //Called at creature death
-    void JustDied(Unit* /*killer*/)
-    { }
-
-    //Called at creature killing another unit
-    void KilledUnit(Unit* /*victim*/)
-    { }
-
-    // Called when the creature summon successfully other creature
-    void JustSummoned(Creature* /*summon*/)
-    { }
-
-    // Called when a summoned creature is despawned
-    void SummonedCreatureDespawn(Creature* /*summon*/)
-    { }
-
-    // Called when hit by a spell
-    void SpellHit(Unit* /*caster*/, SpellInfo const* /*spell*/)
-    { }
-
-    // Called when spell hits a target
-    void SpellHitTarget(Unit* /*target*/, SpellInfo const* /*spell*/)
-    { }
-
-    //Called at waypoint reached or PointMovement end
-    void MovementInform(uint32 /*type*/, uint32 /*id*/)
-    { }
+    virtual void UpdateAI(uint32 diff) override;
 
     // Called when AI is temporarily replaced or put back when possess is applied or removed
     void OnPossess(bool /*apply*/)
@@ -205,7 +175,7 @@ struct ScriptedAI : public CreatureAI
     // *************
 
     //Pointer to creature we are manipulating
-    Creature* me;
+    // Creature* me;
 
     //For fleeing
     bool IsFleeing;
@@ -214,16 +184,8 @@ struct ScriptedAI : public CreatureAI
     //Pure virtual functions
     // *************
 
-    //Called at creature reset either by death or evade
-    void Reset()
-    { }
-
-    //Called at creature aggro either by MoveInLOS or Attack Start
-    void EnterCombat(Unit* /*victim*/)
-    { }
-
     // Called before EnterCombat even before the creature is in combat.
-    void AttackStart(Unit* /*target*/);
+    void AttackStart(Unit* /*target*/) override;
 
     // *************
     //AI Helper Functions
@@ -463,136 +425,111 @@ struct ScriptedAI : public CreatureAI
 class BossAI : public ScriptedAI
 {
     public:
-    BossAI(Creature* creature, uint32 bossId);
-    virtual ~BossAI()
-    { }
+        BossAI(Creature* creature, uint32 bossId);
+        virtual ~BossAI() { }
 
-    InstanceScript* const instance;
-    BossBoundaryMap const* GetBoundary() const
-    {
-        return _boundary;
-    }
+        InstanceScript* const instance;
 
-    void JustSummoned(Creature* summon);
-    void SummonedCreatureDespawn(Creature* summon);
-
-    virtual void UpdateAI(uint32 diff);
-
-    // Hook used to execute events scheduled into EventMap without the need
-    // to override UpdateAI
-    // note: You must re-schedule the event within this method if the event
-    // is supposed to run more than once
-    virtual void ExecuteEvent(uint32 /*eventId*/) { }
-
-    virtual void ScheduleTasks() { }
-
-    void Reset()
-    {
-        _Reset();
-    }
-    void EnterCombat(Unit* /*who*/)
-    {
-        _EnterCombat();
-    }
-    void JustDied(Unit* /*killer*/)
-    {
-        _JustDied();
-    }
-    void JustReachedHome()
-    {
-        _JustReachedHome();
-    }
-
-    protected:
-    void _Reset();
-    bool _EnterCombat();
-    void _JustDied();
-    void _JustReachedHome()
-    {
-        me->setActive(false, ActiveFlags::InCombat);
-    }
-    void _DespawnAtEvade();
-
-    bool CheckInRoom()
-    {
-        if (CheckBoundary(me))
-            return true;
-
-        EnterEvadeMode();
-        return false;
-    }
-
-    bool CheckInArea(const uint32 diff, uint32 areaId)
-    {
-        if (_checkareaTimer <= diff)
-            _checkareaTimer = 3000;
-        else
+        BossBoundaryMap const* GetBoundary() const
         {
-            _checkareaTimer -= diff;
-            return true;
+            return _boundary;
         }
 
-        if (me->GetAreaId() != areaId)
+        void JustSummoned(Creature* summon) override;
+        void SummonedCreatureDespawn(Creature* summon) override;
+
+        virtual void UpdateAI(uint32 diff) override;
+
+        // Hook used to execute events scheduled into EventMap without the need
+        // to override UpdateAI
+        // note: You must re-schedule the event within this method if the event
+        // is supposed to run more than once
+        virtual void ExecuteEvent(uint32 /*eventId*/) { }
+
+        virtual void ScheduleTasks() { }
+
+        void Reset() override { _Reset(); }
+        void EnterCombat(Unit* /*who*/) override { _EnterCombat(); }
+        void JustDied(Unit* /*killer*/) override { _JustDied(); }
+        void JustReachedHome() override { _JustReachedHome(); }
+
+
+    protected:
+        void _Reset();
+        bool _EnterCombat();
+        void _JustDied();
+        void _JustReachedHome();
+        void _DespawnAtEvade();
+
+        bool CheckInRoom()
         {
+            if (CheckBoundary(me))
+                return true;
+
             EnterEvadeMode();
             return false;
         }
 
-        return true;
-    }
+        bool CheckInArea(const uint32 diff, uint32 areaId)
+        {
+            if (_checkareaTimer <= diff)
+                _checkareaTimer = 3000;
+            else
+            {
+                _checkareaTimer -= diff;
+                return true;
+            }
 
-    bool CheckBoundary(Unit* who);
-    void TeleportCheaters();
+            if (me->GetAreaId() != areaId)
+            {
+                EnterEvadeMode();
+                return false;
+            }
 
-    EventMap events;
-    mutable SummonList summons;
-    TaskScheduler scheduler;
+            return true;
+        }
 
-    private:
-    BossBoundaryMap const* const _boundary;
-    uint32 const _bossId;
-    uint32 _checkareaTimer;
+        bool CheckBoundary(Unit* who);
+        void TeleportCheaters();
+
+        EventMap events;
+        mutable SummonList summons;
+        TaskScheduler scheduler;
+
+        private:
+        BossBoundaryMap const* const _boundary;
+        uint32 const _bossId;
+        uint32 _checkareaTimer;
 };
 
 class WorldBossAI : public ScriptedAI
 {
     public:
-    WorldBossAI(Creature* creature);
-    virtual ~WorldBossAI()
-    { }
+        WorldBossAI(Creature* creature);
+        virtual ~WorldBossAI() { }
 
-    void JustSummoned(Creature* summon);
-    void SummonedCreatureDespawn(Creature* summon);
+        void JustSummoned(Creature* summon) override;
+        void SummonedCreatureDespawn(Creature* summon) override;
 
-    virtual void UpdateAI(uint32 diff);
+        virtual void UpdateAI(uint32 diff) override;
 
-    // Hook used to execute events scheduled into EventMap without the need
-    // to override UpdateAI
-    // note: You must re-schedule the event within this method if the event
-    // is supposed to run more than once
-    virtual void ExecuteEvent(uint32 /*eventId*/)
-    { }
+        // Hook used to execute events scheduled into EventMap without the need
+        // to override UpdateAI
+        // note: You must re-schedule the event within this method if the event
+        // is supposed to run more than once
+        virtual void ExecuteEvent(uint32 /*eventId*/) { }
 
-    void Reset()
-    {
-        _Reset();
-    }
-    void EnterCombat(Unit* /*who*/)
-    {
-        _EnterCombat();
-    }
-    void JustDied(Unit* /*killer*/)
-    {
-        _JustDied();
-    }
+        void Reset() override { _Reset(); }
+        void EnterCombat(Unit* /*who*/) override { _EnterCombat(); }
+        void JustDied(Unit* /*killer*/) override { _JustDied(); }
 
     protected:
-    void _Reset();
-    void _EnterCombat();
-    void _JustDied();
+        void _Reset();
+        void _EnterCombat();
+        void _JustDied();
 
-    EventMap events;
-    SummonList summons;
+        EventMap events;
+        SummonList summons;
 };
 
 class CasterMovement
@@ -649,7 +586,7 @@ struct SpellDummyAI : public ScriptedAI
     }
 
     void UpdateAI(uint32) override { }
-    void EnterEvadeMode() { }
+    void EnterEvadeMode() override { }
 };
 
 enum TargetPriority
@@ -738,7 +675,7 @@ struct customCreatureAI : public ScriptedAI
                     DoCast(target, spell_id);
                 break;
         }
-		me->_AddCreatureSpellCooldown(spell_id, time(nullptr) + 2000 / IN_MILLISECONDS); // we need to add GCD  and does account for creatures with many executes.
+        me->_AddCreatureSpellCooldown(spell_id, time(nullptr) + 2000 / IN_MILLISECONDS); // we need to add GCD  and does account for creatures with many executes.
         if (repeat)
             events.ScheduleEvent(event_id, repeat);
     }

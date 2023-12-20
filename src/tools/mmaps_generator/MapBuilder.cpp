@@ -28,26 +28,14 @@
 #include "DetourCommon.h"
 
 #include "DisableMgr.h"
-#include "Logging/AppenderDB.h"
 #include <ace/OS_NS_unistd.h>
 
+#include "SharedDefines.h"
+
 bool DisableMgr::IsDisabledFor(DisableType type, uint32 entry, Unit const* unit, uint8 flags) { return false; }
-void AppenderDB::_write(LogMessage const& message) { }
 
 #define MMAP_MAGIC 0x4d4d4150   // 'MMAP'
 #define MMAP_VERSION 7
-
-struct MmapTileHeader
-{
-    uint32 mmapMagic;
-    uint32 dtVersion;
-    uint32 mmapVersion;
-    uint32 size;
-    bool usesLiquids : 1;
-
-    MmapTileHeader() : mmapMagic(MMAP_MAGIC), dtVersion(DT_NAVMESH_VERSION),
-        mmapVersion(MMAP_VERSION), size(0), usesLiquids(true) {}
-};
 
 namespace MMAP
 {
@@ -92,7 +80,7 @@ namespace MMAP
     {
         std::vector<std::string> files;
         uint32 mapID, tileX, tileY, tileID, count = 0;
-        char filter[12];
+        char filter[13];
 
         printf("Discovering maps... ");
         getDirContents(files, "maps");
@@ -467,7 +455,7 @@ namespace MMAP
         //if (tileBits < 1) tileBits = 1;                                     // need at least one bit!
         //int polyBits = sizeof(dtPolyRef)*8 - SALT_MIN_BITS - tileBits;
 
-        int polyBits = STATIC_POLY_BITS;
+        int polyBits = DT_POLY_BITS;
 
         int maxTiles = tiles->size();
         int maxPolysPerTile = 1 << polyBits;
@@ -537,7 +525,7 @@ namespace MMAP
         dtNavMesh* navMesh)
     {
         // console output
-        char tileString[20];
+        char tileString[21];
         sprintf(tileString, "[Map %04i] [%02i,%02i]: ", mapID, tileX, tileY);
         printf("%s Building movemap tiles...\n", tileString);
 

@@ -424,11 +424,11 @@ public:
             switch (me->GetOwner()->ToPlayer()->GetTeamId())
             {
                 case TEAM_ALLIANCE:
-                    me->setFaction(FACTION_ESCORT_A_NEUTRAL_ACTIVE);
+                    me->SetFaction(FACTION_ESCORT_A_NEUTRAL_ACTIVE);
                     break;
                 default:
                 case TEAM_HORDE:
-                    me->setFaction(FACTION_ESCORT_H_NEUTRAL_ACTIVE);
+                    me->SetFaction(FACTION_ESCORT_H_NEUTRAL_ACTIVE);
                     break;
             }
         }
@@ -785,11 +785,11 @@ public:
             switch (player->GetTeam())
             {
                 case ALLIANCE:
-                    creature->setFaction(FACTION_ESCORTEE_A);
+                    creature->SetFaction(FACTION_ESCORTEE_A);
                     break;
                 default:
                 case HORDE:
-                    creature->setFaction(FACTION_ESCORTEE_H);
+                    creature->SetFaction(FACTION_ESCORTEE_H);
                     break;
             }
 
@@ -893,7 +893,7 @@ public:
                 }
             }
 
-            if ((me->getFaction() == 35) && (!me->HasAura(SPELL_SUBDUED)))
+            if ((me->GetFaction() == 35) && (!me->HasAura(SPELL_SUBDUED)))
             {
                 HarpoonerGUID = 0;
                 me->DisappearAndDie();
@@ -1068,7 +1068,7 @@ public:
                         if (talbot)
                         {
                             talbot->UpdateEntry(NPC_PRINCE_VALANAR, ALLIANCE);
-                            talbot->setFaction(14);
+                            talbot->SetFaction(14);
                             talbot->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
                             talbot->SetReactState(REACT_PASSIVE);
                         }
@@ -1790,10 +1790,10 @@ public:
             switch (player->GetTeam())
             {
             case ALLIANCE:
-                creature->setFaction(FACTION_ESCORTEE_A);
+                creature->SetFaction(FACTION_ESCORTEE_A);
                 break;
             case HORDE:
-                creature->setFaction(FACTION_ESCORTEE_H);
+                creature->SetFaction(FACTION_ESCORTEE_H);
                 break;
             }
             creature->SetStandState(UNIT_STAND_STATE_STAND);
@@ -2335,192 +2335,184 @@ enum HiddenCultist
     SAY_HIDDEN_CULTIST_1                        = 0,
     SAY_HIDDEN_CULTIST_2                        = 1,
     SAY_HIDDEN_CULTIST_3                        = 2,
-    SAY_HIDDEN_CULTIST_4                        = 3
+    SAY_HIDDEN_CULTIST_4                        = 3,
+
+    GOSSIP_ITEM_TOM_HEGGER_MENUID               = 9217, //What do you know about the Cult of the Damned?
+    GOSSIP_ITEM_GUARD_MITCHELLS_MENUID          = 9219, //How long have you worked for the Cult of the Damned?
+    GOSSIP_ITEM_SALTY_JOHN_THORPE_MENUID        = 9218, //I have a reason to believe you're involved in the cultist activity
+    GOSSIP_ITEM_HIDDEN_CULTIST_OPTIONID         = 0
 };
 
-const char* GOSSIP_ITEM_TOM_HEGGER = "What do you know about the Cult of the Damned?";
-const char* GOSSIP_ITEM_GUARD_MITCHELLS = "How long have you worked for the Cult of the Damned?";
-const char* GOSSIP_ITEM_SALTY_JOHN_THORPE = "I have a reason to believe you're involved in the cultist activity";
-
-class npc_hidden_cultist : public CreatureScript
+struct npc_hidden_cultist : public ScriptedAI
 {
-public:
-    npc_hidden_cultist() : CreatureScript("npc_hidden_cultist") { }
-
-    struct npc_hidden_cultistAI : public ScriptedAI
+    npc_hidden_cultist(Creature* creature) : ScriptedAI(creature)
     {
-        npc_hidden_cultistAI(Creature* creature) : ScriptedAI(creature)
-        {
-           uiEmoteState = creature->GetUInt32Value(UNIT_FIELD_NPC_EMOTESTATE);
-           uiNpcFlags = creature->GetUInt32Value(UNIT_FIELD_NPC_FLAGS);
-        }
-
-        uint32 uiEmoteState;
-        uint32 uiNpcFlags;
-
-        uint32 uiEventTimer;
-        uint8 uiEventPhase;
-
-        uint64 uiPlayerGUID;
-
-        void Reset() override
-        {
-            if (uiEmoteState)
-                me->HandleEmoteStateCommand(uiEmoteState);
-
-            if (uiNpcFlags)
-                me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, uiNpcFlags);
-
-            uiEventTimer = 0;
-            uiEventPhase = 0;
-
-            uiPlayerGUID = 0;
-
-            DoCast(SPELL_SHROUD_OF_THE_DEATH_CULTIST);
-
-            me->RestoreFaction();
-        }
-
-        void DoAction(int32 /*iParam*/) override
-        {
-            me->StopMoving();
-            me->SetUInt32Value(UNIT_FIELD_NPC_FLAGS, 0);
-            if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
-                me->SetFacingToObject(player);
-            uiEventTimer = 3000;
-            uiEventPhase = 1;
-        }
-
-        void SetGUID(uint64 uiGuid, int32 /*iId*/) override
-        {
-            uiPlayerGUID = uiGuid;
-        }
-
-        void AttackPlayer()
-        {
-            me->setFaction(14);
-            if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
-                me->AI()->AttackStart(player);
-        }
-
-        void UpdateAI(uint32 uiDiff) override
-        {
-            if (uiEventTimer && uiEventTimer <= uiDiff)
-            {
-                switch (uiEventPhase)
-                {
-                    case 1:
-                        switch (me->GetEntry())
-                        {
-                            case NPC_SALTY_JOHN_THORPE:
-                                me->HandleEmoteStateCommand(0);
-                                Talk(SAY_HIDDEN_CULTIST_1);
-                                uiEventTimer = 5000;
-                                uiEventPhase = 2;
-                                break;
-                            case NPC_GUARD_MITCHELLS:
-                                Talk(SAY_HIDDEN_CULTIST_2);
-                                uiEventTimer = 5000;
-                                uiEventPhase = 2;
-                                break;
-                            case NPC_TOM_HEGGER:
-                                Talk(SAY_HIDDEN_CULTIST_3);
-                                uiEventTimer = 5000;
-                                uiEventPhase = 2;
-                                break;
-                        }
-                        break;
-                    case 2:
-                        switch (me->GetEntry())
-                        {
-                            case NPC_SALTY_JOHN_THORPE:
-                                Talk(SAY_HIDDEN_CULTIST_4);
-                                if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
-                                    me->SetFacingToObject(player);
-                                uiEventTimer = 3000;
-                                uiEventPhase = 3;
-                                break;
-                            case NPC_GUARD_MITCHELLS:
-                            case NPC_TOM_HEGGER:
-                                AttackPlayer();
-                                uiEventPhase = 0;
-                                break;
-                        }
-                        break;
-                    case 3:
-                        if (me->GetEntry() == NPC_SALTY_JOHN_THORPE)
-                        {
-                            AttackPlayer();
-                            uiEventPhase = 0;
-                        }
-                        break;
-                }
-            }else uiEventTimer -= uiDiff;
-
-            if (!UpdateVictim())
-                return;
-
-            DoMeleeAttackIfReady();
-        }
-    };
-
-    CreatureAI* GetAI(Creature* creature) const override
-    {
-        return new npc_hidden_cultistAI(creature);
+        Initialize();
+        uiEmoteState = creature->GetEmoteState();
+        uiNpcFlags = creature->GetNpcFlags();
     }
 
-    bool OnGossipHello(Player* player, Creature* creature) override
+    void Initialize()
+    {
+        uiEventTimer = 0;
+        uiEventPhase = 0;
+
+        uiPlayerGUID.Clear();
+    }
+
+    Emote uiEmoteState;
+    NPCFlags uiNpcFlags;
+
+    uint32 uiEventTimer;
+    uint8 uiEventPhase;
+
+    ObjectGuid uiPlayerGUID;
+
+    void Reset() override
+    {
+        if (uiEmoteState)
+            me->SetEmoteState(uiEmoteState);
+
+        if (uiNpcFlags)
+            me->ReplaceAllNpcFlags(uiNpcFlags);
+
+        Initialize();
+
+        DoCast(SPELL_SHROUD_OF_THE_DEATH_CULTIST);
+
+        me->RestoreFaction();
+    }
+
+    void DoAction(int32 /*iParam*/) override
+    {
+        me->StopMoving();
+        me->ReplaceAllNpcFlags(UNIT_NPC_FLAG_NONE);
+        me->SetEmoteState(EMOTE_ONESHOT_NONE);
+        if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
+            me->SetFacingToObject(player);
+        uiEventTimer = 3000;
+        uiEventPhase = 1;
+    }
+
+    void AttackPlayer()
+    {
+        me->SetFaction(FACTION_MASK_MONSTER); // FACTION_MONSTER
+        if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
+            AttackStart(player);
+    }
+
+    void UpdateAI(uint32 uiDiff) override
+    {
+        if (uiEventTimer && uiEventTimer <= uiDiff)
+        {
+            switch (uiEventPhase)
+            {
+                case 1:
+                    switch (me->GetEntry())
+                    {
+                        case NPC_SALTY_JOHN_THORPE:
+                            Talk(SAY_HIDDEN_CULTIST_1);
+                            uiEventTimer = 5000;
+                            uiEventPhase = 2;
+                            break;
+                        case NPC_GUARD_MITCHELLS:
+                            Talk(SAY_HIDDEN_CULTIST_2);
+                            uiEventTimer = 5000;
+                            uiEventPhase = 2;
+                            break;
+                        case NPC_TOM_HEGGER:
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
+                                Talk(SAY_HIDDEN_CULTIST_3, player);
+                            uiEventTimer = 5000;
+                            uiEventPhase = 2;
+                            break;
+                    }
+                    break;
+                case 2:
+                    switch (me->GetEntry())
+                    {
+                        case NPC_SALTY_JOHN_THORPE:
+                            Talk(SAY_HIDDEN_CULTIST_4);
+                            if (Player* player = ObjectAccessor::GetPlayer(*me, uiPlayerGUID))
+                                me->SetFacingToObject(player);
+                            uiEventTimer = 3000;
+                            uiEventPhase = 3;
+                            break;
+                        case NPC_GUARD_MITCHELLS:
+                        case NPC_TOM_HEGGER:
+                            AttackPlayer();
+                            uiEventPhase = 0;
+                            break;
+                    }
+                    break;
+                case 3:
+                    if (me->GetEntry() == NPC_SALTY_JOHN_THORPE)
+                    {
+                        AttackPlayer();
+                        uiEventPhase = 0;
+                    }
+                    break;
+            }
+        }else uiEventTimer -= uiDiff;
+
+        if (!UpdateVictim())
+            return;
+
+        DoMeleeAttackIfReady();
+    }
+
+    bool OnGossipHello(Player* player) override
     {
         uint32 uiGossipText = 0;
-        const char* charGossipItem;
+        uint32 charGossipItem = 0;
 
-        switch (creature->GetEntry())
+        switch (me->GetEntry())
         {
             case NPC_TOM_HEGGER:
                 uiGossipText = GOSSIP_TEXT_TOM_HEGGER;
-                charGossipItem = GOSSIP_ITEM_TOM_HEGGER;
+                charGossipItem = GOSSIP_ITEM_TOM_HEGGER_MENUID;
                 break;
             case NPC_SALTY_JOHN_THORPE:
                 uiGossipText = GOSSIP_TEXT_SALTY_JOHN_THORPE;
-                charGossipItem = GOSSIP_ITEM_SALTY_JOHN_THORPE;
+                charGossipItem = GOSSIP_ITEM_SALTY_JOHN_THORPE_MENUID;
                 break;
             case NPC_GUARD_MITCHELLS:
                 uiGossipText = GOSSIP_TEXT_GUARD_MITCHELSS;
-                charGossipItem = GOSSIP_ITEM_GUARD_MITCHELLS;
+                charGossipItem = GOSSIP_ITEM_GUARD_MITCHELLS_MENUID;
                 break;
             default:
-                charGossipItem = "";
                 return false;
         }
 
+        InitGossipMenuFor(player, charGossipItem);
         if (player->HasAura(SPELL_RIGHTEOUS_VISION) && player->GetQuestStatus(QUEST_THE_HUNT_IS_ON) == QUEST_STATUS_INCOMPLETE)
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_CHAT, charGossipItem, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF+1);
+            AddGossipItemFor(player, charGossipItem, GOSSIP_ITEM_HIDDEN_CULTIST_OPTIONID, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 1);
 
-        if (creature->IsVendor())
-            player->ADD_GOSSIP_ITEM(GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
+        if (me->IsVendor())
+            AddGossipItemFor(player, GOSSIP_ICON_VENDOR, GOSSIP_TEXT_BROWSE_GOODS, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_TRADE);
 
-        player->SEND_GOSSIP_MENU(uiGossipText, creature->GetGUID());
+        SendGossipMenuFor(player, uiGossipText, me->GetGUID());
 
         return true;
     }
 
-    bool OnGossipSelect(Player* player, Creature* creature, uint32 /*sender*/, uint32 action) override
+    bool OnGossipSelect(Player* player, uint32 /*menuId*/, uint32 gossipListId) override
     {
-        player->PlayerTalkClass->ClearMenus();
+        uint32 const action = player->PlayerTalkClass->GetGossipOptionAction(gossipListId);
+        ClearGossipMenuFor(player);
 
-        if (action == GOSSIP_ACTION_INFO_DEF+1)
+        if (action == GOSSIP_ACTION_INFO_DEF + 1)
         {
-            player->CLOSE_GOSSIP_MENU();
-            creature->AI()->SetGUID(player->GetGUID());
-            creature->AI()->DoAction(1);
+            CloseGossipMenuFor(player);
+            uiPlayerGUID = player->GetGUID();
+            DoAction(1);
         }
 
         if (action == GOSSIP_ACTION_TRADE)
-            player->GetSession()->SendListInventory(creature->GetGUID());
+            player->GetSession()->SendListInventory(me->GetGUID());
 
         return true;
     }
-
 };
 
 void AddSC_borean_tundra()
@@ -2550,5 +2542,5 @@ void AddSC_borean_tundra()
     new npc_seaforium_depth_charge();
     new npc_valiance_keep_cannoneer();
     new npc_warmage_coldarra();
-    new npc_hidden_cultist();
+    RegisterCreatureAI(npc_hidden_cultist);
 }

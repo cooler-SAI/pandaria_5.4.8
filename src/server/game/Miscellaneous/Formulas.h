@@ -174,7 +174,7 @@ namespace Trinity
                 gain = 0;
             else
             {
-                gain = BaseGain(player->getLevel(), u->getLevel(), GetContentLevelsForMapAndZone(u->GetMapId(), u->GetZoneId()));
+                gain = BaseGain(player->GetLevel(), u->GetLevel(), GetContentLevelsForMapAndZone(u->GetMapId(), u->GetZoneId()));
 
                 if (gain != 0 && u->GetTypeId() == TYPEID_UNIT && ((Creature*)u)->isElite())
                 {
@@ -185,8 +185,8 @@ namespace Trinity
                         gain *= 2;
                 }
 
-				if (((Creature*)u)->GetCreatureTemplate()->rank == CREATURE_WEAK)
-				gain *= 0.3; // weak creatures should grant 0.3 experience.
+                if (((Creature*)u)->GetCreatureTemplate()->rank == CREATURE_WEAK)
+                gain *= 0.3; // weak creatures should grant 0.3 experience.
             }
 
             sScriptMgr->OnGainCalculation(gain, player, u);

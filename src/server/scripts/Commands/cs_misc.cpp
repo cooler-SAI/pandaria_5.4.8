@@ -37,12 +37,13 @@
 #include "MMapFactory.h"
 #include "DevTool.h"
 #include "BattlegroundMgr.h"
-#include "CustomLogs.h"
+#include "Realm.h"
 #include "ServiceMgr.h"
 #include "Config.h"
 #include "ServiceMgr.h"
 #include "SpellHistory.h"
 #include "WordFilterMgr.h"
+#include "IPLocation.h"
 #include <fstream>
 
 class misc_commandscript : public CommandScript
@@ -52,7 +53,7 @@ public:
 
     std::vector<ChatCommand> GetCommands() const override
     {
-		static std::vector<ChatCommand> badWordCommandTable =
+        static std::vector<ChatCommand> badWordCommandTable =
         {
             { "add",                SEC_ADMINISTRATOR,      true,  &HandleBadWordAddCommand, },
             { "remove",             SEC_ADMINISTRATOR,      true,  &HandleBadWordRemoveCommand, },
@@ -112,13 +113,6 @@ public:
         static std::vector<ChatCommand> replaceCommandTable =
         {
             { "skill",          SEC_ADMINISTRATOR, true, HandleReplaceCommand                },
-        };
-        static std::vector<ChatCommand> inotifyCommandTable =
-        {
-            { "memberchange",   SEC_CONSOLE,       true,  &HandleINotifyMemberChangeCommand  },
-            { "premium",        SEC_CONSOLE,       true,  &HandleINotifyPremiumCommand       },
-            { "verified",       SEC_CONSOLE,       true,  &HandleINotifyVerifiedCommand      },
-            { "voting",         SEC_CONSOLE,       true,  &HandleINotifyVotingCommand        },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -191,14 +185,12 @@ public:
                 } },
             } },
             { "bg",             SEC_ADMINISTRATOR,  false,  bgCommandTable              },
-            { "itemlog",        SEC_GAMEMASTER, true,   &HandleItemLogCommand       },
             { "itemdelete",     SEC_GAMEMASTER, true,   &HandleItemDeleteCommand    },
             { "removeitem",     SEC_GAMEMASTER, false,  &HandleRemoveItemCommand    },
             { "visibility",     SEC_ADMINISTRATOR,  true,   visibilityCommandTable      },
             { "replace",        SEC_ADMINISTRATOR, true, replaceCommandTable        },
-            { "inotify",        SEC_CONSOLE,    true,   inotifyCommandTable         },
             { "checkladder",    SEC_ADMINISTRATOR,  true,   &HandleCheckLadderCommand   },
-			{ "wordfilter",         SEC_ADMINISTRATOR,      false, wordFilterCommandTable },
+            { "wordfilter",         SEC_ADMINISTRATOR,      false, wordFilterCommandTable },
             { "deleteditem",    SEC_ADMINISTRATOR,  true,
             {
                 { "list",      SEC_ADMINISTRATOR,   true,   &HandleDeletedItemListCommand,    },
@@ -324,7 +316,7 @@ public:
         return true;
     }
 
-	static bool HandleDevCommand(ChatHandler* handler, char const* args)
+    static bool HandleDevCommand(ChatHandler* handler, char const* args)
     {
         if (!*args)
         {
@@ -1284,7 +1276,7 @@ public:
         for (auto at : areatriggers)
             handler->PSendSysMessage("|cFFFFFFFFTrigger %u, x: %.5f, y: %.5f, z: %.5f, radius: %g, box: { %g, %g, %g, %g }", at->id, at->x, at->y, at->z, at->radius, at->box_x, at->box_y, at->box_z, at->box_orientation);
 
-        handler->PSendSysMessage("Found near areatriggers (distance %f): %u", distance, areatriggers.size());
+        handler->PSendSysMessage("Found near areatriggers (distance %f): %lu", distance, areatriggers.size());
 
         return true;
     }
@@ -1387,7 +1379,7 @@ public:
                 std::string itemName = itemNameStr+1;
                 WorldDatabase.EscapeString(itemName);
 
-                PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_ITEM_TEMPLATE_BY_NAME);
+                WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_SEL_ITEM_TEMPLATE_BY_NAME);
                 stmt->setString(0, itemName);
                 PreparedQueryResult result = WorldDatabase.Query(stmt);
 
@@ -1809,14 +1801,14 @@ public:
             accId             = target->GetSession()->GetAccountId();
             money             = target->GetMoney();
             totalPlayerTime   = target->GetTotalPlayedTime();
-            level             = target->getLevel();
+            level             = target->GetLevel();
             latency           = target->GetSession()->GetLatency();
-            raceid            = target->getRace();
-            classid           = target->getClass();
+            raceid            = target->GetRace();
+            classid           = target->GetClass();
             mapId             = target->GetMapId();
             areaId            = target->GetAreaId();
             alive             = target->IsAlive() ? "Yes" : "No";
-            gender            = target->getGender();
+            gender            = target->GetGender();
             phase             = target->GetPhaseMask();
         }
         // get additional information from DB
@@ -1827,7 +1819,7 @@ public:
                 return false;
 
             // Query informations from the DB
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_PINFO);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_PINFO);
             stmt->setUInt32(0, lowguid);
             PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -1854,8 +1846,8 @@ public:
         }
 
         // Query the prepared statement for login data
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO);
-        stmt->setInt32(0, int32(realmID));
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO);
+        stmt->setInt32(0, int32(realm.Id.Realm));
         stmt->setUInt32(1, accId);
         PreparedQueryResult result = LoginDatabase.Query(stmt);
 
@@ -1868,6 +1860,13 @@ public:
             eMail         = fields[2].GetString();
             lastIp        = fields[3].GetString();
             lastLogin     = fields[4].GetString();
+
+            if (IpLocationRecord const* location = sIPLocation->GetLocationRecord(lastIp))
+            {
+                lastIp.append(" (");
+                lastIp.append(location->CountryName);
+                lastIp.append(")");
+            }
 
             muteTime      = fields[5].GetUInt64();
             failedLogins  = fields[6].GetUInt32();
@@ -1884,15 +1883,16 @@ public:
         std::string nameLink = handler->playerLink(targetName);
 
         // Returns banType, banTime, bannedBy, banreason
-        PreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO_BANS);
+        LoginDatabasePreparedStatement* stmt2 = LoginDatabase.GetPreparedStatement(LOGIN_SEL_PINFO_BANS);
+        CharacterDatabasePreparedStatement* cstmt = nullptr;
         stmt2->setUInt32(0, accId);
         PreparedQueryResult result2 = LoginDatabase.Query(stmt2);
         if (!result2)
         {
             banType = "Character";
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_BANS);
-            stmt->setUInt32(0, lowguid);
-            result2 = CharacterDatabase.Query(stmt);
+            cstmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_BANS);
+            cstmt->setUInt32(0, lowguid);
+            result2 = CharacterDatabase.Query(cstmt);
         }
 
         if (result2)
@@ -1904,9 +1904,9 @@ public:
         }
 
         // Can be used to query data from World database
-        stmt2 = WorldDatabase.GetPreparedStatement(WORLD_SEL_REQ_XP);
-        stmt2->setUInt8(0, level);
-        PreparedQueryResult result3 = WorldDatabase.Query(stmt2);
+        WorldDatabasePreparedStatement* stmt3 = WorldDatabase.GetPreparedStatement(WORLD_SEL_REQ_XP);
+        stmt3->setUInt8(0, level);
+        PreparedQueryResult result3 = WorldDatabase.Query(stmt3);
 
         if (result3)
         {
@@ -1915,9 +1915,9 @@ public:
         }
 
         // Can be used to query data from Characters database
-        stmt2 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_XP);
-        stmt2->setUInt32(0, lowguid);
-        PreparedQueryResult result4 = CharacterDatabase.Query(stmt2);
+        cstmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_XP);
+        cstmt->setUInt32(0, lowguid);
+        PreparedQueryResult result4 = CharacterDatabase.Query(cstmt);
 
         if (result4)
         {
@@ -1928,9 +1928,9 @@ public:
             if (gguid != 0)
             {
                 // Guild Data - an own query, because it may not happen.
-                PreparedStatement* stmt3 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
-                stmt3->setUInt32(0, lowguid);
-                PreparedQueryResult result5 = CharacterDatabase.Query(stmt3);
+                CharacterDatabasePreparedStatement* stmt4 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUILD_MEMBER_EXTENDED);
+                stmt4->setUInt32(0, lowguid);
+                PreparedQueryResult result5 = CharacterDatabase.Query(stmt4);
                 if (result5)
                 {
                     Field* fields  = result5->Fetch();
@@ -1961,7 +1961,7 @@ public:
         {
             if (onlineMuteTimer)
             {
-                QueryResult qresult = LoginDatabase.PQuery("SELECT muted_by, mute_reason FROM account_muted WHERE id = '%u' AND acc_id = '%u' AND realmid = '%u'", activeMuteId, accId, realmID);
+                QueryResult qresult = LoginDatabase.PQuery("SELECT muted_by, mute_reason FROM account_muted WHERE id = '%u' AND acc_id = '%u' AND realmid = '%u'", activeMuteId, accId, realm.Id.Realm);
                 if (qresult)
                 {
                     Field* fields = qresult->Fetch();
@@ -2051,9 +2051,9 @@ public:
 
         // Mail Data - an own query, because it may or may not be useful.
         // SQL: "SELECT SUM(CASE WHEN (checked & 1) THEN 1 ELSE 0 END) AS 'readmail', COUNT(*) AS 'totalmail' FROM mail WHERE `receiver` = ?"
-        PreparedStatement* stmt4 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
-        stmt4->setUInt32(0, lowguid);
-        PreparedQueryResult result6 = CharacterDatabase.Query(stmt4);
+        CharacterDatabasePreparedStatement* stmt5 = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PINFO_MAILS);
+        stmt5->setUInt32(0, lowguid);
+        PreparedQueryResult result6 = CharacterDatabase.Query(stmt5);
         if (result6)
         {
             // Define the variables, so the compiler knows they exist
@@ -2179,7 +2179,7 @@ public:
             {
                 QueryResult result = LoginDatabase.PQuery("SELECT m.mute_timer, am.muted_by, am.mute_reason, am.public_channels_only "
                     "FROM mute_active AS m, account_muted AS am "
-                    "WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id", realmID, accId);
+                    "WHERE m.realmid = '%u' AND m.account = '%u' AND m.mute_id = am.id", realm.Id.Realm, accId);
                 if (result)
                 {
                     Field* fields = result->Fetch();
@@ -2209,14 +2209,14 @@ public:
         else if (muteTime > maxMuteTime)
             muteTime = maxMuteTime;
 
-        SQLTransaction trans = LoginDatabase.BeginTransaction();
+        LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
 
         // Write mute history
         uint32 muteId = sObjectMgr->GenerateMuteID();
         LoginDatabase.EscapeString(muteReason);
         trans->PAppend("INSERT INTO account_muted (realmid, id, acc_id, char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, public_channels_only) "
             "SELECT %u, %u, id, %u, username, '%s', UNIX_TIMESTAMP(), '%s', %u, '%s', %u FROM account "
-            "WHERE id = '%u'", realmID, muteId, GUID_LOPART(charId), name.c_str(), mutedBy.c_str(), muteTime, muteReason.c_str(), publicChannelsOnly, accId);
+            "WHERE id = '%u'", realm.Id.Realm, muteId, GUID_LOPART(charId), name.c_str(), mutedBy.c_str(), muteTime, muteReason.c_str(), publicChannelsOnly, accId);
 
         if (sWorld->getBoolConfig(CONFIG_GM_USE_ONLINE_MUTES))
         {
@@ -2227,7 +2227,7 @@ public:
                 session->SetMute({ onlineMuteTimer, mutedBy, muteReason, publicChannelsOnly });
 
             trans->PAppend("INSERT INTO mute_active (realmid, account, mute_id, mute_timer) VALUES ('%u', '%u', '%u', '%u')",
-                realmID, accId, muteId, onlineMuteTimer);
+                realm.Id.Realm, accId, muteId, onlineMuteTimer);
         }
         else
         {
@@ -2305,7 +2305,7 @@ public:
                 session->GetMute().Timer = 0;
             }
 
-            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realmID, accId);
+            LoginDatabase.PExecute("DELETE FROM mute_active WHERE realmid = '%u' AND account = '%u'", realm.Id.Realm, accId);
         }
         else
         {
@@ -2384,7 +2384,7 @@ public:
         if (sWorld->getBoolConfig(CONFIG_GM_USE_ONLINE_MUTES))
         {
             // Get mute info
-            QueryResult result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realmID);
+            QueryResult result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realm.Id.Realm);
 
             if (result)
             {
@@ -2452,7 +2452,7 @@ public:
             sAccountMgr->GetName(accId, acc);
 
             // Get mute info
-            result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realmID);
+            result = LoginDatabase.PQuery("SELECT mute_timer, mute_id FROM mute_active WHERE account = '%u' AND realmid = '%u'", accId, realm.Id.Realm);
 
             if (result)
             {
@@ -2485,14 +2485,14 @@ public:
         {
             //                                    0        1          2          3         4          5            6
             result = LoginDatabase.PQuery("SELECT char_id, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
-                                          "WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date ASC", activeMuteId, realmID, acc.c_str(), excludeCharId);
+                                          "WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date ASC", activeMuteId, realm.Id.Realm, acc.c_str(), excludeCharId);
         }
         else
         {
             //                                                   0        1          2          3         4          5            6
             result = LoginDatabase.PQuery("SELECT * FROM (SELECT char_id, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
                                           "               WHERE realmid = '%u' AND mute_acc = '%s' AND char_id <> '%u' ORDER BY mute_date DESC LIMIT %u) AS last_muted "
-                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realmID, acc.c_str(), excludeCharId, limit);
+                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realm.Id.Realm, acc.c_str(), excludeCharId, limit);
         }
 
         if (limit)
@@ -2554,14 +2554,14 @@ public:
         {
             //                                    0        1         2          3          4         5          6            7
             result = LoginDatabase.PQuery("SELECT char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
-                                          "WHERE realmid = '%u' AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date ASC", activeMuteId, realmID, charId, name.c_str());
+                                          "WHERE realmid = '%u' AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date ASC", activeMuteId, realm.Id.Realm, charId, name.c_str());
         }
         else
         {
             //                                                   0        1         2          3          4         5          6            7
             result = LoginDatabase.PQuery("SELECT * FROM (SELECT char_id, mute_acc, mute_name, mute_date, muted_by, mute_time, mute_reason, id = '%u' FROM account_muted "
                                           "               WHERE realmid = %u AND (char_id = '%u' OR mute_name = '%s') ORDER BY mute_date DESC LIMIT %u) AS last_muted "
-                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realmID, charId, name.c_str(), limit);
+                                          "ORDER BY last_muted.mute_date ASC", activeMuteId, realm.Id.Realm, charId, name.c_str(), limit);
         }
 
         if (!result)
@@ -3082,14 +3082,14 @@ public:
             handler->PSendSysMessage(LANG_COMMAND_FREEZE, name.c_str());
 
             // stop combat + make player unattackable + duel stop + stop some spells
-            player->setFaction(35);
+            player->SetFaction(35);
             player->CombatStop();
             if (player->IsNonMeleeSpellCasted(true))
                 player->InterruptNonMeleeSpells(true);
             player->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
             // if player class = hunter || warlock remove pet if alive
-            if ((player->getClass() == CLASS_HUNTER) || (player->getClass() == CLASS_WARLOCK))
+            if ((player->GetClass() == CLASS_HUNTER) || (player->GetClass() == CLASS_WARLOCK))
                 player->RemovePet(PET_REMOVE_DISMISS, PET_REMOVE_FLAG_RESET_CURRENT);
 
             if (SpellInfo const* spellInfo = sSpellMgr->GetSpellInfo(9454))
@@ -3126,7 +3126,7 @@ public:
             handler->PSendSysMessage(LANG_COMMAND_UNFREEZE, name.c_str());
 
             // Reset player faction + allow combat + allow duels
-            player->setFactionForRace(player->getRace());
+            player->setFactionForRace(player->GetRace());
             player->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE);
 
             // Remove Freeze spell (allowing movement and spells)
@@ -3140,7 +3140,7 @@ public:
             if (targetName)
             {
                 // Check for offline players
-                PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_BY_NAME);
+                CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_GUID_BY_NAME);
                 stmt->setString(0, name);
                 PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -3174,7 +3174,7 @@ public:
     static bool HandleListFreezeCommand(ChatHandler* handler, char const* /*args*/)
     {
         // Get names from DB
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_AURA_FROZEN);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_AURA_FROZEN);
         PreparedQueryResult result = CharacterDatabase.Query(stmt);
         if (!result)
         {
@@ -3423,7 +3423,7 @@ public:
             return false;
 
         player->ClearLootLockouts();
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_LOOTLOCKOUTS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_CHARACTER_LOOTLOCKOUTS);
         stmt->setUInt32(0, player->GetGUIDLow());
         CharacterDatabase.Execute(stmt);
         handler->SendSysMessage("All loot lockouts cleared");
@@ -3555,70 +3555,6 @@ public:
     {
         WorldPacket data;
         handler->GetSession()->HandleBattlemasterJoinRated(data);
-        return true;
-    }
-
-    static bool HandleItemLogCommand(ChatHandler* handler, const char* args)
-    {
-        if (!*args)
-            return false;
-
-        Tokenizer tok(args, ' ');
-        if (tok.size() != 2)
-            return false;
-
-        std::string username = tok[0];
-        uint32 acc = sAccountMgr->GetId(username.c_str());
-        if (!acc)
-            return handler->SendError(LANG_ACCOUNT_NOT_EXIST, tok[0]);
-
-        bool on = false;
-        if (strncmp(tok[1], "on", 2) == 0)
-            on = true;
-        else if (strncmp(tok[1], "off", 3) != 0)
-            return handler->SendError(LANG_USE_BOL);
-
-        if (WorldSession* ws = sWorld->FindSession(acc))
-        {
-            if (on)
-                ws->AddFlag(ACC_FLAG_ITEM_LOG);
-            else
-            {
-                ws->RemoveFlag(ACC_FLAG_ITEM_LOG);
-                QueryResult res = CharacterDatabase.PQuery("SELECT `guid` FROM `characters` WHERE `account` = %u", acc);
-                if (res)
-                {
-                    do
-                    {
-                        logs::StopItemLogging((*res)[0].GetUInt32());
-                    } while (res->NextRow());
-                }
-            }
-        }
-        else
-        {
-            //uint32 id = sWorld->GetprojectMemberID(acc);
-            if (on)
-            {
-                /*
-                if (id)
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE project_member_id = %u", ACC_FLAG_ITEM_LOG, id);
-                else
-                */
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
-            }
-            else
-            {
-                /*
-                if (id)
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE project_member_id = %u", ACC_FLAG_ITEM_LOG, id);
-                else
-                */
-                    LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE id = %u", ACC_FLAG_ITEM_LOG, acc);
-            }
-        }
-
-        handler->PSendSysMessage("Item log for account \"%s\" %s", username.c_str(), on ? "enabled" : "disabled");
         return true;
     }
 
@@ -3907,9 +3843,9 @@ public:
                 objects[category.first].insert(info.first);
 
         handler->PSendSysMessage("Reloaded visibility settings for:");
-        handler->PSendSysMessage("- %u Creatures", objects[CustomVisibility::Type::Creature].size());
-        handler->PSendSysMessage("- %u GameObjects", objects[CustomVisibility::Type::GameObject].size());
-        handler->PSendSysMessage("- %u DynamicObjects", objects[CustomVisibility::Type::DynamicObject].size());
+        handler->PSendSysMessage("- %lu Creatures", objects[CustomVisibility::Type::Creature].size());
+        handler->PSendSysMessage("- %lu GameObjects", objects[CustomVisibility::Type::GameObject].size());
+        handler->PSendSysMessage("- %lu DynamicObjects", objects[CustomVisibility::Type::DynamicObject].size());
 
         // Update all entries that either previously had or currently have settings
         uint32 count = 0;
@@ -3952,7 +3888,7 @@ public:
         Map* map = handler->GetSession()->GetPlayer()->GetMap();
         {
             auto&& objects = map->GetCustomVisibilityObjects();
-            handler->PSendSysMessage("%u map-wide objects:", objects.size());
+            handler->PSendSysMessage("%lu map-wide objects:", objects.size());
 
             std::map<CustomVisibility::Importance, uint32> counts;
             for (auto&& obj : objects)
@@ -3964,7 +3900,7 @@ public:
         }
         {
             auto&& objects = map->GetCustomVisibilityObjects(handler->GetSession()->GetPlayer()->GetZoneId());
-            handler->PSendSysMessage("%u zone-wide objects:", objects.size());
+            handler->PSendSysMessage("%lu zone-wide objects:", objects.size());
 
             std::map<CustomVisibility::Importance, uint32> counts;
             for (auto&& obj : objects)
@@ -4216,7 +4152,7 @@ public:
                 ObjectMgr::GetLocaleString(locale->Name, handler->GetSession()->GetSessionDbLocaleIndex(), name);
 
             std::stringstream ss;
-            ss << "|c" << std::hex << ItemQualityColors[proto->Quality] << std::dec << "|Hitem:" << proto->ItemId << ":0:0:0:0:0:" << info.randomPropertyId << ":0:" << uint32(handler->GetSession()->GetPlayer()->getLevel()) << "|h[" << name << "]|h|r";
+            ss << "|c" << std::hex << ItemQualityColors[proto->Quality] << std::dec << "|Hitem:" << proto->ItemId << ":0:0:0:0:0:" << info.randomPropertyId << ":0:" << uint32(handler->GetSession()->GetPlayer()->GetLevel()) << "|h[" << name << "]|h|r";
             name = ss.str();
         }
         if (revert)
@@ -4224,7 +4160,7 @@ public:
             handler->PSendSysMessage("Restoring item %s (GUID: %u, Entry: %u) to player %s (GUID: %u) inventory.", name.c_str(), itemGuid, info.itemEntry, playerName.c_str(), info.owner_guid);
 
             uint8 index = 0;
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ITEM_INSTANCE);
             stmt->setUInt32(  index, info.itemEntry);
             stmt->setUInt32(++index, info.owner_guid);
             stmt->setUInt32(++index, info.creatorGuid);
@@ -4257,7 +4193,7 @@ public:
         {
             handler->PSendSysMessage("Deleting item %s (GUID: %u, Entry: %u) from player %s (GUID: %u) inventory. Use .itemdelete revert %u to restore the item.", name.c_str(), itemGuid, info.itemEntry, playerName.c_str(), info.owner_guid, itemGuid);
 
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ITEM_INSTANCE);
             stmt->setUInt32(0, itemGuid);
             CharacterDatabase.Execute(stmt);
 
@@ -4341,135 +4277,6 @@ public:
             return true;
         }
 
-        return true;
-    }
-
-    static bool HandleINotifyMemberChangeCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* accountStr = strtok(nullptr, " ");
-
-        if (!memberStr || !accountStr)
-            return false;
-
-        uint32 accountId = (uint32)atol(accountStr);
-        uint32 oldMemberId = sWorld->GetprojectMemberID(accountId);
-        uint32 newMemberId = (uint32)atol(memberStr);
-
-        sWorld->UpdateAccountCacheDataMemberID(accountId, newMemberId);
-
-        if (oldMemberId)
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(oldMemberId, false))
-                info->GameAccountIDs.erase(accountId);
-
-        if (newMemberId)
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(newMemberId, false))
-                info->GameAccountIDs.insert(accountId);
-
-        handler->PSendSysMessage("Changed member ID from %u to %u for account %u", oldMemberId, newMemberId, accountId);
-        return true;
-    }
-
-    static bool HandleINotifyPremiumCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* unsetDateStr = strtok(nullptr, " ");
-
-        if (!memberStr || !unsetDateStr)
-            return false;
-
-        uint32 memberId = (uint32)atol(memberStr);
-        uint32 unsetDate = (uint32)atol(unsetDateStr);
-
-        if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-        {
-            info->PremiumActive = true;
-            info->PremiumUnsetDate = unsetDate;
-            info->SyncWithCross();
-        }
-
-        handler->PSendSysMessage("Activated premium status for member %u until %u", memberId, unsetDate);
-        return true;
-    }
-
-    static bool HandleINotifyVerifiedCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        char* memberStr = strtok((char*)args, " ");
-        char* enabledStr = strtok(nullptr, " ");
-
-        if (!memberStr || !enabledStr)
-            return false;
-
-        uint32 memberId = (uint32)atol(memberStr);
-        bool enabled = (bool)atoi(enabledStr);
-
-        if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-        {
-            info->IsVerified = enabled;
-            info->SyncWithCross();
-        }
-
-        handler->PSendSysMessage("%s verified status for member %u", enabled ? "Activated" : "Deactivated", memberId);
-        return true;
-    }
-
-    static bool HandleINotifyVotingCommand(ChatHandler* handler, char const* args)
-    {
-        if (!*args)
-            return false;
-
-        time_t votingBonusEnd = time(nullptr) + 24 * HOUR;
-
-        // Gather up changes for offline members to prevent generating useless DB queries, as there can be multiple votes from the same member present
-        std::map<uint32, std::set<uint32>> delayed;
-
-        SQLTransaction trans = LoginDatabase.BeginTransaction();
-        uint32 count = 0;
-        for (auto&& vote : Tokenizer(args, ' '))
-        {
-            if (*vote == '\0')
-                continue;
-
-            Tokenizer data{ vote, ':', 4 };
-            ASSERT(data.size() == 4);
-            uint32 memberId = atol(data[0]);
-            //uint32 voteId   = atol(data[1]); // unused
-            uint32 sourceId = atol(data[2]);
-            //uint32 time     = atol(data[3]); // unused
-
-            if (projectMemberInfo* info = sWorld->GetprojectMemberInfo(memberId, false))
-                info->SetSetting(info->GetVotingSetting(sourceId), { (uint32)votingBonusEnd }, std::move(trans));
-            else
-                delayed[(uint32)info->GetVotingSetting(sourceId)].insert(memberId);
-
-            ++count;
-        }
-
-        // Generate queries for offline members
-        std::string const value = std::to_string((uint32)votingBonusEnd);
-        for (auto&& setting : delayed)
-        {
-            for (auto&& memberId : setting.second)
-            {
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_project_MEMBER_SETTING);
-                stmt->setUInt32(0, memberId);
-                stmt->setUInt32(1, setting.first);
-                stmt->setString(2, value);
-                trans->Append(stmt);
-            }
-        }
-        LoginDatabase.CommitTransaction(trans);
-
-        handler->PSendSysMessage("Handled %u votes", count);
         return true;
     }
 
@@ -4601,7 +4408,7 @@ public:
 
         std::list<Item*> itemStorage;
         QueryResult result;
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         if (all)
             result = CharacterDatabase.PQuery("SELECT id, old_item_guid, item_entry, item_count FROM item_deleted WHERE owner_guid = '%u' AND `restored`=0", GUID_LOPART(guid));

@@ -85,7 +85,7 @@ class BattlegroundDS : public Battleground
         ~BattlegroundDS();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void OnInvite(Player* player, GroupQueueInfo const* ginfo) override;
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
@@ -93,7 +93,7 @@ class BattlegroundDS : public Battleground
         void RemovePlayer(Player* player, uint64 guid, uint32 team);
         void HandleAreaTrigger(Player* Source, uint32 Trigger);
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         void FillInitialWorldStates(WorldStateBuilder& builder);
         void HandleKillPlayer(Player* player, Player* killer);
     private:

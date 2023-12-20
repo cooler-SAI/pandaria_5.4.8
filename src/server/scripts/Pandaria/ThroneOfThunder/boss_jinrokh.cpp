@@ -18,6 +18,7 @@
 #include "throne_of_thunder.h"
 #include "GridNotifiers.h"
 #include "Vehicle.h"
+#include "Random.h"
 
 enum eSpells
 {
@@ -1023,17 +1024,16 @@ class spell_thundering_throw : public SpellScript
                     StatueList.sort(Trinity::ObjectDistanceOrderPred(caster));
 
                     // select farthest statue
-                    if (target = StatueList.back())
-                    {
-                        m_victim->ExitVehicle();
-                        m_victim->CastSpell(target, SPELL_THUNDERING_THROW_JUMP, true);
+                    target = StatueList.back();
+                    m_victim->ExitVehicle();
+                    m_victim->CastSpell(target, SPELL_THUNDERING_THROW_JUMP, true);
 
-                        if (target->AI())
-                        {
-                            target->AI()->DoAction(ACTION_DESTROYED);
-                            target->AI()->SetGUID(caster->GetGUID());
-                        }
+                    if (target->AI())
+                    {
+                        target->AI()->DoAction(ACTION_DESTROYED);
+                        target->AI()->SetGUID(caster->GetGUID());
                     }
+                    
                 }
             }
         }

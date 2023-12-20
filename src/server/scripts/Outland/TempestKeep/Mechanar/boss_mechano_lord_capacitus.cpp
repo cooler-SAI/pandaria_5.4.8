@@ -20,6 +20,7 @@
 #include "SpellScript.h"
 #include "mechanar.h"
 #include "Player.h"
+#include "Random.h"
 
 enum Spells
 {

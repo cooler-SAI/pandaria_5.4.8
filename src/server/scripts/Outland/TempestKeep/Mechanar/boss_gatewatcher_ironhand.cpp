@@ -25,6 +25,7 @@ EndScriptData */
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "mechanar.h"
+#include "Random.h"
 
 enum Says
 {

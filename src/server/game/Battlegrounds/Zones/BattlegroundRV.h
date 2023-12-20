@@ -98,11 +98,11 @@ class BattlegroundRV : public Battleground
         ~BattlegroundRV();
 
         /* inherited from BattlegroundClass */
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         void OnInvite(Player* player, GroupQueueInfo const* ginfo) override;
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
-        void Reset();
+        void Reset() override;
         void FillInitialWorldStates(WorldStateBuilder& builder);
 
         void RemovePlayer(Player* player, uint64 guid, uint32 team);

@@ -399,7 +399,7 @@ class boss_lei_shi : public CreatureScript
 
                     me->CombatStop();
                     me->DeleteThreatList();
-                    me->setFaction(35);
+                    me->SetFaction(35);
                     me->CastSpell(me, SPELL_LEI_SHI_TRANSFORM, true);
                     me->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
                     me->RestoreDisplayId();
@@ -907,7 +907,7 @@ class npc_lei_shi_corrupted_protector : public CreatureScript
 
                 while (uint32 eventId = events.ExecuteEvent())
                 {
-                    if (eventId = EVENT_DISPERSE)
+                    if (eventId == EVENT_DISPERSE)
                     {
                         me->RemoveAurasDueToSpell(SPELL_DISPERSE);
                         DoCast(me, SPELL_DISPERSE);

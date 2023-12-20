@@ -216,7 +216,7 @@ bool GameObject::Create(uint32 guidlow, uint32 name_id, Map* map, uint32 phaseMa
         return false;
     }
 
-    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT)
+    if (goinfo->type == GAMEOBJECT_TYPE_TRANSPORT && goinfo->entry != 216666)
     {
         TC_LOG_ERROR("sql.sql", "Gameobject (GUID: %u Entry: %u) not created: gameobject type GAMEOBJECT_TYPE_TRANSPORT cannot be manually created.", guidlow, name_id);
         return false;
@@ -643,12 +643,15 @@ void GameObject::Update(uint32 diff)
                         {
                             uint32 gguid = lootingGroupLowGUID;
                             uint64 goguid = GetGUID();
-                            TaskMgr::Default()->ScheduleInvocation([=]
-                            {
-                                if (GameObject* go = ObjectAccessor::FindGameObject(goguid))
-                                    if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
-                                        group->EndRoll(&go->loot);
-                            });
+                            // TaskMgr::Default()->ScheduleInvocation([=]
+                            // {
+                            //     if (GameObject* go = ObjectAccessor::FindGameObject(goguid))
+                            //         if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
+                            //             group->EndRoll(&go->loot);
+                            // });
+                            if (GameObject* go = ObjectAccessor::FindGameObject(goguid))
+                                if (Group* group = sGroupMgr->GetGroupByGUID(gguid))
+                                    group->EndRoll(&go->loot);                            
                             m_groupLootTimer = 0;
                             lootingGroupLowGUID = 0;
                         }
@@ -828,11 +831,11 @@ void GameObject::SaveToDB(uint32 mapid, uint16 spawnMask, uint32 phaseMask)
     data.artKit = GetGoArtKit();
 
     // Update in DB
-    SQLTransaction trans = WorldDatabase.BeginTransaction();
+    WorldDatabaseTransaction trans = WorldDatabase.BeginTransaction();
 
     uint8 index = 0;
 
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_GAMEOBJECT);
+    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_GAMEOBJECT);
     stmt->setUInt32(0, m_DBTableGuid);
     trans->Append(stmt);
 
@@ -933,7 +936,7 @@ void GameObject::DeleteFromDB()
     GetMap()->RemoveGORespawnTime(m_DBTableGuid);
     sObjectMgr->DeleteGOData(m_DBTableGuid);
 
-    PreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_GAMEOBJECT);
+    WorldDatabasePreparedStatement* stmt = WorldDatabase.GetPreparedStatement(WORLD_DEL_GAMEOBJECT);
 
     stmt->setUInt32(0, m_DBTableGuid);
 
@@ -1515,8 +1518,6 @@ void GameObject::Use(Unit* user)
                     {
                         player->UpdateFishingSkill();
 
-                        player->CreditprojectDailyQuest(182000 + GetZoneId()); // project Daily Quest Credit - Fishing - *
-
                         /// @todo I do not understand this hack. Need some explanation.
                         // prevent removing GO at spell cancel
                         RemoveFromOwner();
@@ -1691,10 +1692,10 @@ void GameObject::Use(Unit* user)
                 return;
 
             //required lvl checks!
-            uint8 level = player->getLevel();
+            uint8 level = player->GetLevel();
             if (level < info->meetingstone.minLevel)
                 return;
-            level = targetPlayer->getLevel();
+            level = targetPlayer->GetLevel();
             if (level < info->meetingstone.minLevel)
                 return;
 
@@ -1885,7 +1886,7 @@ void GameObject::CastSpell(Unit* target, uint32 spellId)
 
     if (Unit* owner = GetOwner())
     {
-        trigger->setFaction(owner->getFaction());
+        trigger->SetFaction(owner->GetFaction());
         // needed for GO casts for proper target validation checks
         trigger->SetOwnerGUID(owner->GetGUID());
         if (owner->HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_PVP_ATTACKABLE))
@@ -1896,7 +1897,7 @@ void GameObject::CastSpell(Unit* target, uint32 spellId)
     }
     else
     {
-        trigger->setFaction(14);
+        trigger->SetFaction(14);
         // Set owner guid for target if no owner available - needed by trigger auras
         // - trigger gets despawned and there's no caster avalible (see AuraEffect::TriggerSpell())
         trigger->CastSpell(target ? target : trigger, spellInfo, true, 0, 0, target ? target->GetGUID() : 0);

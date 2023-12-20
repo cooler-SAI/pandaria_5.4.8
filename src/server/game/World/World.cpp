@@ -1,5 +1,5 @@
 /*
-* This file is part of the Pandaria 5.4.8 Project. See THANKS file for Copyright information
+* This file is part of the Legends of Azeroth MOP Project. See THANKS file for Copyright information
 *
 * This program is free software; you can redistribute it and/or modify it
 * under the terms of the GNU General Public License as published by the
@@ -18,10 +18,11 @@
 /** \file
     \ingroup world
 */
-
 #include "Common.h"
 #include "Memory.h"
 #include "DatabaseEnv.h"
+#include "QueryResult.h"
+#include "Transaction.h"
 #include "Config.h"
 #include "SystemConfig.h"
 #include "Log.h"
@@ -35,6 +36,7 @@
 #include "World.h"
 #include "AccountMgr.h"
 #include "AchievementMgr.h"
+#include "AuctionHouseBot.h"
 #include "AuctionHouseMgr.h"
 #include "BlackMarketMgr.h"
 #include "ObjectMgr.h"
@@ -48,6 +50,7 @@
 #include "DB2Stores.h"
 #include "LootMgr.h"
 #include "ItemEnchantmentMgr.h"
+#include "IPLocation.h"
 #include "MapManager.h"
 #include "CreatureAIRegistry.h"
 #include "BattlegroundMgr.h"
@@ -91,12 +94,19 @@
 #include "ServiceBoost.h"
 #include "ServiceMgr.h"
 #include "WordFilterMgr.h"
+#include "Realm.h"
+#ifdef ELUNA
+#include "LuaEngine.h"
+#include "HookMgr.h"
+#endif
 
 void AFDRoyaleUpdateHook(uint32 diff);
 
-ACE_Atomic_Op<ACE_Thread_Mutex, bool> World::m_stopEvent = false;
 uint8 World::m_ExitCode = SHUTDOWN_EXIT_CODE;
-ACE_Atomic_Op<ACE_Thread_Mutex, uint32> World::m_worldLoopCounter = 0;
+
+TC_GAME_API std::atomic<bool> World::m_stopEvent(false);
+
+TC_GAME_API std::atomic<uint32> World::m_worldLoopCounter(0);
 
 float World::m_MaxVisibleDistanceOnContinents = DEFAULT_VISIBILITY_DISTANCE;
 float World::m_MaxVisibleDistanceInInstances  = DEFAULT_VISIBILITY_INSTANCE;
@@ -109,6 +119,9 @@ int32 World::m_visibility_notify_periodInBGArenas   = DEFAULT_VISIBILITY_NOTIFY_
 float World::Visibility_RelocationLowerLimit = 10.0f;
 uint32 World::Visibility_AINotifyDelay = 1000;
 
+#ifdef ELUNA
+extern void StartEluna(bool restart);
+#endif
 /// World constructor
 World::World()
 {
@@ -159,6 +172,12 @@ World::~World()
 
     for (auto&& setting : m_devToolSettings)
         delete setting.second.second;
+}
+
+World* World::instance()
+{
+    static World instance;
+    return &instance;
 }
 
 /// Find a player in a specified zone
@@ -422,24 +441,15 @@ void World::LoadConfigSettings(bool reload)
 {
     if (reload)
     {
-        if (!sConfigMgr->Reload())
+        std::vector<std::string> configErrors;
+        if (!sConfigMgr->Reload(configErrors))
         {
-            TC_LOG_ERROR("misc", "World settings reload fail: can't read settings from %s.", sConfigMgr->GetFilename().c_str());
+            for (std::string const& configError : configErrors)
+                TC_LOG_ERROR("misc", "World settings reload fail: %s.", configError.c_str());
+
             return;
         }
     }
-
-    QueryResult result = LoginDatabase.PQuery("SELECT name, value FROM config WHERE (realmid = -1 OR realmid = '%u') AND value IS NOT NULL ORDER BY realmid ASC", sConfigMgr->GetIntDefault("RealmID", 0));
-    if (result)
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            sConfigMgr->SetValue(fields[0].GetString().c_str(), fields[1].GetString().c_str());
-        } while (result->NextRow());
-    }
-    else
-        TC_LOG_ERROR("misc", "World settings load fail: can't read settings from auth database or the `config` table is empty.");
 
     if (reload)
         sLog->LoadFromConfig();
@@ -908,7 +918,7 @@ void World::LoadConfigSettings(bool reload)
     m_int_configs[CONFIG_CHATFLOOD_MESSAGE_DELAY] = sConfigMgr->GetIntDefault("ChatFlood.MessageDelay", 1);
     m_int_configs[CONFIG_CHATFLOOD_MUTE_TIME]     = sConfigMgr->GetIntDefault("ChatFlood.MuteTime", 10);
 
-	m_int_configs[CONFIG_WORD_FILTER_MUTE_DURATION] = sConfigMgr->GetIntDefault("WordFilter.MuteDuration", 30000);
+    m_int_configs[CONFIG_WORD_FILTER_MUTE_DURATION] = sConfigMgr->GetIntDefault("WordFilter.MuteDuration", 30000);
     m_bool_configs[CONFIG_WORD_FILTER_ENABLE]       = sConfigMgr->GetBoolDefault("WordFilter.Enable", true);
 
     m_bool_configs[CONFIG_EVENT_ANNOUNCE] = sConfigMgr->GetIntDefault("Event.Announce", false);
@@ -1122,7 +1132,7 @@ void World::LoadConfigSettings(bool reload)
 
     m_bool_configs[CONFIG_EXECUTED_SERVICES_LOG] = sConfigMgr->GetBoolDefault("ExecutedServices.Log.Enabled", true);
 
-	// custom balance system
+    // custom balance system
     m_float_configs[CONFIGSPECMAGEARCANE] = sConfigMgr->GetFloatDefault("CONFIGSPECMAGEARCANE", 100.0f);
     m_float_configs[CONFIGSPECMAGEFIRE] = sConfigMgr->GetFloatDefault("CONFIGSPECMAGEFIRE", 100.0f);
     m_float_configs[CONFIGSPECMAGEFROST] = sConfigMgr->GetFloatDefault("CONFIGSPECMAGEFROST", 100.0f);
@@ -1276,7 +1286,7 @@ void World::LoadConfigSettings(bool reload)
     m_bool_configs[CONFIG_CHATLOG_GUILD] = sConfigMgr->GetBoolDefault("ChatLogs.Guild", false);
     m_bool_configs[CONFIG_CHATLOG_PUBLIC] = sConfigMgr->GetBoolDefault("ChatLogs.Public", false);
     m_bool_configs[CONFIG_CHATLOG_ADDON] = sConfigMgr->GetBoolDefault("ChatLogs.Addon", false);
-    m_bool_configs[CONFIG_CHATLOG_BGROUND] = sConfigMgr->GetBoolDefault("ChatLogs.Battleground", false);
+    m_bool_configs[CONFIG_CHATLOG_BGROUND] = sConfigMgr->GetBoolDefault("ChatLogs.BattleGround", false);
 
     // Warden
     m_bool_configs[CONFIG_WARDEN_ENABLED]             =  true;
@@ -1289,6 +1299,7 @@ void World::LoadConfigSettings(bool reload)
 
     // Dungeon finder
     m_int_configs[CONFIG_LFG_OPTIONSMASK]               = sConfigMgr->GetIntDefault("DungeonFinder.OptionsMask", 1);
+    m_bool_configs[CONFIG_LFG_SOLO]                     = sConfigMgr->GetBoolDefault("LFGSolo.Enabled", false);
     m_bool_configs[CONFIG_LFG_CASTDESERTER]             = sConfigMgr->GetBoolDefault("DungeonFinder.CastDeserter", false);
     m_bool_configs[CONFIG_LFG_OVERRIDE_ROLES_REQUIRED]  = sConfigMgr->GetBoolDefault("DungeonFinder.OverrideRolesRequired", false);
     m_bool_configs[CONFIG_LFG_MULTIQUEUE_ENABLED]       = sConfigMgr->GetBoolDefault("DungeonFinder.MultiqueueEnabled", false);
@@ -1313,6 +1324,13 @@ void World::LoadConfigSettings(bool reload)
 
     // Max instances per hour
     m_int_configs[CONFIG_MAX_INSTANCES_PER_HOUR] = sConfigMgr->GetIntDefault("AccountInstancesPerHour", 5);
+	
+   //Server restart in hour
+	m_int_configs[CONFIG_AUTO_SERVER_RESTART_HOUR] = sConfigMgr->GetIntDefault("Server.Auto.RestartHour", 4);
+	if (m_int_configs[CONFIG_AUTO_SERVER_RESTART_HOUR] > 23)
+	{
+		m_int_configs[CONFIG_AUTO_SERVER_RESTART_HOUR] = 4;
+	}
 
     // Anounce reset of instance to whole party
     m_bool_configs[CONFIG_INSTANCES_RESET_ANNOUNCE] = sConfigMgr->GetBoolDefault("InstancesResetAnnounce", false);
@@ -1359,6 +1377,9 @@ void World::LoadConfigSettings(bool reload)
     m_float_configs[CONFIG_STATS_LIMITS_PARRY] = sConfigMgr->GetFloatDefault("Stats.Limits.Parry", 95.0f);
     m_float_configs[CONFIG_STATS_LIMITS_BLOCK] = sConfigMgr->GetFloatDefault("Stats.Limits.Block", 95.0f);
     m_float_configs[CONFIG_STATS_LIMITS_CRIT] = sConfigMgr->GetFloatDefault("Stats.Limits.Crit", 95.0f);
+	
+    //Restart 
+	m_bool_configs[CONFIG_DISABLE_RESTART] = sConfigMgr->GetBoolDefault("DisableRestart", false);
 
     // Wow Token
     m_bool_configs[CONFIG_WOW_TOKEN] = sConfigMgr->GetBoolDefault("Wow.Token", false);
@@ -1374,6 +1395,9 @@ void World::LoadConfigSettings(bool reload)
         m_int_configs[CONFIG_PACKET_SPOOF_BANMODE] = BAN_ACCOUNT;
 
     m_int_configs[CONFIG_PACKET_SPOOF_BANDURATION] = sConfigMgr->GetIntDefault("PacketSpoof.BanDuration", 86400);
+
+    // AHBot
+    m_int_configs[CONFIG_AHBOT_UPDATE_INTERVAL] = sConfigMgr->GetIntDefault("AuctionHouseBot.Update.Interval", 20);
 
     m_bool_configs[CONFIG_CALCULATE_CREATURE_ZONE_AREA_DATA] = sConfigMgr->GetBoolDefault("Calculate.Creature.Zone.Area.Data", false);
     m_bool_configs[CONFIG_CALCULATE_GAMEOBJECT_ZONE_AREA_DATA] = sConfigMgr->GetBoolDefault("Calculate.Gameoject.Zone.Area.Data", false);
@@ -1471,7 +1495,10 @@ void World::LoadConfigSettings(bool reload)
     m_float_configs[CONFIG_VENGEANCE_MULTIPLIER] = sConfigMgr->GetFloatDefault("VengeanceMultipier", 1.0f);
 
     m_bool_configs[CONFIG_BOOST_PROMOTION] = sConfigMgr->GetBoolDefault("BoostPromotion.Enabled", false);
-
+#ifdef ELUNA
+	//eluna
+	m_bool_configs[CONFIG_BOOL_ELUNA_ENABLED] = sConfigMgr->GetBoolDefault("Eluna.Enabled", true);
+#endif    
     // call ScriptMgr if we're reloading the configuration
     if (reload)
     {
@@ -1705,10 +1732,10 @@ void World::SetInitialWorldSettings()
     uint32 server_type = IsFFAPvPRealm() ? uint32(REALM_TYPE_PVP) : getIntConfig(CONFIG_GAME_TYPE);
     uint32 realm_zone = getIntConfig(CONFIG_REALM_ZONE);
 
-    LoginDatabase.PExecute("UPDATE realmlist SET icon = %u, timezone = %u WHERE id = '%d'", server_type, realm_zone, realmID);      // One-time query
+    LoginDatabase.PExecute("UPDATE realmlist SET icon = %u, timezone = %u WHERE id = '%d'", server_type, realm_zone, realm.Id.Realm);      // One-time query
 
     ///- Remove the bones (they should not exist in DB though) and old corpses after a restart
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_OLD_CORPSES);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_OLD_CORPSES);
     stmt->setUInt32(0, 3 * DAY);
     CharacterDatabase.Execute(stmt);
 
@@ -1716,6 +1743,9 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Initialize data stores...");
     LoadDBCStores(m_dataPath, m_availableDbcLocaleMask);
     LoadDB2Stores(m_dataPath, m_availableDbcLocaleMask);
+
+    // Load IP Location Database
+    sIPLocation->Load();
 
     TC_LOG_INFO("server.loading", "Loading SpellInfo store...");
     sSpellMgr->LoadSpellInfoStore();
@@ -1742,12 +1772,19 @@ void World::SetInitialWorldSettings()
     TC_LOG_INFO("server.loading", "Loading instances...");
     sInstanceSaveMgr->LoadInstances();
 
+    TC_LOG_INFO("server.loading", "Loading Broadcast texts...");
+    sObjectMgr->LoadBroadcastTexts();
+    sObjectMgr->LoadBroadcastTextLocales();
+
     TC_LOG_INFO("server.loading", "Loading Localization strings...");
     uint32 oldMSTime = getMSTime();
     sObjectMgr->LoadCreatureLocales();
     sObjectMgr->LoadGameObjectLocales();
     sObjectMgr->LoadItemLocales();
-    sObjectMgr->LoadQuestLocales();
+    sObjectMgr->LoadQuestTemplateLocale();
+    sObjectMgr->LoadQuestObjectivesLocale();
+    sObjectMgr->LoadQuestOfferRewardLocale();
+    sObjectMgr->LoadQuestRequestItemsLocale();
     sObjectMgr->LoadNpcTextLocales();
     sObjectMgr->LoadPageTextLocales();
     sObjectMgr->LoadGossipMenuItemsLocales();
@@ -1756,10 +1793,10 @@ void World::SetInitialWorldSettings()
     sObjectMgr->SetDBCLocaleIndex(GetDefaultDbcLocale());        // Get once for all the locale index of DBC language (console/broadcasts)
     TC_LOG_INFO("server.loading", ">> Localization strings loaded in %u ms", GetMSTimeDiffToNow(oldMSTime));
 
-	TC_LOG_INFO("server.loading", "Loading Letter Analogs...");
+    TC_LOG_INFO("server.loading", "Loading Letter Analogs...");
     sWordFilterMgr->LoadLetterAnalogs();
 
-	TC_LOG_INFO("server.loading", "Loading Bad Words...");
+    TC_LOG_INFO("server.loading", "Loading Bad Words...");
     sWordFilterMgr->LoadBadWords();
 
     TC_LOG_INFO("server.loading", "Loading Page Texts...");
@@ -1904,7 +1941,7 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadQuestObjectives();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Locales...");
-    sObjectMgr->LoadQuestObjectiveLocales();
+    sObjectMgr->LoadQuestObjectivesLocale();
 
     TC_LOG_INFO("server.loading", "Loading Quest Objective Visual Effects...");
     sObjectMgr->LoadQuestObjectiveVisualEffects();
@@ -2127,9 +2164,6 @@ void World::SetInitialWorldSettings()
     sObjectMgr->LoadEventScripts();                              // must be after load Creature/Gameobject(Template/Data)
     sObjectMgr->LoadWaypointScripts();
 
-    TC_LOG_INFO("server.loading", "Loading Scripts text locales...");      // must be after Load*Scripts calls
-    sObjectMgr->LoadDbScriptStrings();
-
     TC_LOG_INFO("server.loading", "Loading spell script names...");
     sObjectMgr->LoadSpellScriptNames();
 
@@ -2191,7 +2225,7 @@ void World::SetInitialWorldSettings()
     m_startTime = m_gameTime;
 
     LoginDatabase.PExecute("INSERT INTO uptime (realmid, starttime, uptime, revision) VALUES(%u, %u, 0, '%s')",
-                            realmID, uint32(m_startTime), _FULLVERSION);       // One-time query
+                            realm.Id.Realm, uint32(m_startTime), _FULLVERSION);       // One-time query
 
     m_timers[WUPDATE_WEATHERS].SetInterval(1*IN_MILLISECONDS);
     m_timers[WUPDATE_AUCTIONS].SetInterval(MINUTE*IN_MILLISECONDS);
@@ -2206,6 +2240,9 @@ void World::SetInitialWorldSettings()
 
     m_timers[WUPDATE_DELETECHARS].SetInterval(DAY*IN_MILLISECONDS); // check for chars to delete every day
 
+    // for AhBot
+    m_timers[WUPDATE_AHBOT].SetInterval(getIntConfig(CONFIG_AHBOT_UPDATE_INTERVAL) * IN_MILLISECONDS); // every 20 sec
+
     m_timers[WUPDATE_PINGDB].SetInterval(getIntConfig(CONFIG_DB_PING_INTERVAL)*MINUTE*IN_MILLISECONDS);    // Mysql ping time in minutes
 
     m_timers[WUPDATE_GUILDSAVE].SetInterval(getIntConfig(CONFIG_GUILD_SAVE_INTERVAL) * MINUTE * IN_MILLISECONDS);
@@ -2214,14 +2251,12 @@ void World::SetInitialWorldSettings()
 
     m_timers[WUPDATE_BONUS_RATES].SetInterval(30 * IN_MILLISECONDS);
 
-    m_timers[WUPDATE_project_MEMBER_INFO].SetInterval(10 * IN_MILLISECONDS);
-
     //to set mailtimer to return mails every day between 4 and 5 am
     //mailtimer is increased when updating auctions
     //one second is 1000 -(tested on win system)
     /// @todo Get rid of magic numbers
     tm localTm;
-    ACE_OS::localtime_r(&m_gameTime, &localTm);
+    localtime_r(&m_gameTime, &localTm);
     mail_timer = ((((localTm.tm_hour + 20) % 24)* HOUR * IN_MILLISECONDS) / m_timers[WUPDATE_AUCTIONS].GetInterval());
                                                             //1440
     mail_timer_expires = ((DAY * IN_MILLISECONDS) / (m_timers[WUPDATE_AUCTIONS].GetInterval()));
@@ -2240,6 +2275,9 @@ void World::SetInitialWorldSettings()
 
     // Delete all characters which have been deleted X days before
     Player::DeleteOldCharacters(true);
+
+    TC_LOG_INFO("server.loading", "Initialize AuctionHouseBot...");
+    sAuctionBot->Initialize();
 
     // Delete all custom channels which haven't been used for PreserveCustomChannelDuration days.
     Channel::CleanOldChannelsInDB();
@@ -2332,6 +2370,16 @@ void World::SetInitialWorldSettings()
 
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
+#ifdef ELUNA
+	if (sWorld->getBoolConfig(CONFIG_BOOL_ELUNA_ENABLED))
+	{
+		///- Initialize Lua Engine
+		TC_LOG_INFO("server.loading", ">> Initialize Eluna Lua Engine...");
+		StartEluna(false);
+	}
+
+#endif
+
     TC_LOG_INFO("server.worldserver", "World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));
 
     if (uint32 realmId = sConfigMgr->GetIntDefault("RealmID", 0)) // 0 reserved for auth
@@ -2393,8 +2441,8 @@ void World::LoadAutobroadcasts()
     m_autobroadcasts.clear();
     m_autobroadcastsWeights.clear();
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_AUTOBROADCAST);
-    stmt->setInt32(0, realmID);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_AUTOBROADCAST);
+    stmt->setInt32(0, realm.Id.Realm);
     PreparedQueryResult result = LoginDatabase.Query(stmt);
 
     if (!result)
@@ -2500,6 +2548,13 @@ void World::Update(uint32 diff)
         RecordTimeDiff("AuctionMgr::Update");
     }
 
+    /// <li> Handle AHBot operations
+    if (m_timers[WUPDATE_AHBOT].Passed())
+    {
+        sAuctionBot->Update();
+        m_timers[WUPDATE_AHBOT].Reset();
+    }
+
     /// <li> Handle session updates when the timer has passed
 
     RecordTimeDiff(NULL);
@@ -2523,11 +2578,11 @@ void World::Update(uint32 diff)
 
         m_timers[WUPDATE_UPTIME].Reset();
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_UPTIME_PLAYERS);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_UPTIME_PLAYERS);
 
         stmt->setUInt32(0, tmpDiff);
         stmt->setUInt16(1, uint16(maxOnlinePlayers));
-        stmt->setUInt32(2, realmID);
+        stmt->setUInt32(2, realm.Id.Realm);
         stmt->setUInt32(3, uint32(m_startTime));
 
         LoginDatabase.Execute(stmt);
@@ -2630,9 +2685,9 @@ void World::Update(uint32 diff)
     if (m_timers[WUPDATE_DIFFSTAT].Passed())
     {
         // minute elapsed - write to DB
-        PreparedStatement *stmt = LoginDatabase.GetPreparedStatement(LOGIN_DIFF_STAT);
+        LoginDatabasePreparedStatement *stmt = LoginDatabase.GetPreparedStatement(LOGIN_DIFF_STAT);
         int32 index = -1;
-        stmt->setUInt8(++index, realmID);
+        stmt->setUInt8(++index, realm.Id.Realm);
         stmt->setUInt16(++index, m_timers[WUPDATE_DIFFSTAT].GetCurrent() / m_statDiffCounter);
         stmt->setUInt16(++index, m_minDiff);
         stmt->setUInt16(++index, m_maxDiff);
@@ -2648,12 +2703,6 @@ void World::Update(uint32 diff)
     {
         UpdateBonusRatesState();
         m_timers[WUPDATE_BONUS_RATES].Reset();
-    }
-
-    if (m_timers[WUPDATE_project_MEMBER_INFO].Passed())
-    {
-        UpdateprojectMemberInfos();
-        m_timers[WUPDATE_project_MEMBER_INFO].Reset();
     }
 
     RecordTimeDiff(nullptr);
@@ -2902,8 +2951,8 @@ BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, std::stri
 BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, uint32 duration_secs, std::string const& reason, std::string const& author)
 {
     PreparedQueryResult resultAccounts = PreparedQueryResult(NULL); //used for kicking
-    PreparedStatement* stmt = NULL;
-
+    LoginDatabasePreparedStatement* stmt = nullptr;
+    CharacterDatabasePreparedStatement* cstmt = nullptr;
     ///- Update the database with ban information
     switch (mode)
     {
@@ -2930,9 +2979,9 @@ BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, uint32 du
                 return BAN_SYNTAX_ERROR;
         case BAN_CHARACTER:
             // No SQL injection with prepared statements
-            stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_BY_NAME);
-            stmt->setString(0, nameOrIP);
-            resultAccounts = CharacterDatabase.Query(stmt);
+            cstmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_BY_NAME);
+            cstmt->setString(0, nameOrIP);
+            resultAccounts = CharacterDatabase.Query(cstmt);
             break;
         default:
             return BAN_SYNTAX_ERROR;
@@ -2947,63 +2996,11 @@ BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, uint32 du
     }
 
     ///- Disconnect all affected players (for IP it can be several)
-    SQLTransaction trans = LoginDatabase.BeginTransaction();
+    LoginDatabaseTransaction trans = LoginDatabase.BeginTransaction();
     do
     {
         Field* fieldsAccount = resultAccounts->Fetch();
         uint32 account = fieldsAccount[0].GetUInt32();
-
-        if (mode == BAN_SOLO)
-        {
-            uint32 memberId = GetprojectMemberID(account);
-            uint32 unbandate = time(nullptr) + duration_secs;
-            if (projectMemberInfo* info = GetprojectMemberInfo(memberId, false))
-            {
-                info->SetSetting(projectMemberInfo::Setting::SoloArenaBanUnbanDate, { unbandate });
-                info->SetSetting(projectMemberInfo::Setting::SoloArenaBanBannedBy, { author });
-
-                // Inform every online player on this account and remove them from queue
-                for (auto&& accountId : info->GameAccountIDs)
-                {
-                    if (WorldSession* session = FindSession(accountId))
-                    {
-                        uint32 duration = duration_secs;
-                        std::string durationStr;
-                        if (duration >= DAY)
-                            durationStr = Format(session->GetTrinityString(LANG_SOLO_QUEUE_BAN_DURATION_DAYS), duration / DAY, (duration % DAY) / HOUR, ((duration % DAY) % HOUR) / MINUTE, ((duration % DAY) % HOUR) % MINUTE);
-                        else
-                            durationStr = Format(session->GetTrinityString(LANG_SOLO_QUEUE_BAN_DURATION), duration / HOUR, (duration % HOUR) / MINUTE, (duration % HOUR) % MINUTE);
-
-                        session->SendNotification(author.empty() ? LANG_SOLO_QUEUE_BANNED : LANG_SOLO_QUEUE_BANNED_BY, durationStr.c_str(), author.c_str());
-
-                        if (Player* player = session->GetPlayer())
-                            player->LeaveFromSoloQueueIfNeed();
-                    }
-                }
-            }
-            else
-            {
-                std::stringstream unbandateStr;
-                unbandateStr << unbandate;
-
-                PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_project_MEMBER_SETTING);
-                stmt->setUInt32(0, memberId);
-                stmt->setUInt32(1, (uint32)projectMemberInfo::Setting::SoloArenaBanUnbanDate);
-                stmt->setString(2, unbandateStr.str());
-                LoginDatabase.Execute(stmt);
-
-                stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_project_MEMBER_SETTING);
-                stmt->setUInt32(0, memberId);
-                stmt->setUInt32(1, (uint32)projectMemberInfo::Setting::SoloArenaBanBannedBy);
-                stmt->setString(2, author);
-                LoginDatabase.Execute(stmt);
-
-                // No need to iterate over game accounts and inform/unqueue them, as none of them are online. Otherwise projectMemberInfo would've been found.
-            }
-
-            // Enough to find one game account for requested character, from there we can do the rest. Already did.
-            return BAN_SUCCESS;
-        }
 
         if (mode != BAN_IP)
         {
@@ -3014,7 +3011,7 @@ BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, uint32 du
             // No SQL injection with prepared statements
             stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BANNED);
             stmt->setUInt32(0, account);
-            stmt->setUInt32(1, realmID);
+            stmt->setUInt32(1, realm.Id.Realm);
             stmt->setUInt32(2, duration_secs);
             stmt->setString(3, author);
             stmt->setString(4, reason);
@@ -3034,7 +3031,7 @@ BanReturn World::BanAccount(BanMode mode, std::string const& nameOrIP, uint32 du
 /// Remove a ban from an account or IP address
 bool World::RemoveBanAccount(BanMode mode, std::string const& nameOrIP)
 {
-    PreparedStatement* stmt = NULL;
+    LoginDatabasePreparedStatement* stmt = NULL;
     if (mode == BAN_IP)
     {
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_IP_NOT_BANNED);
@@ -3071,7 +3068,7 @@ BanReturn World::BanCharacter(std::string const& name, std::string const& durati
     /// Pick a player to ban if not online
     if (!pBanned)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
         stmt->setString(0, name);
         PreparedQueryResult resultCharacter = CharacterDatabase.Query(stmt);
 
@@ -3083,9 +3080,9 @@ BanReturn World::BanCharacter(std::string const& name, std::string const& durati
     else
         guid = pBanned->GetGUIDLow();
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     // make sure there is only one active ban
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_BAN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_BAN);
     stmt->setUInt32(0, guid);
     trans->Append(stmt);
 
@@ -3112,7 +3109,7 @@ bool World::RemoveBanCharacter(std::string const& name)
     /// Pick a player to ban if not online
     if (!pBanned)
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_GUID_BY_NAME);
         stmt->setString(0, name);
         PreparedQueryResult resultCharacter = CharacterDatabase.Query(stmt);
 
@@ -3127,10 +3124,10 @@ bool World::RemoveBanCharacter(std::string const& name)
     if (!guid)
         return false;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_BAN);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_BAN);
     stmt->setUInt32(0, guid);
     CharacterDatabase.Execute(stmt);
-    LoginDatabase.PExecute("DELETE FROM account_muted WHERE char_id = %u AND realmid  = %u", guid, realmID);
+    LoginDatabase.PExecute("DELETE FROM account_muted WHERE char_id = %u AND realmid  = %u", guid, realm.Id.Realm);
     CharacterDatabase.PExecute("DELETE FROM rated_pvp_info WHERE guid = %u", guid);
     return true;
 }
@@ -3226,7 +3223,7 @@ void World::ShutdownMsg(bool show, Player* player)
 void World::ShutdownCancel()
 {
     // nothing cancel or too later
-    if (!m_ShutdownTimer || m_stopEvent.value())
+    if (!m_ShutdownTimer || m_stopEvent)
         return;
 
     ServerMessageType msgid = (m_ShutdownMask & SHUTDOWN_MASK_RESTART) ? SERVER_MSG_RESTART_CANCELLED : SERVER_MSG_SHUTDOWN_CANCELLED;
@@ -3366,10 +3363,11 @@ void World::SendAutoBroadcast()
 
 void World::UpdateRealmCharCount(uint32 accountId)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_COUNT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_COUNT);
     stmt->setUInt32(0, accountId);
-    PreparedQueryResultFuture result = CharacterDatabase.AsyncQuery(stmt);
-    m_realmCharCallbacks.insert(result);
+    _queryProcessor.AddCallback(CharacterDatabase.AsyncQuery(stmt).WithPreparedCallback(std::bind(&World::_UpdateRealmCharCount, this, std::placeholders::_1)));
+    // PreparedQueryResultFuture result = CharacterDatabase.AsyncQuery(stmt);
+    // m_realmCharCallbacks.insert(result);
 }
 
 void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
@@ -3380,15 +3378,15 @@ void World::_UpdateRealmCharCount(PreparedQueryResult resultCharCount)
         uint32 accountId = fields[0].GetUInt32();
         uint8 charCount = uint8(fields[1].GetUInt64());
 
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_REALM_CHARACTERS_BY_REALM);
+        LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_REALM_CHARACTERS_BY_REALM);
         stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realmID);
+        stmt->setUInt32(1, realm.Id.Realm);
         LoginDatabase.Execute(stmt);
 
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS);
         stmt->setUInt8(0, charCount);
         stmt->setUInt32(1, accountId);
-        stmt->setUInt32(2, realmID);
+        stmt->setUInt32(2, realm.Id.Realm);
         LoginDatabase.Execute(stmt);
     }
 }
@@ -3417,7 +3415,7 @@ void World::InitDailyQuestResetTime()
     // FIX ME: client not show day start time
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = 6;
     localTm.tm_min  = 0;
     localTm.tm_sec  = 0;
@@ -3451,7 +3449,7 @@ void World::InitRandomBGResetTime()
     // generate time by config
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = getIntConfig(CONFIG_RANDOM_BG_RESET_HOUR);
     localTm.tm_min = 0;
     localTm.tm_sec = 0;
@@ -3479,7 +3477,7 @@ void World::InitGuildResetTime()
     // generate time by config
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
     localTm.tm_hour = getIntConfig(CONFIG_GUILD_RESET_HOUR);
     localTm.tm_min = 0;
     localTm.tm_sec = 0;
@@ -3545,40 +3543,15 @@ void World::ResetDailyQuests()
 {
     TC_LOG_INFO("misc", "Daily quests reset for all characters.");
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_DAILY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_DAILY);
     CharacterDatabase.Execute(stmt);
-
-    // Gather a list of all project daily quests
-    std::vector<uint32> projectDailyQuests;
-    std::stringstream projectDailyQuestsStr;
-    for (auto&& quest : sObjectMgr->GetQuestTemplates())
-    {
-        if (quest.second->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-        {
-            projectDailyQuests.push_back(quest.second->GetQuestId());
-            projectDailyQuestsStr << (projectDailyQuestsStr.rdbuf()->in_avail() ? "," : "") << quest.second->GetQuestId();
-        }
-    }
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
     {
         if (Player* player = itr->second->GetPlayer())
         {
             player->ResetDailyQuestStatus();
-
-            // Remove all active project daily quests from all active players
-            for (auto&& quest : projectDailyQuests)
-                player->RemoveActiveQuest(quest, true, true);
         }
-    }
-
-    ResetprojectDailyQuests();
-
-    std::string str = projectDailyQuestsStr.str();
-    if (!str.empty())
-    {
-        // Remove all active project daily quest statues from all players
-        CharacterDatabase.PExecute("DELETE FROM character_queststatus WHERE quest IN (%s)", str.c_str());
     }
 
     // change available dailies
@@ -3591,9 +3564,9 @@ void World::ResetCurrencyWeekCap()
 {
     TC_LOG_INFO("currency", "World::ResetCurrencyWeekCap");
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->Append(CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_CURRENCY_WEEKLY));
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_RATED_PVP_INFO_LAST_WEEK);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_RATED_PVP_INFO_LAST_WEEK);
     stmt->setUInt32(0, sWorld->getIntConfig(CONFIG_ARENA_SEASON_ID));
     trans->Append(stmt);
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_RATED_PVP_INFO_WEEKLY);
@@ -3621,7 +3594,7 @@ void World::ResetCurrencyWeekCap()
 
 void World::ResetLootLockouts()
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_LOOTLOCKOUTS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_ALL_LOOTLOCKOUTS);
     CharacterDatabase.Execute(stmt);
 
     for (auto&& it : m_sessions)
@@ -3631,24 +3604,19 @@ void World::ResetLootLockouts()
 
 void World::DBCleanup()
 {
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_OLD_LOGS);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_OLD_LOGS);
 
     stmt->setUInt32(0, sWorld->getIntConfig(CONFIG_LOGDB_CLEARTIME));
     stmt->setUInt32(1, uint32(time(0)));
 
     LoginDatabase.Execute(stmt);
 
-    if (sWorld->getIntConfig(CONFIG_CURRENCY_LOG_CLEAR_INTERVAL) > 0)
-    {
-        uint32 timeToKeep = time(NULL) - sWorld->getIntConfig(CONFIG_CURRENCY_LOG_CLEAR_INTERVAL);
-        ArchiveDatabase.PExecute("DELETE FROM `currency_transactions` WHERE `unix_time` < %u", timeToKeep);
-    }
 }
 
 void World::LoadDBAllowedSecurityLevel()
 {
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST_SECURITY_LEVEL);
-    stmt->setInt32(0, int32(realmID));
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_REALMLIST_SECURITY_LEVEL);
+    stmt->setInt32(0, int32(realm.Id.Realm));
     PreparedQueryResult result = LoginDatabase.Query(stmt);
 
     if (result)
@@ -3668,7 +3636,7 @@ void World::ResetWeeklyQuests()
 {
     TC_LOG_INFO("misc", "Weekly quests reset for all characters.");
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_WEEKLY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_WEEKLY);
     CharacterDatabase.Execute(stmt);
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
@@ -3686,7 +3654,7 @@ void World::ResetMonthlyQuests()
 {
     TC_LOG_INFO("misc", "Monthly quests reset for all characters.");
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_MONTHLY);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_MONTHLY);
     CharacterDatabase.Execute(stmt);
 
     for (SessionMap::const_iterator itr = m_sessions.begin(); itr != m_sessions.end(); ++itr)
@@ -3696,7 +3664,7 @@ void World::ResetMonthlyQuests()
     // generate time
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
 
     int month   = localTm.tm_mon;
     int year    = localTm.tm_year;
@@ -3728,7 +3696,7 @@ void World::ResetMonthlyQuests()
 
 void World::ResetEventSeasonalQuests(uint16 event_id)
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_SEASONAL);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_QUEST_STATUS_SEASONAL);
     stmt->setUInt16(0, event_id);
     CharacterDatabase.Execute(stmt);
 
@@ -3741,7 +3709,7 @@ void World::ResetRandomBG()
 {
     TC_LOG_INFO("misc", "Random BG status reset for all characters.");
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BATTLEGROUND_RANDOM);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BATTLEGROUND_RANDOM);
     CharacterDatabase.Execute(stmt);
 
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_BATTLEGROUND_WEEKEND);
@@ -3848,7 +3816,7 @@ void World::setWorldState(uint32 index, uint64 value)
     WorldStatesMap::const_iterator it = m_worldstates.find(index);
     if (it != m_worldstates.end())
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_WORLDSTATE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_WORLDSTATE);
 
         stmt->setUInt32(0, uint32(value));
         stmt->setUInt32(1, index);
@@ -3857,7 +3825,7 @@ void World::setWorldState(uint32 index, uint64 value)
     }
     else
     {
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_WORLDSTATE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_WORLDSTATE);
 
         stmt->setUInt32(0, index);
         stmt->setUInt32(1, uint32(value));
@@ -3875,22 +3843,23 @@ uint64 World::getWorldState(uint32 index) const
 
 void World::ProcessQueryCallbacks()
 {
-    PreparedQueryResult result;
+    _queryProcessor.ProcessReadyCallbacks();
+    // PreparedQueryResult result;
 
-    while (!m_realmCharCallbacks.is_empty())
-    {
-        ACE_Future<PreparedQueryResult> lResult;
-        ACE_Time_Value timeout = ACE_Time_Value::zero;
-        if (m_realmCharCallbacks.next_readable(lResult, &timeout) != 1)
-            break;
+    // while (!m_realmCharCallbacks.is_empty())
+    // {
+    //     ACE_Future<PreparedQueryResult> lResult;
+    //     ACE_Time_Value timeout = ACE_Time_Value::zero;
+    //     if (m_realmCharCallbacks.next_readable(lResult, &timeout) != 1)
+    //         break;
 
-        if (lResult.ready())
-        {
-            lResult.get(result);
-            _UpdateRealmCharCount(result);
-            lResult.cancel();
-        }
-    }
+    //     if (lResult.ready())
+    //     {
+    //         lResult.get(result);
+    //         _UpdateRealmCharCount(result);
+    //         lResult.cancel();
+    //     }
+    // }
 }
 
 /**
@@ -4069,23 +4038,6 @@ AccountCacheData& World::GetAccountCacheData(uint32 accountId)
     return _accountCacheData[accountId];
 }
 
-void World::UpdateAccountCacheDataMemberID(uint32 accountId, uint32 memberId)
-{
-    AccountCacheData& data = GetAccountCacheData(accountId);
-    data.MemberID = memberId;
-
-    if (LoadprojectMemberInfoIfNeeded(accountId))
-        if (projectMemberInfo* info = GetprojectMemberInfo(memberId))
-            info->SyncWithCross();
-
-    //sCross->SendUpdate(data, accountId);
-
-    auto itr = m_sessions.find(accountId);
-    if (itr != m_sessions.end())
-        itr->second->UpdateprojectMemberInfo();
-}
-
-
 void World::UpdatePhaseDefinitions()
 {
     SessionMap::const_iterator itr;
@@ -4098,681 +4050,6 @@ void World::UpdatePhaseDefinitions()
 #define timezone _timezone
 #endif
 
-uint32 World::GetTodaysprojectDailyDay() const
-{
-    // For improved performance we store day as a separate column which belongs to an index
-    time_t now = time(nullptr);
-    now -= timezone;
-    now -= 6 * HOUR;
-    now /= DAY;
-    return now;
-}
-
-std::map<uint32, std::vector<Quest const*>> projectDailyQuestRelationMap;
-
-void World::LoadprojectDailyQuestRelations()
-{
-    for (auto&& quest : sObjectMgr->GetQuestTemplates())
-    {
-        if (quest.second->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-            for (auto&& objective : quest.second->m_questObjectives)
-                if (objective->ObjectId)
-                    projectDailyQuestRelationMap[objective->ObjectId].push_back(quest.second);
-    }
-}
-
-std::vector<Quest const*> const* World::GetprojectDailyQuestRelation(uint32 entry)
-{
-    if (projectDailyQuestRelationMap.empty())
-        LoadprojectDailyQuestRelations();
-
-    auto itr = projectDailyQuestRelationMap.find(entry);
-    return itr == projectDailyQuestRelationMap.end() ? nullptr : &itr->second;
-}
-
-void World::ResetprojectDailyQuests()
-{
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
-    for (auto&& info : m_projectMemberInfos)
-    {
-        info.second.CompletedDailyQuestsCount = 0;
-        info.second.CompletedDailyQuestExclusiveGroups.clear();
-    }
-}
-
-uint32 World::GetprojectMemberID(uint32 accountId)
-{
-    return GetAccountCacheData(accountId).MemberID;
-}
-
-bool World::LoadprojectMemberInfoIfNeeded(uint32 accountId)
-{
-    uint32 memberId = GetprojectMemberID(accountId);
-
-    // Game account not bound to forum account?
-    if (!memberId)
-        return false;
-
-    PreparedStatement* stmt;
-
-    // Member info already loaded?
-    if (projectMemberInfo* loadedInfo = GetprojectMemberInfo(memberId, false))
-    {
-        // Reload premium anyway, because it might have changed from another realm that isn't synched with this one.
-        // Ideally we should sync the entire projectMemberInfo between realms, but that is currently not the case,
-        // and we can neglect the synching of settings for the time being...
-        bool premiumActive = false;
-        time_t premiumUnsetDate = 0;
-
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_project_MEMBER_PREMIUM);
-        stmt->setUInt32(0, memberId);
-
-        if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-        {
-            premiumActive = true;
-            premiumUnsetDate = result->Fetch()[0].GetUInt64();
-        }
-
-        // It is not safe to use GameAccountIDs because other reactor thread or main thread can access it.
-        // So do it in main thread (Yes we can grab this pointer, it always is valid).
-        TaskMgr::Default()->ScheduleInvocation([=]
-        {
-            loadedInfo->GameAccountIDs.insert(accountId);
-            loadedInfo->PremiumActive = std::max(loadedInfo->PremiumActive, premiumActive);
-            loadedInfo->PremiumUnsetDate = std::max(loadedInfo->PremiumUnsetDate, premiumUnsetDate);
-        });
-        return false;
-    }
-
-    projectMemberInfo info;
-    info.GameAccountIDs.insert(accountId);
-    info.MemberID = memberId;
-
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_project_MEMBER_PREMIUM);
-    stmt->setUInt32(0, memberId);
-    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-    {
-        info.PremiumActive = true;
-        info.PremiumUnsetDate = result->Fetch()[0].GetUInt64();
-    }
-
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_VERIFIED);
-    stmt->setUInt32(0, memberId);
-    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-        info.IsVerified = true;
-
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_project_MEMBER_SETTINGS);
-    stmt->setUInt32(0, memberId);
-    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            projectMemberInfo::Setting setting = (projectMemberInfo::Setting)fields[0].GetUInt32();
-            std::string valueString = fields[1].GetString();
-
-            auto itr = projectMemberInfo::SettingDefaults.find(setting);
-            if (itr == projectMemberInfo::SettingDefaults.end())
-            {
-                TC_LOG_ERROR("misc", "World::LoadprojectMemberInfoIfNeeded: Attempting to load Setting %u with missing SettingDefault for MemberID %u", (uint32)setting, info.MemberID);
-                continue;
-            }
-
-            projectMemberInfo::SettingValue& value = info.Settings[setting];
-            std::istringstream ss(valueString);
-            switch (itr->second.Type)
-            {
-                case projectMemberInfo::SettingType::Bool: ss >> value.Bool; break;
-                case projectMemberInfo::SettingType::UInt32: ss >> value.UInt32; break;
-                case projectMemberInfo::SettingType::Float: ss >> value.Float; break;
-                case projectMemberInfo::SettingType::String: value.String = valueString; break;
-                default:
-                    TC_LOG_ERROR("misc", "World::LoadprojectMemberInfoIfNeeded: Attempting to load Setting %u with unhandled SettingType %u for MemberID %u", (uint32)setting, (uint32)itr->second.Type, info.MemberID);
-                    continue;
-            }
-        } while (result->NextRow());
-    }
-
-    info.CompletedDailyQuestsCount = 0;
-
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_project_MEMBER_TODAYS_DAILY_REWARDS);
-    stmt->setUInt32(0, memberId);
-    stmt->setUInt32(1, (uint32)ItemPickupSourceType::QuestReward);
-    stmt->setUInt32(2, GetTodaysprojectDailyDay());
-    stmt->setUInt32(3, realmID);
-    if (PreparedQueryResult result = LoginDatabase.Query(stmt))
-    {
-        do
-        {
-            Field* fields = result->Fetch();
-            uint32 questId = fields[0].GetUInt32();
-
-            if (Quest const* quest = sObjectMgr->GetQuestTemplate(questId))
-                info.CompletedDailyQuestExclusiveGroups.insert(quest->GetExclusiveGroup());
-
-            ++info.CompletedDailyQuestsCount;
-        } while (result->NextRow());
-    }
-
-    AddprojectMemberInfo(memberId, info);
-    return true;
-}
-
-void World::AddprojectMemberInfo(uint32 memberId, projectMemberInfo const& info)
-{
-    TRINITY_WRITE_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
-    m_projectMemberInfos[memberId] = info;
-}
-
-projectMemberInfo* World::GetprojectMemberInfo(uint32 memberId, bool logError)
-{
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
-    auto itr = m_projectMemberInfos.find(memberId);
-    if (itr == m_projectMemberInfos.end())
-    {
-        if (logError)
-            TC_LOG_ERROR("misc", "World::GetprojectMemberInfo: Missing projectMemberInfo for memberId %u", memberId);
-        return nullptr;
-    }
-    return &itr->second;
-}
-
-void World::SendprojectMemberInfoContainer()
-{
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
-    //sCross->SendUpdate(m_projectMemberInfos);
-}
-
-void projectMemberInfo::SyncWithCross()
-{
-    //sCross->SendUpdate(this);
-}
-
-bool projectMemberInfo::IsPremium()
-{
-    if (!PremiumActive)
-    {
-        if (time_t globalSetDate = sWorld->getIntConfig(CONFIG_ICORE_PREMIUM_ENABLE_FOR_ALL_SET_DATE))
-            if (time_t globalUnsetDate = sWorld->getIntConfig(CONFIG_ICORE_PREMIUM_ENABLE_FOR_ALL_UNSET_DATE))
-                if (globalSetDate < time(NULL) && time(NULL) < globalUnsetDate)
-                    return true;
-
-        return false;
-    }
-
-    if (time(NULL) < PremiumUnsetDate)
-        return true;
-
-    PremiumActive = false;
-    PremiumUnsetDate = 0;
-    return false;
-}
-
-time_t projectMemberInfo::GetPremiumUnsetDate()
-{
-    if (!IsPremium())
-        return 0;
-
-    time_t globalUnsetDate = sWorld->getIntConfig(CONFIG_ICORE_PREMIUM_ENABLE_FOR_ALL_UNSET_DATE);
-
-    if (PremiumActive)
-        return std::max(PremiumUnsetDate, globalUnsetDate);
-
-    return globalUnsetDate;
-}
-
-std::map<projectMemberInfo::Setting, projectMemberInfo::SettingDefault> const projectMemberInfo::SettingDefaults =
-{
-    { projectMemberInfo::Setting::RateXPKill,                      projectMemberInfo::SettingDefault::Make<float>(-1) },
-    { projectMemberInfo::Setting::RateXPQuest,                     projectMemberInfo::SettingDefault::Make<float>(-1) },
-    { projectMemberInfo::Setting::RateReputation,                  projectMemberInfo::SettingDefault::Make<float>(-1) },
-    { projectMemberInfo::Setting::RateHonor,                       projectMemberInfo::SettingDefault::Make<float>(-1) },
-    { projectMemberInfo::Setting::ServerBirthday2016,              projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationLevelUp,             projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationReputationRank,      projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationQuestComplete,       projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationTrade,               projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationMail,                projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationRMT,                 projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationRaidInvite,          projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationRaidConvert,         projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationBattlegroundQueue,   projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationArenaQueue,          projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::AutoAcceptprojectDailyQuests,   projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::SoloArenaBanUnbanDate,           projectMemberInfo::SettingDefault::Make<uint32>(0) },
-    { projectMemberInfo::Setting::SoloArenaBanBannedBy,            projectMemberInfo::SettingDefault::Make<std::string>("") },
-    { projectMemberInfo::Setting::VoteBonusEndDateMMOTOP,          projectMemberInfo::SettingDefault::Make<uint32>(0) },
-    { projectMemberInfo::Setting::VoteBonusEndDateMMOVOTE,         projectMemberInfo::SettingDefault::Make<uint32>(0) },
-    { projectMemberInfo::Setting::NotificationVotingBonusStarted,  projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationVotingBonusExpired,  projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::BattlegroundLadderReportChanges, projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationBattlegroundLadder,  projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::PromocodesRedemptionData,        projectMemberInfo::SettingDefault::Make<std::string>("") },
-    { projectMemberInfo::Setting::ServerBirthday2017,              projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::ServerBirthday2018,              projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::CollectionsSkinUnlockMessage,    projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationCollections,         projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::QueueAnnounceArenaTirion,        projectMemberInfo::SettingDefault::Make<uint32>(1) },
-    { projectMemberInfo::Setting::QueueAnnounceBattlegroundTirion, projectMemberInfo::SettingDefault::Make<uint32>(1) },
-    { projectMemberInfo::Setting::QueueAnnounceArenaHorizon,       projectMemberInfo::SettingDefault::Make<uint32>(3) },
-    { projectMemberInfo::Setting::QueueAnnounceBattlegroundHorizon, projectMemberInfo::SettingDefault::Make<uint32>(3) },
-    { projectMemberInfo::Setting::QueueAnnounceRaidFinder,         projectMemberInfo::SettingDefault::Make<uint32>(3) },
-    { projectMemberInfo::Setting::InstanceRunParticipation,        projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::InstanceRunNotifications,        projectMemberInfo::SettingDefault::Make<uint32>(0) },
-    { projectMemberInfo::Setting::CrossFactionBGMirrorImageMode,   projectMemberInfo::SettingDefault::Make<uint32>(0) },
-    { projectMemberInfo::Setting::BattlegroundRatingDeserterData,  projectMemberInfo::SettingDefault::Make<std::string>("") },
-    { projectMemberInfo::Setting::NotificationArenaRewards,        projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationArenaWinStreak,      projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationArenaRBGRewards,     projectMemberInfo::SettingDefault::Make<bool>(false) },
-    { projectMemberInfo::Setting::NotificationBGRewards,           projectMemberInfo::SettingDefault::Make<bool>(false) },
-};
-
-projectMemberInfo::SettingValue const& projectMemberInfo::GetSetting(Setting setting) const
-{
-    auto itr = Settings.find(setting);
-    if (itr != Settings.end())
-        return itr->second;
-
-    auto defItr = SettingDefaults.find(setting);
-    ASSERT(defItr != SettingDefaults.end());
-    return defItr->second.Value;
-}
-
-void projectMemberInfo::SetSetting(Setting setting, SettingValue const& value, SQLTransaction&& trans)
-{
-    auto defItr = SettingDefaults.find(setting);
-    ASSERT(defItr != SettingDefaults.end());
-
-    auto itr = Settings.find(setting);
-
-    std::stringstream ss;
-    bool isDefault = false;
-    switch (defItr->second.Type)
-    {
-        case SettingType::Bool:
-            isDefault = defItr->second.Value.Bool == value.Bool;
-            if (itr != Settings.end() && itr->second.Bool == value.Bool)
-                return;
-            if (itr == Settings.end() && isDefault)
-                return;
-            ss << value.Bool;
-            break;
-        case SettingType::UInt32:
-            isDefault = defItr->second.Value.UInt32 == value.UInt32;
-            if (itr != Settings.end() && itr->second.UInt32 == value.UInt32)
-                return;
-            if (itr == Settings.end() && isDefault)
-                return;
-            ss << value.UInt32;
-            break;
-        case SettingType::Float:
-            isDefault = defItr->second.Value.Float == value.Float;
-            if (itr != Settings.end() && itr->second.Float == value.Float)
-                return;
-            if (itr == Settings.end() && isDefault)
-                return;
-            ss << value.Float;
-            break;
-        case SettingType::String:
-            isDefault = defItr->second.Value.String == value.String;
-            if (itr != Settings.end() && itr->second.String == value.String)
-                return;
-            if (itr == Settings.end() && isDefault)
-                return;
-            ss << value.String;
-            break;
-        default:
-            TC_LOG_ERROR("server.loading", "projectMemberInfo::SetSetting: Attempting to change Setting %u with unhandled SettingType %u for MemberID %u", (uint32)setting, (uint32)defItr->second.Type, MemberID);
-            return;
-    }
-
-    if (isDefault)
-    {
-        Settings.erase(setting);
-
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_project_MEMBER_SETTING);
-        stmt->setUInt32(0, MemberID);
-        stmt->setUInt32(1, (uint32)setting);
-        if (trans)
-            trans->Append(stmt);
-        else
-            LoginDatabase.Execute(stmt);
-    }
-    else
-    {
-        Settings[setting] = value;
-
-        PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_REP_project_MEMBER_SETTING);
-        stmt->setUInt32(0, MemberID);
-        stmt->setUInt32(1, (uint32)setting);
-        stmt->setString(2, ss.str());
-        if (trans)
-            trans->Append(stmt);
-        else
-            LoginDatabase.Execute(stmt);
-    }
-
-    SyncWithCross();
-}
-
-struct AdditionalRateInfo
-{
-    Rates PremiumRate = MAX_RATES;
-    projectMemberInfo::Setting MemberSetting = projectMemberInfo::Setting::Undefined;
-
-    AdditionalRateInfo() { }
-    AdditionalRateInfo(Rates premiumRate, projectMemberInfo::Setting memberSetting = projectMemberInfo::Setting::Undefined) : PremiumRate(premiumRate), MemberSetting(memberSetting) { }
-};
-AdditionalRateInfo AdditionalRatesInfo[MAX_RATES];
-bool AdditionalRatesInfoInited = false;
-
-void InitAdditionalRatesInfo()
-{
-    AdditionalRatesInfo[RATE_XP_KILL]               = AdditionalRateInfo(RATE_XP_KILL_PREMIUM,                projectMemberInfo::Setting::RateXPKill             );
-    AdditionalRatesInfo[RATE_XP_QUEST]              = AdditionalRateInfo(RATE_XP_QUEST_PREMIUM,               projectMemberInfo::Setting::RateXPQuest            );
-    AdditionalRatesInfo[RATE_XP_EXPLORE]            = AdditionalRateInfo(RATE_XP_EXPLORE_PREMIUM                                                                  );
-    AdditionalRatesInfo[RATE_REPUTATION_GAIN]       = AdditionalRateInfo(RATE_REPUTATION_GAIN_PREMIUM,        projectMemberInfo::Setting::RateReputation         );
-    AdditionalRatesInfo[RATE_HONOR]                 = AdditionalRateInfo(RATE_HONOR_PREMIUM,                  projectMemberInfo::Setting::RateHonor              );
-    AdditionalRatesInfoInited = true;
-}
-
-float projectMemberInfo::GetRate(Rates rate, bool maximum)
-{
-    if (!AdditionalRatesInfoInited)
-        InitAdditionalRatesInfo();
-
-    float minRate = rate == RATE_REPUTATION_GAIN ? 1 : 0;
-    float maxRate = sWorld->getRate(rate);
-    if (IsPremium() && AdditionalRatesInfo[rate].PremiumRate != MAX_RATES)
-        maxRate *= sWorld->getRate(AdditionalRatesInfo[rate].PremiumRate);
-
-    if (!maximum && AdditionalRatesInfo[rate].MemberSetting != Setting::Undefined)
-    {
-        float customRate = GetSetting(AdditionalRatesInfo[rate].MemberSetting).Float;
-        if (customRate >= minRate && customRate <= maxRate)
-            return customRate;
-    }
-
-    return maxRate;
-}
-
-bool projectMemberInfo::IsDailyQuestsFeatureAvailable()
-{
-    return IsVerified;
-}
-
-bool projectMemberInfo::CanCompleteMoreDailyQuests()
-{
-    if (!IsDailyQuestsFeatureAvailable())
-        return false;
-
-    return CompletedDailyQuestsCount < GetMaximumDailyQuestCount();
-}
-
-uint32 projectMemberInfo::GetRemainingDailyQuestsToday()
-{
-    if (!IsDailyQuestsFeatureAvailable())
-        return 0;
-
-    uint32 max = GetMaximumDailyQuestCount();
-    if (!max || CompletedDailyQuestsCount >= max)
-        return 0;
-
-    return max - CompletedDailyQuestsCount;
-}
-
-uint32 projectMemberInfo::GetMaximumDailyQuestCount()
-{
-    if (!IsDailyQuestsFeatureAvailable())
-        return 0;
-
-    return sWorld->getIntConfig(IsPremium() ? CONFIG_ICORE_project_DAILY_QUESTS_LIMIT_PREMIUM : CONFIG_ICORE_project_DAILY_QUESTS_LIMIT);
-}
-
-uint32 projectMemberInfo::GetPremiumQuestRewardBonus(Quest const* quest)
-{
-    if (!IsPremium() || !IsDailyQuestsFeatureAvailable() || !quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-        return 0;
-
-    uint32 base = quest->RewardItemIdCount[0];
-    uint32 count = 0;
-    if (uint32 pct = sWorld->getIntConfig(CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_PREMIUM_PCT))
-        count += CalculatePct(base, pct);
-    if (uint32 flat = sWorld->getIntConfig(CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_PREMIUM_FLAT))
-        count += flat;
-
-    return count;
-}
-
-struct VotingInfo
-{
-    char const* Name;
-    projectMemberInfo::Setting Setting;
-    WorldIntConfigs ConfigPct;
-    WorldIntConfigs ConfigFlat;
-};
-std::map<uint32, VotingInfo> const VotingData =
-{
-    //{  9, { "MMOTOP",          projectMemberInfo::Setting::VoteBonusEndDateMMOTOP,          CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_MMOTOP_PCT,         CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_MMOTOP_FLAT         } },
-    { 10, { "MMOVOTE",         projectMemberInfo::Setting::VoteBonusEndDateMMOVOTE,         CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_MMOVOTE_PCT,        CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_MMOVOTE_FLAT        } },
-};
-
-uint32 projectMemberInfo::GetVotingQuestRewardBonus(Quest const* quest)
-{
-    if (!IsDailyQuestsFeatureAvailable() || !quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-        return 0;
-
-    uint32 pct, flat;
-    GetVotingRewardBonus(pct, flat);
-    return CalculatePct(quest->RewardItemIdCount[0], pct) + flat;
-}
-
-void projectMemberInfo::GetVotingRewardBonus(uint32& totalPct, uint32& totalFlat)
-{
-    time_t now = time(nullptr);
-
-    totalPct = 0;
-    totalFlat = 0;
-    for (auto&& info : VotingData)
-    {
-        if (now < (time_t)GetSetting(info.second.Setting).UInt32)
-        {
-            totalPct += sWorld->getIntConfig(info.second.ConfigPct);
-            totalFlat += sWorld->getIntConfig(info.second.ConfigFlat);
-        }
-    }
-}
-
-void projectMemberInfo::GetVotingStats(uint32& count, uint32& total)
-{
-    time_t now = time(nullptr);
-    count = std::count_if(VotingData.begin(), VotingData.end(), [this, now](std::pair<uint32, VotingInfo> const& info) { return now < (time_t)GetSetting(info.second.Setting).UInt32; });
-    total = VotingData.size();
-}
-
-projectMemberInfo::Setting projectMemberInfo::GetVotingSetting(uint32 webSourceId)
-{
-    auto itr = VotingData.find(webSourceId);
-    ASSERT(itr != VotingData.end());
-    return itr->second.Setting;
-}
-
-std::vector<std::tuple<char const*, bool, time_t, uint32, uint32>> projectMemberInfo::GetRewardBonuses()
-{
-    time_t now = time(nullptr);
-    std::vector<std::tuple<char const*, bool, time_t, uint32, uint32>> result;
-    result.emplace_back(nullptr, IsPremium(), PremiumUnsetDate, sWorld->getIntConfig(CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_PREMIUM_PCT), sWorld->getIntConfig(CONFIG_ICORE_project_DAILY_QUESTS_REWARD_BONUS_PREMIUM_FLAT));
-
-    for (auto&& info : VotingData)
-    {
-        time_t end = (time_t)GetSetting(info.second.Setting).UInt32;
-        result.emplace_back(info.second.Name, now < end, end, sWorld->getIntConfig(info.second.ConfigPct), sWorld->getIntConfig(info.second.ConfigFlat));
-    }
-
-    return result;
-}
-
-void projectMemberInfo::ModifyQuestReward(Quest const* quest, uint32 index, uint32& id, uint32& count)
-{
-    if (!quest->HasSpecialFlag(QUEST_SPECIAL_FLAGS_project_DAILY_QUEST))
-        return;
-
-    switch (index)
-    {
-        case 0:
-            // Original reward
-            break;
-        case 1: // Premium reward if available, voting reward otherwise
-            if (uint32 bonus = GetPremiumQuestRewardBonus(quest))
-            {
-                id = quest->RewardItemId[0];
-                count = bonus;
-            }
-            else if (uint32 bonus = GetVotingQuestRewardBonus(quest))
-            {
-                id = quest->RewardItemId[0];
-                count = bonus;
-            }
-            break;
-        case 2: // Voting reward if premium also available
-            if (GetPremiumQuestRewardBonus(quest))
-            {
-                if (uint32 bonus = GetVotingQuestRewardBonus(quest))
-                {
-                    id = quest->RewardItemId[0];
-                    count = bonus;
-                }
-            }
-            break;
-    }
-}
-
-std::map<projectMemberInfo::Notification, projectMemberInfo::NotificationData> const projectMemberInfo::NotificationsData =
-{
-    { projectMemberInfo::Notification::LevelUp,            { "LevelUp",            projectMemberInfo::Setting::NotificationLevelUp,           0           } },
-    { projectMemberInfo::Notification::ReputationRank,     { "ReputationRank",     projectMemberInfo::Setting::NotificationReputationRank,    30 * MINUTE } },
-    { projectMemberInfo::Notification::QuestComplete,      { "QuestComplete",      projectMemberInfo::Setting::NotificationQuestComplete,     30 * MINUTE } },
-    { projectMemberInfo::Notification::Trade,              { "Trade",              projectMemberInfo::Setting::NotificationTrade,             30 * MINUTE } },
-    { projectMemberInfo::Notification::Mail,               { "Mail",               projectMemberInfo::Setting::NotificationMail,              30 * MINUTE } },
-    { projectMemberInfo::Notification::RMT,                { "RMT",                projectMemberInfo::Setting::NotificationRMT,               30 * MINUTE } },
-    { projectMemberInfo::Notification::RaidInvite,         { "RaidInvite",         projectMemberInfo::Setting::NotificationRaidInvite,        0           } },
-    { projectMemberInfo::Notification::RaidConvert,        { "RaidConvert",        projectMemberInfo::Setting::NotificationRaidConvert,       0           } },
-    { projectMemberInfo::Notification::BattlegroundQueue,  { "BattlegroundQueue",  projectMemberInfo::Setting::NotificationBattlegroundQueue, 30 * MINUTE } },
-    { projectMemberInfo::Notification::ArenaQueue,         { "ArenaQueue",         projectMemberInfo::Setting::NotificationArenaQueue,        30 * MINUTE } },
-    { projectMemberInfo::Notification::VotingBonusStarted, { "VotingBonusStarted", projectMemberInfo::Setting::NotificationVotingBonusStarted,0           } },
-    { projectMemberInfo::Notification::VotingBonusExpired, { "VotingBonusExpired", projectMemberInfo::Setting::NotificationVotingBonusExpired,0           } },
-    { projectMemberInfo::Notification::BattlegroundLadder, { "BattlegroundLadder", projectMemberInfo::Setting::NotificationBattlegroundLadder,60 * MINUTE } },
-    { projectMemberInfo::Notification::Collections,        { "Collections",        projectMemberInfo::Setting::NotificationCollections,       4 * HOUR    } },
-    { projectMemberInfo::Notification::ArenaRewards,       { "ArenaRewards",       projectMemberInfo::Setting::NotificationArenaRewards,      30 * MINUTE } },
-    { projectMemberInfo::Notification::ArenaWinStreak,     { "ArenaWinStreak",     projectMemberInfo::Setting::NotificationArenaRewards,      30 * MINUTE } },
-    { projectMemberInfo::Notification::ArenaRBGRewards,    { "ArenaRBGRewards",    projectMemberInfo::Setting::NotificationArenaRewards,      30 * MINUTE } },
-    { projectMemberInfo::Notification::BGRewards,          { "BGRewards",          projectMemberInfo::Setting::NotificationBGRewards,         30 * MINUTE } },
-};
-
-bool projectMemberInfo::Notify(Player* player, Notification notification, ...)
-{
-    auto itrData = NotificationsData.find(notification);
-    if (itrData == NotificationsData.end())
-        return false;
-
-    if (GetSetting(itrData->second.Setting).Bool)
-        return false;
-
-    time_t now = time(nullptr);
-
-    auto itrCooldown = NotificationCooldowns.find(notification);
-    if (itrCooldown != NotificationCooldowns.end() && now < itrCooldown->second)
-        return false;
-
-    std::string text = sConfigMgr->GetStringDefault(itrData->second.GetFullConfigName().c_str(), "");
-    if (text.empty())
-        return false;
-
-    char buffer[4096];
-    va_list args;
-    va_start(args, notification);
-    vsnprintf(buffer, sizeof(buffer) / sizeof(buffer[0]), text.c_str(), args);
-    va_end(args);
-    text = buffer;
-
-    text += sConfigMgr->GetStringDefault("ICore.Notifications.Postfix", "");
-
-    auto sendNotification = [](Player* player, uint32 delay, std::string const& text)
-    {
-        if (!player)
-            return;
-
-        player->m_Events.Schedule(delay, [player, text]()
-        {
-            ChatHandler(player).PSendSysMessage("|TInterface/FriendsFrame/ReportSpamIcon:0:1.2666:0:0:32:32:0:21:0:17|t |cFF00B0E8%s|r", text.c_str());
-            player->PlayDirectSound(15273, player); // GM_ChatWarning
-        });
-    };
-
-    if (player)
-        sendNotification(player, 2000, text);
-    else
-        for (auto&& account : GameAccountIDs)
-            if (WorldSession* session = sWorld->FindSession(account))
-                sendNotification(session->GetPlayer(), 0, text);
-
-    if (itrData->second.Cooldown)
-        NotificationCooldowns[notification] = now + itrData->second.Cooldown;
-
-    return true;
-}
-
-bool projectMemberInfo::Notify(Player* player, std::initializer_list<Notification> notifications)
-{
-    std::vector<Notification> random { notifications };
-    std::random_shuffle(random.begin(), random.end());
-    for (auto&& notification : random)
-        if (Notify(player, notification))
-            return true;
-
-    return false;
-}
-
-void World::UpdateprojectMemberInfos()
-{
-#ifndef CROSS_SERVER
-    time_t now = time(nullptr);
-
-    TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, m_projectMemberInfosLock);
-    for (auto&& pair : m_projectMemberInfos)
-    {
-        projectMemberInfo& info = pair.second;
-
-        // Feature: Voting
-        // Notify account about voting bonuses starting or expiring
-        if (!info.ActiveVotingBonusesUpdated || std::any_of(info.GameAccountIDs.begin(), info.GameAccountIDs.end(), [this](uint32 const& id) { auto itr = m_sessions.find(id); return itr != m_sessions.end() && itr->second->GetPlayer(); })) // Only update notifications when there are players online or this info is being initialized
-        {
-            for (auto&& voting : VotingData)
-            {
-                time_t end = (time_t)info.GetSetting(voting.second.Setting).UInt32;
-                bool isActive = (info.ActiveVotingBonusesUpdated ? now : now - DAY) < end;
-                if (isActive != (info.ActiveVotingBonuses.find(voting.second.Setting) != info.ActiveVotingBonuses.end()))
-                {
-                    if (isActive)
-                    {
-                        uint32 duration = end - now;
-                        if (info.ActiveVotingBonusesUpdated)
-                            info.Notify(nullptr, projectMemberInfo::Notification::VotingBonusStarted, voting.second.Name, Format("%02u:%02u:%02u", duration / HOUR, (duration % HOUR) / MINUTE, (duration % HOUR) % MINUTE).c_str());
-                        info.ActiveVotingBonuses.insert(voting.second.Setting);
-                    }
-                    else
-                    {
-                        if (info.ActiveVotingBonusesUpdated)
-                            info.Notify(nullptr, projectMemberInfo::Notification::VotingBonusExpired, voting.second.Name);
-                        info.ActiveVotingBonuses.erase(voting.second.Setting);
-                    }
-                }
-            }
-        }
-        info.ActiveVotingBonusesUpdated = true;
-    }
-#endif
-}
 
 // New AutoBroadcast scheduling system
 void AutoBroadcastEntry::ScheduleData::Part::Set(std::string dbData)
@@ -4986,7 +4263,7 @@ void World::UpdateBonusRatesState()
 {
     time_t curTime = time(NULL);
     tm localTm;
-    ACE_OS::localtime_r(&curTime, &localTm);
+    localtime_r(&curTime, &localTm);
 
     for (auto&& bonusRates : m_bonusRates)
         bonusRates.second.Update(curTime, localTm);
@@ -5023,7 +4300,7 @@ void BonusRatesEntry::Update(time_t const& now, tm const& lt)
             return;
         }
 
-        if (shouldBeActive = schedule.Satisfies(lt))
+        if (shouldBeActive == schedule.Satisfies(lt))
             break;
     }
 
@@ -5061,18 +4338,11 @@ bool BonusRatesEntry::IsAffectingRate(char const* rateConfigName) const
 
 float World::getRate(Rates rate, Player* player) const
 {
-    if (WorldSession* session = player->GetSession())
-        if (projectMemberInfo* info = session->GetprojectMemberInfo())
-            return info->GetRate(rate);
-
     return getRate(rate);
 }
 
 float World::getRate(Rates rate, WorldSession* session) const
 {
-    if (projectMemberInfo* info = session->GetprojectMemberInfo())
-        return info->GetRate(rate);
-
     return getRate(rate);
 }
 
@@ -5115,3 +4385,37 @@ void World::SendRaidQueueInfo(Player* player)
                 sendInfo(plr);
     }
 }
+
+   void World::InitServerAutoRestartTime()
+{
+	time_t serverRestartTime = uint64(sWorld->getWorldState(WS_AUTO_SERVER_RESTART_TIME));
+	if (!serverRestartTime)
+		m_NextServerRestart = time_t(time(NULL));         // game time not yet init
+
+	// generate time by config
+	time_t curTime = time(NULL);
+	tm localTm;
+	localtime_r(&curTime, &localTm);
+	localTm.tm_hour = getIntConfig(CONFIG_AUTO_SERVER_RESTART_HOUR);
+	localTm.tm_min = 0;
+	localTm.tm_sec = 0;
+
+	// current day reset time
+	time_t nextDayRestartTime = mktime(&localTm);
+
+	// next reset time before current moment
+	if (curTime >= nextDayRestartTime)
+		nextDayRestartTime += DAY;
+
+	// normalize reset time
+	m_NextServerRestart = serverRestartTime < curTime ? nextDayRestartTime - DAY : nextDayRestartTime;
+
+	if (sWorld->getBoolConfig(CONFIG_DISABLE_RESTART))
+		m_NextServerRestart = time_t(m_NextServerRestart + DAY);
+
+	if (!serverRestartTime)
+		sWorld->setWorldState(WS_AUTO_SERVER_RESTART_TIME, uint64(m_NextServerRestart));
+}
+
+Realm realm;
+

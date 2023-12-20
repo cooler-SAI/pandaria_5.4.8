@@ -414,7 +414,7 @@ public:
         if (!type || !name || !level || *name == '\0' || *level == '\0' || (*type != 'a' && *type != 'l'))
             return false;
 
-        sLog->SetLogLevel(name, level, *type == 'l');
+        sLog->SetLogLevel(name, atoi(level), *type == 'l');
         return true;
     }
 

@@ -245,7 +245,7 @@ class boss_eadric : public CreatureScript
 
                     _done = true;
                     EnterEvadeMode();
-                    me->setFaction(35);
+                    me->SetFaction(35);
 
                     Talk(SAY_COMMON_DEATH);
 
@@ -367,7 +367,7 @@ class boss_eadric : public CreatureScript
         }
 };
 
-class OrientationCheck : public std::unary_function<Unit*, bool>
+class OrientationCheck 
 {
     public:
         explicit OrientationCheck(Unit* _caster) : caster(_caster) { }
@@ -552,7 +552,7 @@ class boss_paletress : public CreatureScript
                     }
 
                     EnterEvadeMode();
-                    me->setFaction(35);
+                    me->SetFaction(35);
 
                     Talk(SAY_COMMON_DEATH);
 

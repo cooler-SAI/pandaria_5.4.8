@@ -29,6 +29,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
+#include "Random.h"
 
 // 45102 Romantic Picnic
 enum SpellsPicnic
@@ -150,7 +151,7 @@ class spell_hallow_end_trick : public SpellScriptLoader
                 Unit* caster = GetCaster();
                 if (Player* target = GetHitPlayer())
                 {
-                    uint8 gender = target->getGender();
+                    uint8 gender = target->GetGender();
                     uint32 spellId = SPELL_TRICK_BUFF;
                     switch (urand(0, 5))
                     {

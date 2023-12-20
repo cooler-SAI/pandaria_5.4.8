@@ -18,7 +18,6 @@
 #include "ScriptMgr.h"
 #include "ScriptedCreature.h"
 #include "siege_of_orgrimmar.h"
-#include <ace/Stack_Trace.h>
 
 enum Spells
 {                                   
@@ -549,8 +548,7 @@ class boss_paragon_of_the_klaxxi : public CreatureScript
                     {
                         if (paragonSequence.size() < 4)
                         {
-                            ACE_Stack_Trace st;
-                            TC_LOG_ERROR("shitlog", "boss_paragon_of_the_klaxxi paragonSequence.size() %u, boss state %u\n%s", uint32(paragonSequence.size()), instance ? instance->GetBossState(DATA_PARAGONS_OF_THE_KLAXXI) : 0, st.c_str());
+                            TC_LOG_ERROR("shitlog", "boss_paragon_of_the_klaxxi paragonSequence.size() %u, boss state %u\n", uint32(paragonSequence.size()), instance ? instance->GetBossState(DATA_PARAGONS_OF_THE_KLAXXI) : 0);
                             return;
                         }
 
@@ -762,7 +760,7 @@ class boss_paragon_of_the_klaxxi : public CreatureScript
                         if (Creature* klaxxi = ObjectAccessor::GetCreature(*me, instance ? instance->GetData64(paragonMemberEntry) : 0))
                         {
                             klaxxi->RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE);
-                            klaxxi->setFaction(14);
+                            klaxxi->SetFaction(14);
                             klaxxi->RemoveFlag(UNIT_FIELD_FLAGS2, 69240832);
                             klaxxi->RemoveAurasDueToSpell(SPELL_PERMANENT_FEIGN_DEATH);
 
@@ -864,7 +862,7 @@ struct soo_paragon_typeAI : public ScriptedAI
         events.Reset();
         nonCombatEvents.Reset();
         me->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NON_ATTACKABLE | UNIT_FLAG_PACIFIED);
-        me->setFaction(14);
+        me->SetFaction(14);
         me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
         prevToxin       = 0;
         targetGUID      = 0;
@@ -1114,7 +1112,7 @@ struct soo_paragon_typeAI : public ScriptedAI
             me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_SPELLCLICK);
             me->PrepareChanneledCast(me->GetOrientation());
             me->SetHealth(1);
-            me->setFaction(35); // cuz ref doesn`t work
+            me->SetFaction(35); // cuz ref doesn`t work
             me->SetFlag(UNIT_FIELD_FLAGS2, 69240832);
             DoCast(me, SPELL_PERMANENT_FEIGN_DEATH, true);
             DoCast(me, SPELL_CLICK_ME);
@@ -3258,7 +3256,7 @@ class spell_soo_aim : public SpellScript
     }
 };
 
-class AimPredicate : public std::unary_function<Creature*, bool>
+class AimPredicate 
 {
     public:
         AimPredicate(Creature* const caster) : _caster(caster) { }
@@ -3677,7 +3675,7 @@ class spell_paragon_fiery_edge_periodic : public AuraScript
     }
 };
 
-class FieryEdgePredicate : public std::binary_function<Unit*, Unit*, bool>
+class FieryEdgePredicate 
 {
     public:
         FieryEdgePredicate(Unit* const caster, Unit* const target) : _caster(caster), _target(target) { }

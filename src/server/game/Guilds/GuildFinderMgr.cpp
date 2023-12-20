@@ -28,6 +28,12 @@ GuildFinderMgr::~GuildFinderMgr()
 {
 }
 
+GuildFinderMgr* GuildFinderMgr::instance()
+{
+    static GuildFinderMgr instance;
+    return &instance;
+}
+
 void GuildFinderMgr::LoadFromDB()
 {
     LoadGuildSettings();
@@ -98,7 +104,7 @@ void GuildFinderMgr::LoadMembershipRequests()
         uint32 playerId     = fields[1].GetUInt32();
         if (!sWorld->GetCharacterNameData(playerId))
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
             stmt->setUInt32(0, guildId);
             stmt->setUInt32(1, playerId);
             CharacterDatabase.Execute(stmt);
@@ -124,8 +130,8 @@ void GuildFinderMgr::AddMembershipRequest(uint32 guildGuid, MembershipRequest co
 {
     _membershipRequests[guildGuid].push_back(request);
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GUILD_FINDER_APPLICANT);
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GUILD_FINDER_APPLICANT);
     stmt->setUInt32(0, request.GetGuildId());
     stmt->setUInt32(1, request.GetPlayerGUID());
     stmt->setUInt8(2, request.GetAvailability());
@@ -157,8 +163,8 @@ void GuildFinderMgr::RemoveAllMembershipRequestsFromPlayer(uint32 playerId)
         if (itr2 == itr->second.end())
             continue;
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
         stmt->setUInt32(0, itr2->GetGuildId());
         stmt->setUInt32(1, itr2->GetPlayerGUID());
         trans->Append(stmt);
@@ -182,9 +188,9 @@ void GuildFinderMgr::RemoveMembershipRequest(uint32 playerId, uint32 guildId)
     if (itr == _membershipRequests[guildId].end())
         return;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
     stmt->setUInt32(0, itr->GetGuildId());
     stmt->setUInt32(1, itr->GetPlayerGUID());
     trans->Append(stmt);
@@ -276,9 +282,9 @@ void GuildFinderMgr::SetGuildSettings(uint32 guildGuid, LFGuildSettings const& s
 {
     _guildSettings[guildGuid] = settings;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GUILD_FINDER_GUILD_SETTINGS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GUILD_FINDER_GUILD_SETTINGS);
     stmt->setUInt32(0, settings.GetGUID());
     stmt->setUInt8(1, settings.GetAvailability());
     stmt->setUInt8(2, settings.GetClassRoles());
@@ -296,11 +302,11 @@ void GuildFinderMgr::DeleteGuild(uint32 guildId)
     std::vector<MembershipRequest>::iterator itr = _membershipRequests[guildId].begin();
     while (itr != _membershipRequests[guildId].end())
     {
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         uint32 applicant = itr->GetPlayerGUID();
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GUILD_FINDER_APPLICANT);
         stmt->setUInt32(0, itr->GetGuildId());
         stmt->setUInt32(1, applicant);
         trans->Append(stmt);

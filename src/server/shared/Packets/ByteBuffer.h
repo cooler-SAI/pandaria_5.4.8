@@ -22,7 +22,6 @@
 #include "Errors.h"
 #include "ByteConverter.h"
 
-#include <ace/OS_NS_time.h>
 #include <exception>
 #include <list>
 #include <map>
@@ -30,6 +29,11 @@
 #include <vector>
 #include <cstring>
 #include <time.h>
+#include <cstdarg>
+
+#include "ObjectGuid.h"
+
+class MessageBuffer;
 
 // Root of ByteBuffer exception hierarchy
 class ByteBufferException : public std::exception
@@ -51,7 +55,7 @@ class ByteBufferPositionException : public ByteBufferException
 public:
     ByteBufferPositionException(bool add, size_t pos, size_t size, size_t valueSize);
 
-    ~ByteBufferPositionException() throw() { }
+    ~ByteBufferPositionException() noexcept = default;
 };
 
 class ByteBufferSourceException : public ByteBufferException
@@ -59,69 +63,22 @@ class ByteBufferSourceException : public ByteBufferException
 public:
     ByteBufferSourceException(size_t pos, size_t size, size_t valueSize);
 
-    ~ByteBufferSourceException() throw() { }
+    ~ByteBufferSourceException() noexcept = default;
 };
 
-//! Structure to ease conversions from single 64 bit integer guid into individual bytes, for packet sending purposes
-//! Nuke this out when porting ObjectGuid from MaNGOS, but preserve the per-byte storage
-struct ObjectGuid
+class ByteBufferInvalidValueException : public ByteBufferException
 {
 public:
-    ObjectGuid() { _data.u64 = UI64LIT(0); }
-    ObjectGuid(uint64 guid) { _data.u64 = guid; }
-    ObjectGuid(ObjectGuid const& other) { _data.u64 = other._data.u64; }
+    ByteBufferInvalidValueException(char const* type, char const* value);
 
-    uint8& operator[](uint32 index)
-    {
-        ASSERT(index < sizeof(uint64));
-
-#if TRINITY_ENDIAN == TRINITY_LITTLEENDIAN
-        return _data.byte[index];
-#else
-        return _data.byte[7 - index];
-#endif
-    }
-
-    uint8 const& operator[](uint32 index) const
-    {
-        ASSERT(index < sizeof(uint64));
-
-#if TRINITY_ENDIAN == TRINITY_LITTLEENDIAN
-        return _data.byte[index];
-#else
-        return _data.byte[7 - index];
-#endif
-    }
-
-    operator uint64()
-    {
-        return _data.u64;
-    }
-
-    ObjectGuid& operator=(uint64 guid)
-    {
-        _data.u64 = guid;
-        return *this;
-    }
-
-    ObjectGuid& operator=(ObjectGuid const& other)
-    {
-        _data.u64 = other._data.u64;
-        return *this;
-    }
-
-private:
-    union
-    {
-        uint64 u64;
-        uint8 byte[8];
-    } _data;
-
+    ~ByteBufferInvalidValueException() noexcept = default;
 };
+
+
 class ByteBuffer
 {
 public:
-    const static size_t DEFAULT_SIZE = 0x1000;
+    constexpr static size_t DEFAULT_SIZE = 0x1000;
 
     // constructor
     ByteBuffer() : _rpos(0), _wpos(0), _bitpos(8), _curbitval(0)
@@ -134,11 +91,47 @@ public:
         _storage.reserve(reserve);
     }
 
-    void clear()
+    // copy constructor
+    ByteBuffer(const ByteBuffer &buf) : _rpos(buf._rpos), _wpos(buf._wpos),
+        _bitpos(buf._bitpos), _curbitval(buf._curbitval), _storage(buf._storage)
     {
-        _storage.clear();
-        _rpos = _wpos = 0;
     }
+
+    ByteBuffer(ByteBuffer&& buf) noexcept : _rpos(buf._rpos), _wpos(buf._wpos), _storage(std::move(buf._storage))
+    {
+        buf._rpos = 0;
+        buf._wpos = 0;
+    }
+
+    ByteBuffer(MessageBuffer&& buffer);
+
+    ByteBuffer& operator=(ByteBuffer const& right)
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            _wpos = right._wpos;
+            _storage = right._storage;
+        }
+
+        return *this;
+    }
+
+    ByteBuffer& operator=(ByteBuffer&& right) noexcept
+    {
+        if (this != &right)
+        {
+            _rpos = right._rpos;
+            right._rpos = 0;
+            _wpos = right._wpos;
+            right._wpos = 0;
+            _storage = std::move(right._storage);
+        }
+
+        return *this;
+    }
+
+    void clear();
 
     template <typename T> void append(T value)
     {
@@ -147,21 +140,9 @@ public:
         append((uint8 *)&value, sizeof(value));
     }
 
-    void FlushBits()
-    {
-        if (_bitpos == 8)
-            return;
+    void FlushBits();
 
-        append((uint8 *)&_curbitval, sizeof(uint8));
-        _curbitval = 0;
-        _bitpos = 8;
-    }
-
-    void WriteBitInOrder(ObjectGuid guid, uint8 order[8])
-    {
-        for (uint8 i = 0; i < 8; ++i)
-            WriteBit(guid[order[i]]);
-    }
+    void WriteBitInOrder(ObjectGuid guid, uint8 order[8]);
 
     bool WriteBit(uint32 bit)
     {
@@ -418,20 +399,22 @@ public:
         return *this;
     }
 
-    ByteBuffer &operator<<(const std::string &value)
+    ByteBuffer &operator<<(std::string_view value)
     {
         if (size_t len = value.length())
-            append((uint8 const*)value.c_str(), len);
-        append((uint8)0);
+            append(reinterpret_cast<uint8 const*>(value.data()), len);
+        append(static_cast<uint8>(0));
         return *this;
     }
 
-    ByteBuffer &operator<<(const char *str)
+    ByteBuffer& operator<<(std::string const& str)
     {
-        if (size_t len = (str ? strlen(str) : 0))
-            append((uint8 const*)str, len);
-        append((uint8)0);
-        return *this;
+        return operator<<(std::string_view(str));
+    }
+
+    ByteBuffer &operator<<(char const* str)
+    {
+        return operator<<(std::string_view(str ? str : ""));
     }
 
     ByteBuffer &operator>>(bool &value)
@@ -617,7 +600,7 @@ public:
         }
     }
 
-    std::string ReadString(uint32 length)
+    std::string ReadString(size_t length)
     {
         if (!length)
             return std::string();
@@ -636,20 +619,9 @@ public:
             append(str.c_str(), len);
     }
 
-    uint32 ReadPackedTime()
-    {
-        uint32 packedDate = read<uint32>();
-        tm lt = tm();
+    std::string ReadCString(bool requireValidUtf8 = true);
 
-        lt.tm_min = packedDate & 0x3F;
-        lt.tm_hour = (packedDate >> 6) & 0x1F;
-        //lt.tm_wday = (packedDate >> 11) & 7;
-        lt.tm_mday = ((packedDate >> 14) & 0x3F) + 1;
-        lt.tm_mon = (packedDate >> 20) & 0xF;
-        lt.tm_year = ((packedDate >> 24) & 0x1F) + 100;
-
-        return uint32(mktime(&lt));
-    }
+    uint32 ReadPackedTime();
 
     ByteBuffer& ReadPackedTime(uint32& time)
     {
@@ -682,26 +654,16 @@ public:
         return append((const uint8 *)src, cnt);
     }
 
+    void shrink_to_fit()
+    {
+        _storage.shrink_to_fit();
+    }
+
     template<class T> void append(const T *src, size_t cnt)
     {
         return append((const uint8 *)src, cnt * sizeof(T));
     }
-
-    void append(const uint8 *src, size_t cnt)
-    {
-        if (!cnt)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        if (!src)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        ASSERT(size() < 10000000);
-
-        if (_storage.size() < _wpos + cnt)
-            _storage.resize(_wpos + cnt);
-        std::memcpy(&_storage[_wpos], src, cnt);
-        _wpos += cnt;
-    }
+    void append(uint8 const* src, size_t cnt);
 
     void append(const ByteBuffer& buffer)
     {
@@ -746,23 +708,9 @@ public:
         append(packGUID, size);
     }
 
-    void AppendPackedTime(time_t time)
-    {
-        tm lt;
-        ACE_OS::localtime_r(&time, &lt);
-        append<uint32>((lt.tm_year - 100) << 24 | lt.tm_mon << 20 | (lt.tm_mday - 1) << 14 | lt.tm_wday << 11 | lt.tm_hour << 6 | lt.tm_min);
-    }
+    void AppendPackedTime(time_t time);
 
-    void put(size_t pos, const uint8 *src, size_t cnt)
-    {
-        if (pos + cnt > size())
-            throw ByteBufferPositionException(true, pos, cnt, size());
-
-        if (!src)
-            throw ByteBufferSourceException(_wpos, size(), cnt);
-
-        std::memcpy(&_storage[pos], src, cnt);
-    }
+    void put(size_t pos, const uint8 *src, size_t cnt);
 
     void print_storage() const;
 

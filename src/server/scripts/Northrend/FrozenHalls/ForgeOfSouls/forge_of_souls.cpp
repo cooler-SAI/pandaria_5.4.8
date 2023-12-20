@@ -144,14 +144,15 @@ class npc_sylvanas_fos : public CreatureScript
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == 10942 && action == 0)
                     StartScene(player);
+                return true;
             }
 
-            void sQuestAccept(Player* player, Quest const* /*quest*/) override
+            void OnQuestAccept(Player* player, Quest const* /*quest*/) override
             {
                 StartScene(player, 5000);
             }
@@ -194,14 +195,15 @@ class npc_jaina_fos : public CreatureScript
                 me->SetFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
             }
 
-            void sGossipSelect(Player* player, uint32 sender, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 sender, uint32 action) override
             {
                 player->CLOSE_GOSSIP_MENU();
                 if (sender == 10943 && action == 0)
                     StartScene(player);
+                return true;
             }
 
-            void sQuestAccept(Player* player, Quest const* /*quest*/) override
+            void OnQuestAccept(Player* player, Quest const* /*quest*/) override
             {
                 StartScene(player, 5000);
             }

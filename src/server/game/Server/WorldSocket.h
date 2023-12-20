@@ -24,21 +24,25 @@
 #ifndef SF_WORLDSOCKET_H
 #define SF_WORLDSOCKET_H
 
-#include <ace/Basic_Types.h>
-#include <ace/Synch_Traits.h>
+#include <memory>
+#include <mutex>
+//#include <ace/Synch_Traits.h>
 #include <ace/Svc_Handler.h>
 #include <ace/SOCK_Stream.h>
-#include <ace/Thread_Mutex.h>
-#include <ace/Guard_T.h>
-#include <ace/Unbounded_Queue.h>
+//#include <ace/Guard_T.h>
+//#include <ace/Unbounded_Queue.h>
 #include <ace/Message_Block.h>
+
+struct AuthSession;
 
 #if !defined (ACE_LACKS_PRAGMA_ONCE)
 #pragma once
 #endif /* ACE_LACKS_PRAGMA_ONCE */
-
 #include "Common.h"
 #include "AuthCrypt.h"
+#include "Duration.h"
+#include "AsyncCallbackProcessor.h"
+#include "DatabaseEnvFwd.h" 
 
 class ACE_Message_Block;
 class WorldPacket;
@@ -83,6 +87,7 @@ typedef ACE_Svc_Handler<ACE_SOCK_STREAM, ACE_NULL_SYNCH> WorldHandler;
  * notification.
  *
  */
+
 class WorldSocket : public WorldHandler
 {
     public:
@@ -90,10 +95,6 @@ class WorldSocket : public WorldHandler
         virtual ~WorldSocket (void);
 
         friend class WorldSocketMgr;
-
-        /// Mutex type used for various synchronizations.
-        typedef ACE_Thread_Mutex LockType;
-        typedef ACE_Guard<LockType> GuardType;
 
         /// Check if socket is closed.
         bool IsClosed(void) const;
@@ -144,11 +145,11 @@ class WorldSocket : public WorldHandler
 
         /// Help functions to mark/unmark the socket for output.
         /// @param g the guard is for m_OutBufferLock, the function will release it
-        int cancel_wakeup_output(GuardType& g);
-        int schedule_wakeup_output(GuardType& g);
+        int cancel_wakeup_output();
+        int schedule_wakeup_output();
 
         /// Drain the queue if its not empty.
-        int handle_output_queue(GuardType& g);
+        int handle_output_queue();
 
         /// process one incoming packet.
         /// @param new_pct received packet, note that you need to delete it.
@@ -156,6 +157,7 @@ class WorldSocket : public WorldHandler
 
         /// Called by ProcessIncoming() on CMSG_AUTH_SESSION.
         int HandleAuthSession(WorldPacket& recvPacket);
+        void HandleAuthSessionCallback(std::shared_ptr<AuthSession> authSession, PreparedQueryResult result);
 
         /// Called by ProcessIncoming() on CMSG_PING.
         int HandlePing(WorldPacket& recvPacket);
@@ -163,10 +165,20 @@ class WorldSocket : public WorldHandler
         /// Called by MSG_VERIFY_CONNECTIVITY_RESPONSE
         int HandleSendAuthSession();
 
+    protected:
+        enum class ReadDataHandlerResult
+        {
+            Ok = 0,
+            Error = 1,
+            WaitingForQuery = 2
+        };    
+        
+        //ReadDataHandlerResult ReadDataHandler();    
+
     private:
         void SendAuthResponseError(uint8);
         /// Time in which the last ping was received
-        ACE_Time_Value m_LastPingTime;
+        TimePoint m_LastPingTime;
 
         /// Keep track of over-speed pings, to prevent ping flood.
         uint32 m_OverSpeedPings;
@@ -174,11 +186,12 @@ class WorldSocket : public WorldHandler
         /// Address of the remote peer
         std::string m_Address;
 
+        std::array<uint8, 4> _authSeed;
         /// Class used for managing encryption of the headers
         AuthCrypt m_Crypt;
 
         /// Mutex lock to protect m_Session
-        LockType m_SessionLock;
+        std::mutex m_SessionLock;
 
         /// Session to which received packets are routed
         WorldSession* m_Session;
@@ -196,7 +209,7 @@ class WorldSocket : public WorldHandler
         ACE_Message_Block m_WorldHeader;
 
         /// Mutex for protecting output related data.
-        LockType m_OutBufferLock;
+        std::mutex m_OutBufferLock;
 
         /// Buffer used for writing output.
         ACE_Message_Block* m_OutBuffer;
@@ -207,10 +220,9 @@ class WorldSocket : public WorldHandler
         /// True if the socket is registered with the reactor for output
         bool m_OutActive;
 
-        uint32 m_Seed;
+        QueryCallbackProcessor _queryProcessor;
+        std::string _ipCountry;
 
 };
 
 #endif  /* _WORLDSOCKET_H */
-
-/// @}

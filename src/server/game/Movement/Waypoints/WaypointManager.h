@@ -18,7 +18,6 @@
 #ifndef TRINITY_WAYPOINTMANAGER_H
 #define TRINITY_WAYPOINTMANAGER_H
 
-#include <ace/Singleton.h>
 #include <ace/Null_Mutex.h>
 #include <vector>
 
@@ -37,9 +36,8 @@ typedef std::unordered_map<uint32, WaypointPath> WaypointPathContainer;
 
 class WaypointMgr
 {
-        friend class ACE_Singleton<WaypointMgr, ACE_Null_Mutex>;
-
     public:
+        static WaypointMgr* instance();
         // Attempts to reload a single path from database
         void ReloadPath(uint32 id);
 
@@ -57,13 +55,13 @@ class WaypointMgr
         }
 
     private:
-        // Only allow instantiation from ACE_Singleton
+
         WaypointMgr();
         ~WaypointMgr();
 
         WaypointPathContainer _waypointStore;
 };
 
-#define sWaypointMgr ACE_Singleton<WaypointMgr, ACE_Null_Mutex>::instance()
+#define sWaypointMgr WaypointMgr::instance()
 
 #endif

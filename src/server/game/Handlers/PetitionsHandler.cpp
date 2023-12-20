@@ -116,7 +116,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
         return;
     }
 
-	if (sObjectMgr->IsReservedName(name) || !ObjectMgr::IsValidCharterName(name)  ||
+    if (sObjectMgr->IsReservedName(name) || !ObjectMgr::IsValidCharterName(name)  ||
         (sWorld->getBoolConfig(CONFIG_WORD_FILTER_ENABLE) && !sWordFilterMgr->FindBadWord(name).empty()))
     {
         Guild::SendCommandResult(this, GUILD_COMMAND_CREATE, ERR_GUILD_NAME_INVALID, name);
@@ -158,7 +158,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
     // a petition is invalid, if both the owner and the type matches
     // we checked above, if this player is in an arenateam, so this must be
     // datacorruption
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_BY_OWNER);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_BY_OWNER);
     stmt->setUInt32(0, _player->GetGUIDLow());
     stmt->setUInt8(1, type);
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
@@ -179,7 +179,7 @@ void WorldSession::HandlePetitionBuyOpcode(WorldPacket& recvData)
 
     TC_LOG_DEBUG("network", "Invalid petition GUIDs: %s", ssInvalidPetitionGUIDs.str().c_str());
     CharacterDatabase.EscapeString(name);
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     trans->PAppend("DELETE FROM petition WHERE petitionguid IN (%s)",  ssInvalidPetitionGUIDs.str().c_str());
     trans->PAppend("DELETE FROM petition_sign WHERE petitionguid IN (%s)", ssInvalidPetitionGUIDs.str().c_str());
 
@@ -223,7 +223,7 @@ void WorldSession::HandlePetitionShowSignOpcode(WorldPacket& recvData)
     // solve (possible) some strange compile problems with explicit use GUID_LOPART(petitionguid) at some GCC versions (wrong code optimization in compiler?)
     uint32 petitionGuidLow = GUID_LOPART(petitionGuid);
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
 
     stmt->setUInt32(0, petitionGuidLow);
 
@@ -371,7 +371,7 @@ void WorldSession::SendPetitionQueryOpcode(uint64 petitionGuid)
     uint32 type;
     std::string name = "NO_NAME_FOR_GUID";
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION);
 
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
 
@@ -469,7 +469,7 @@ void WorldSession::HandlePetitionRenameOpcode(WorldPacket& recvData)
     if (!item)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
 
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
 
@@ -497,7 +497,7 @@ void WorldSession::HandlePetitionRenameOpcode(WorldPacket& recvData)
         return;
     }
 
-	if (sObjectMgr->IsReservedName(newName) || !ObjectMgr::IsValidCharterName(newName) ||
+    if (sObjectMgr->IsReservedName(newName) || !ObjectMgr::IsValidCharterName(newName) ||
         (sWorld->getBoolConfig(CONFIG_WORD_FILTER_ENABLE) && !sWordFilterMgr->FindBadWord(newName).empty()))
     {
         Guild::SendCommandResult(this, GUILD_COMMAND_CREATE, ERR_GUILD_NAME_INVALID, newName);
@@ -562,7 +562,7 @@ void WorldSession::HandlePetitionSignOpcode(WorldPacket& recvData)
     recvData.ReadByteSeq(petitionGuid[0]);
     recvData.ReadByteSeq(petitionGuid[4]);
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_SIGNATURES);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_SIGNATURES);
 
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
     stmt->setUInt32(1, GUID_LOPART(petitionGuid));
@@ -673,7 +673,7 @@ void WorldSession::HandlePetitionDeclineOpcode(WorldPacket& recvData)
 
     TC_LOG_DEBUG("network", "Petition %u declined by %u", GUID_LOPART(petitionGuid), _player->GetGUIDLow());
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_OWNER_BY_GUID);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_OWNER_BY_GUID);
 
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
 
@@ -739,7 +739,7 @@ void WorldSession::HandleOfferPetitionOpcode(WorldPacket& recvData)
     if (!player)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION_TYPE);
 
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
 
@@ -897,7 +897,7 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket& recvData)
     uint32 type;
     std::string name;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PETITION);
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -991,7 +991,7 @@ void WorldSession::HandleTurnInPetitionOpcode(WorldPacket& recvData)
         result->NextRow();
     }
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_PETITION_BY_GUID);
     stmt->setUInt32(0, GUID_LOPART(petitionGuid));

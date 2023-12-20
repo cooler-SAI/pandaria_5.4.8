@@ -12,10 +12,12 @@
 file(GLOB_RECURSE sources *.cpp *.h)
 
 include_directories (
-  ${CMAKE_SOURCE_DIR}/src/server/shared
-  ${CMAKE_SOURCE_DIR}/dep/StormLib/src
-  ${CMAKE_CURRENT_SOURCE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/loadlib
+  PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/server/common
+    ${CMAKE_SOURCE_DIR}/src/server/shared
+    ${CMAKE_SOURCE_DIR}/dep/StormLib/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/loadlib
 )
 
 include_directories(${include_Dirs})
@@ -25,9 +27,10 @@ add_executable(mapextractor
 )
 
 target_link_libraries(mapextractor
-  ${BZIP2_LIBRARIES}
-  ${ZLIB_LIBRARIES}
-  storm
+  PRIVATE
+    ${BZIP2_LIBRARIES}
+    ${ZLIB_LIBRARIES}
+    storm
 )
 
 add_dependencies(mapextractor storm)

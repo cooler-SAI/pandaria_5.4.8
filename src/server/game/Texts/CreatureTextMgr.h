@@ -25,33 +25,49 @@
 #include "Opcodes.h"
 #include "Group.h"
 
+class Creature;
+class Player;
+class Unit;
+class WorldObject;
+class WorldPacket;
+
 enum CreatureTextRange
 {
     TEXT_RANGE_NORMAL   = 0,
     TEXT_RANGE_AREA     = 1,
     TEXT_RANGE_ZONE     = 2,
     TEXT_RANGE_MAP      = 3,
-    TEXT_RANGE_WORLD    = 4
+    TEXT_RANGE_WORLD    = 4,
+    TEXT_RANGE_PERSONAL = 5
+};
+
+enum class CreatureTextSoundType : uint32
+{
+    DirectSound = 0,
+    ObjectSound = 1,
+    Music       = 2
 };
 
 struct CreatureTextEntry
 {
-    uint32 entry;
-    uint8 group;
+    uint32 creatureId;
+    uint8 groupId;
     uint8 id;
-    std::string text[GENDER_NONE];
+    std::string text;
     ChatMsg type;
     Language lang;
     float probability;
     Emote emote;
     uint32 duration;
     uint32 sound;
+    CreatureTextSoundType soundType;
+    uint32 BroadcastTextId;
     CreatureTextRange TextRange;
 };
 
 struct CreatureTextLocale
 {
-    StringVector Text[GENDER_NONE];
+    std::vector<std::string> Text;
 };
 
 struct CreatureTextId
@@ -60,7 +76,7 @@ struct CreatureTextId
 
     bool operator<(CreatureTextId const& right) const
     {
-        return memcmp(this, &right, sizeof(CreatureTextId)) < 0;
+        return std::tie(entry, textGroup, textId) < std::tie(right.entry, right.textGroup, right.textId);
     }
 
     uint32 entry;
@@ -74,18 +90,16 @@ typedef std::unordered_map<uint32, CreatureTextHolder> CreatureTextMap;     // a
 
 typedef std::map<CreatureTextId, CreatureTextLocale> LocaleCreatureTextMap;
 
-// used for handling non-repeatable random texts
-typedef std::vector<uint8> CreatureTextRepeatIds;
-typedef std::unordered_map<uint8, CreatureTextRepeatIds> CreatureTextRepeatGroup;
 typedef std::unordered_map<uint64, CreatureTextRepeatGroup> CreatureTextRepeatMap; // guid based
 
 class CreatureTextMgr
 {
-    friend class ACE_Singleton<CreatureTextMgr, ACE_Null_Mutex>;
-    CreatureTextMgr() { }
+    private:
+        CreatureTextMgr() { }
+        ~CreatureTextMgr() { }    
 
     public:
-        ~CreatureTextMgr() { }
+        static CreatureTextMgr* instance();
         void LoadCreatureTexts();
         void LoadCreatureTextLocales();
         CreatureTextMap  const& GetTextMap() const { return mTextMap; }
@@ -96,23 +110,19 @@ class CreatureTextMgr
         //if sent, returns the 'duration' of the text else 0 if error
         uint32 SendChat(Creature* source, uint8 textGroup, WorldObject const* whisperTarget = nullptr, ChatMsg msgType = CHAT_MSG_ADDON, Language language = LANG_ADDON, CreatureTextRange range = TEXT_RANGE_NORMAL, uint32 sound = 0, Team team = TEAM_OTHER, bool gmOnly = false, Player* srcPlr = nullptr);
         bool TextExist(uint32 sourceEntry, uint8 textGroup);
-        std::string GetLocalizedChatString(uint32 entry, uint8 textGroup, uint32 id, Gender gender, LocaleConstant locale) const;
+        std::string GetLocalizedChatString(uint32 entry, uint8 gender, uint8 textGroup, uint32 id, LocaleConstant locale) const;
 
         template<class Builder>
         void SendChatPacket(WorldObject* source, Builder const& builder, ChatMsg msgType, WorldObject const* whisperTarget = nullptr, CreatureTextRange range = TEXT_RANGE_NORMAL, Team team = TEAM_OTHER, bool gmOnly = false) const;
     private:
-        CreatureTextRepeatIds GetRepeatGroup(Creature* source, uint8 textGroup);
-        void SetRepeatId(Creature* source, uint8 textGroup, uint8 id);
-
         void SendNonChatPacket(WorldObject* source, WorldPacket* data, ChatMsg msgType, WorldObject const* whisperTarget, CreatureTextRange range, Team team, bool gmOnly) const;
         float GetRangeForChatType(ChatMsg msgType) const;
 
         CreatureTextMap mTextMap;
-        CreatureTextRepeatMap mTextRepeatMap;
         LocaleCreatureTextMap mLocaleTextMap;
 };
 
-#define sCreatureTextMgr ACE_Singleton<CreatureTextMgr, ACE_Null_Mutex>::instance()
+#define sCreatureTextMgr CreatureTextMgr::instance()
 
 template<class Builder>
 class CreatureTextLocalizer
@@ -123,39 +133,100 @@ class CreatureTextLocalizer
             _packetCache.resize(TOTAL_LOCALES);
         }
 
+        ~CreatureTextLocalizer()
+        {
+            for (size_t i = 0; i < _packetCache.size(); ++i)
+            {
+                if (_packetCache[i])
+                    delete _packetCache[i]->first;
+                delete _packetCache[i];
+            }
+        }
+
         void operator()(Player* player)
         {
+            // LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
+            // WorldPacket* messageTemplate;
+
+            // uint64 guid = 0LL;
+            // switch (_msgType)
+            // {
+            //     case CHAT_MSG_MONSTER_WHISPER:
+            //     case CHAT_MSG_RAID_BOSS_WHISPER:
+            //         guid = player->GetGUID();
+            //         break;
+            //     default:
+            //         break;
+            // }
+
+            // // create if not cached yet
+            // if (!_packetCache[loc_idx])
+            // {
+            //     messageTemplate = new WorldPacket();
+            //     _builder(messageTemplate, loc_idx, guid);
+            //      ASSERT(messageTemplate->GetOpcode() != MSG_NULL_ACTION);
+            //     _packetCache[loc_idx].reset(messageTemplate);
+            // }
+            // else
+            //     messageTemplate = _packetCache[loc_idx].get();
+
+            // WorldPacket data(*messageTemplate);
+
+
+
             LocaleConstant loc_idx = player->GetSession()->GetSessionDbLocaleIndex();
             WorldPacket* messageTemplate;
-
-            uint64 guid = 0LL;
-            switch (_msgType)
-            {
-                case CHAT_MSG_MONSTER_WHISPER:
-                case CHAT_MSG_RAID_BOSS_WHISPER:
-                    guid = player->GetGUID();
-                    break;
-                default:
-                    break;
-            }
+            size_t whisperGUIDpos;
 
             // create if not cached yet
             if (!_packetCache[loc_idx])
             {
                 messageTemplate = new WorldPacket();
-                _builder(messageTemplate, loc_idx, guid);
-                 ASSERT(messageTemplate->GetOpcode() != MSG_NULL_ACTION);
-                _packetCache[loc_idx].reset(messageTemplate);
+                whisperGUIDpos = _builder(messageTemplate, loc_idx);
+                _packetCache[loc_idx] = new std::pair<WorldPacket*, size_t>(messageTemplate, whisperGUIDpos);
             }
             else
-                messageTemplate = _packetCache[loc_idx].get();
+            {
+                messageTemplate = _packetCache[loc_idx]->first;
+                whisperGUIDpos = _packetCache[loc_idx]->second;
+            }
 
+            ObjectGuid receiverGUID = player->GetGUID();
             WorldPacket data(*messageTemplate);
+            switch (_msgType)
+            {
+                case CHAT_MSG_MONSTER_WHISPER:
+                case CHAT_MSG_RAID_BOSS_WHISPER:
+                    data.bitwpos(whisperGUIDpos);
+                    data.WriteBit(receiverGUID[7]);
+                    data.WriteBit(receiverGUID[6]);
+                    data.WriteBit(receiverGUID[1]);
+                    data.WriteBit(receiverGUID[4]);
+                    data.WriteBit(receiverGUID[0]);
+                    data.WriteBit(receiverGUID[2]);
+                    data.WriteBit(receiverGUID[3]);
+                    data.WriteBit(receiverGUID[5]);
+
+                    data.bitwpos(whisperGUIDpos+71);
+                    data.WriteByteSeq(receiverGUID[2]);
+                    data.WriteByteSeq(receiverGUID[5]);
+                    data.WriteByteSeq(receiverGUID[3]);
+                    data.WriteByteSeq(receiverGUID[6]);
+                    data.WriteByteSeq(receiverGUID[7]);
+                    data.WriteByteSeq(receiverGUID[4]);
+                    data.WriteByteSeq(receiverGUID[1]);
+                    data.WriteByteSeq(receiverGUID[0]);                  
+                    break;
+                default:
+                    break;
+            }
+
             player->SendDirectMessage(&data);
         }
 
     private:
-        std::vector<std::unique_ptr<WorldPacket>> _packetCache;
+        //std::vector<std::unique_ptr<WorldPacket>> _packetCache;
+        mutable std::vector<std::pair<WorldPacket*, size_t>*> _packetCache;
         Builder const& _builder;
         ChatMsg _msgType;
 };

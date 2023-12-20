@@ -69,8 +69,8 @@ public:
             player->ADD_GOSSIP_ITEM_EXTENDED(GOSSIP_ICON_MONEY_BAG, "|TInterface/ICONS/INV_Enchant_Disenchant:30:30:-18:0|tRemove all transmogrifications", EQUIPMENT_SLOT_END + 2, 0, "Remove transmogrifications from all equipped items?", 0, false);
             player->ADD_GOSSIP_ITEM(GOSSIP_ICON_MONEY_BAG, "|TInterface/PaperDollInfoFrame/UI-GearManager-Undo:30:30:-18:0|tUpdate menu", EQUIPMENT_SLOT_END + 1, 0);
         }
-		player->SEND_GOSSIP_MENU(DEFAULT_GOSSIP_MESSAGE, creature->GetGUID());
-		return true;
+        player->SEND_GOSSIP_MENU(DEFAULT_GOSSIP_MESSAGE, creature->GetGUID());
+        return true;
     }
 
     bool OnGossipSelect(Player* player, Creature* creature, uint32 sender, uint32 action)
@@ -88,14 +88,14 @@ public:
             case EQUIPMENT_SLOT_END + 2: // Remove Transmogrifications
             {
                 bool removed = false;
-                SQLTransaction trans = CharacterDatabase.BeginTransaction();
+                CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
                 for (uint8 slot = EQUIPMENT_SLOT_START; slot < EQUIPMENT_SLOT_END; ++slot)
                 {
                     if (Item* newItem = player->GetItemByPos(INVENTORY_SLOT_BAG_0, slot))
                     {
                         if (!sT->GetFakeEntry(newItem->GetGUID()))
                             continue;
-                        sT->DeleteFakeEntry(player, slot, newItem, &trans);
+                        sT->DeleteFakeEntry(player, slot, newItem, trans);
                         removed = true;
                     }
                 }
@@ -490,8 +490,8 @@ class global_transmog_script : public GlobalScript {
     public:
         global_transmog_script() : GlobalScript("global_transmog_script") { }
         
-        void OnItemDelFromDB(SQLTransaction& trans, uint32 itemGuid) {
-            sT->DeleteFakeFromDB(itemGuid, &trans);
+        void OnItemDelFromDB(CharacterDatabaseTransaction trans, uint32 itemGuid) {
+            sT->DeleteFakeFromDB(itemGuid, trans);
         }
         
         void OnMirrorImageDisplayItem(const Item *item, uint32 &display) {

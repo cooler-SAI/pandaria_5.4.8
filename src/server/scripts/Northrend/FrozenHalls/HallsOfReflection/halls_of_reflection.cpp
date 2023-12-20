@@ -21,6 +21,7 @@
 #include "GameObjectAI.h"
 #include "Transport.h"
 #include "../AI/SmartScripts/SmartAI.h"
+#include "Random.h"
 
 enum Yells
 {
@@ -239,15 +240,16 @@ class npc_jaina_and_sylvanas_hor_part1 : public CreatureScript
                 }
             }
 
-            void sGossipSelect(Player* player, uint32 menuId, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 menuId, uint32 action) override
             {
                 if (!player || menuId != (instance->GetData(DATA_TEAM_IN_INSTANCE) == ALLIANCE ? 11031 : 10950) || action > 1)
-                    return;
+                    return false;
 
                 player->CLOSE_GOSSIP_MENU();
                 playerGUID = player->GetGUID();
                 events.ScheduleEvent(action ? EVENT_SKIP_INTRO : EVENT_START_INTRO, 0);
                 me->RemoveFlag(UNIT_FIELD_NPC_FLAGS, UNIT_NPC_FLAG_GOSSIP);
+                return true;
             }
 
             void SpellHit(Unit* /*caster*/, SpellInfo const* spell) override
@@ -1398,7 +1400,7 @@ class npc_frostworn_general : public CreatureScript
                             pReflection->SetName(unit->GetName());
                             unit->CastSpell(pReflection, SPELL_CLONE_NAME, true);
                             unit->CastSpell(pReflection, SPELL_CLONE_MODEL, true);
-                            pReflection->setFaction(me->getFaction());
+                            pReflection->SetFaction(me->GetFaction());
                             pReflection->AI()->AttackStart(unit);
                         }
                     }
@@ -1539,13 +1541,13 @@ class npc_jaina_and_sylvanas_hor_part2 : public CreatureScript
                 instance->SetData(DATA_LICHKING_EVENT, NOT_STARTED);
             }
 
-            void sGossipSelect(Player* player, uint32 menuId, uint32 action) override
+            bool OnGossipSelect(Player* player, uint32 menuId, uint32 action) override
             {
                 if (!player || menuId != (instance->GetData(DATA_TEAM_IN_INSTANCE) == ALLIANCE ? 10860 : 10909) || action != 0)
-                    return;
+                    return false;
 
                 if (instance->GetData(DATA_LICHKING_EVENT) == DONE)
-                    return;
+                    return false;
 
                 player->CLOSE_GOSSIP_MENU();
                 Start(false, true);
@@ -1558,6 +1560,7 @@ class npc_jaina_and_sylvanas_hor_part2 : public CreatureScript
                     instance->SetData64(DATA_ESCAPE_LIDER, me->GetGUID());
                     instance->SetData(DATA_LICHKING_EVENT, IN_PROGRESS);
                 }
+                return true;
             }
 
             void WaypointReached(uint32 waypointId)

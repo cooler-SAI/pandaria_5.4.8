@@ -19,6 +19,7 @@
 #define TRINITY_CREATUREAI_H
 
 #include "Creature.h"
+#include "Optional.h"
 #include "UnitAI.h"
 #include "Common.h"
 
@@ -91,9 +92,9 @@ class CreatureAI : public UnitAI
         // Called if IsVisible(Unit* who) is true at each who move, reaction at visibility zone enter
         void MoveInLineOfSight_Safe(Unit* who);
 
-		bool CanSeeEvenInPassiveMode() { return m_canSeeEvenInPassiveMode; }
+        bool CanSeeEvenInPassiveMode() { return m_canSeeEvenInPassiveMode; }
         void SetCanSeeEvenInPassiveMode(bool canSeeEvenInPassiveMode) { m_canSeeEvenInPassiveMode = canSeeEvenInPassiveMode; }
-		
+        
         // Called in Creature::Update when deathstate = DEAD. Inherited classes may maniuplate the ability to respawn based on scripted events.
         virtual bool CanRespawn() { return true; }
 
@@ -178,6 +179,32 @@ class CreatureAI : public UnitAI
 
         // Called when victim entered water and creature can not enter water
         //virtual bool CanReachByRangeAttack(Unit*) { return false; }
+
+        /// == Gossip system ================================
+
+        // Called when the dialog status between a player and the creature is requested.
+        // virtual Optional<QuestGiverStatus> GetDialogStatus(Player* player); TC master branch
+
+        // Called when a player opens a gossip dialog with the creature.
+        virtual bool OnGossipHello(Player* /*player*/) { return false; }
+
+        // Called when a player selects a gossip item in the creature's gossip menu.
+        virtual bool OnGossipSelect(Player* /*player*/, uint32 /*menuId*/, uint32 /*gossipListId*/) { return false; }
+
+        // Called when a player selects a gossip with a code in the creature's gossip menu.
+        virtual bool OnGossipSelectCode(Player* /*player*/, uint32 /*menuId*/, uint32 /*gossipListId*/, char const* /*code*/) { return false; }
+
+        // Called when a player accepts a quest from the creature.
+        virtual void OnQuestAccept(Player* /*player*/, Quest const* /*quest*/) { }
+
+        // Called when a player completes a quest and is rewarded, opt is the selected item's index or 0
+        virtual void OnQuestReward(Player* /*player*/, Quest const* /*quest*/, uint32 /*opt*/) { }
+
+        /// == Waypoints system =============================
+
+        // virtual void WaypointStarted(uint32 /*nodeId*/, uint32 /*pathId*/) { }
+        // virtual void WaypointReached(uint32 /*nodeId*/, uint32 /*pathId*/) { }
+        // virtual void WaypointPathEnded(uint32 /*nodeId*/, uint32 /*pathId*/) { }
 
         /// == Fields =======================================
 

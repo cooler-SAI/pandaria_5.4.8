@@ -19,7 +19,6 @@
 #define TRINITYCORE_QUEST_H
 
 #include "Define.h"
-#include "DatabaseEnv.h"
 #include "SharedDefines.h"
 #include "WorldPacket.h"
 #include "DBCEnums.h"
@@ -233,6 +232,34 @@ struct QuestLocale
 struct QuestObjectiveLocale
 {
     StringVector Description;
+};
+
+struct QuestTemplateLocale
+{
+    std::vector<std::string> LogTitle;
+    std::vector<std::string> LogDescription;
+    std::vector<std::string> QuestDescription;
+    std::vector<std::string> AreaDescription;
+    std::vector<std::string> PortraitGiverText;
+    std::vector<std::string> PortraitGiverName;
+    std::vector<std::string> PortraitTurnInText;
+    std::vector<std::string> PortraitTurnInName;
+    std::vector<std::string> QuestCompletionLog;
+};
+
+struct QuestRequestItemsLocale
+{
+    std::vector<std::string> CompletionText;
+};
+
+struct QuestObjectivesLocale
+{
+    std::vector<std::string> Description;
+};
+
+struct QuestOfferRewardLocale
+{
+    std::vector<std::string> RewardText;
 };
 
 typedef std::vector<uint32> VisualEffectVec;

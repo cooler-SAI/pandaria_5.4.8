@@ -8,7 +8,6 @@ SqlPath = ""
 LoginDatabaseInfo     = "127.0.0.1;3306;user;pass;database"
 WorldDatabaseInfo     = "127.0.0.1;3306;user;pass;database"
 CharacterDatabaseInfo = "127.0.0.1;3306;user;pass;database"
-#ArchiveDatabaseInfo   = "127.0.0.1;3306;user;pass;database"
 
 LogsDir = "./"
 Log.Main.File = "detail.log"

@@ -30,6 +30,7 @@
 #include "GridNotifiers.h"
 #include "GridNotifiersImpl.h"
 #include "CellImpl.h"
+#include "Random.h"
 
 class spell_generic_quest_update_entry_SpellScript : public SpellScript
 {
@@ -798,7 +799,7 @@ class spell_q10041_q10040_who_are_they : public SpellScriptLoader
                 PreventHitDefaultEffect(effIndex);
                 if (Player* target = GetHitPlayer())
                 {
-                    target->CastSpell(target, target->getGender() == GENDER_MALE ? SPELL_MALE_DISGUISE : SPELL_FEMALE_DISGUISE, true);
+                    target->CastSpell(target, target->GetGender() == GENDER_MALE ? SPELL_MALE_DISGUISE : SPELL_FEMALE_DISGUISE, true);
                     target->CastSpell(target, SPELL_GENERIC_DISGUISE, true);
                 }
             }
@@ -2313,7 +2314,7 @@ class spell_q31450 : public SpellScript
     void HandleScript(SpellEffIndex /*effIndex*/)
     {
         if (Player* player = GetCaster()->ToPlayer())
-            if (player->getRace() == RACE_PANDAREN_NEUTRAL && player->GetQuestStatus(31450) == QUEST_STATUS_INCOMPLETE)
+            if (player->GetRace() == RACE_PANDAREN_NEUTRAL && player->GetQuestStatus(31450) == QUEST_STATUS_INCOMPLETE)
                 player->ShowNeutralPlayerFactionSelectUI();
     }
 
@@ -2547,6 +2548,6 @@ void AddSC_quest_spell_scripts()
     new spell_script<spell_q32683_q32726_ghostly_skeleton_key>("spell_q32683_q32726_ghostly_skeleton_key");
     new spell_script<spell_q12414_hand_over_reins>("spell_q12414_hand_over_reins");
     new aura_script<spell_cooking_for_kunzen_bonfire>("spell_cooking_for_kunzen_bonfire");
-	new spell_q30050_resuscitate();
-	new spell_q31112_ping_bunny();
+    new spell_q30050_resuscitate();
+    new spell_q31112_ping_bunny();
 }

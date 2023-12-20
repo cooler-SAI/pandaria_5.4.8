@@ -128,7 +128,7 @@ class npc_starving_hound : public CreatureScript
                 if (CanAttackMyOwner() && !attacked)
                 {
                     attacked = true;
-                    me->setFaction(15);
+                    me->SetFaction(15);
 
                     if (Unit* owner = GetClosestCreatureWithEntry(me, NPC_VIGILANT_WATCHMAN, 30.0f, true))
                         me->Attack(owner, true);
@@ -497,7 +497,7 @@ class npc_commander_lindon : public CreatureScript
                         itr->AI()->DoAction(action);
             }
 
-            struct ShieldBreakerPredicate : public std::unary_function<Unit*, bool>
+            struct ShieldBreakerPredicate 
             {
                 public:
                     ShieldBreakerPredicate(Creature const* me) : _me(me) { }

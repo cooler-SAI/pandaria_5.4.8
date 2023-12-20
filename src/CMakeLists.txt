@@ -11,12 +11,12 @@
 
 add_subdirectory(genrev)
 add_subdirectory(server)
+add_subdirectory(common)
 
 if(TOOLS)
   if( MSVC )
     add_subdirectory(tools)
   else()
-    add_definitions(-std=c++11)
     add_subdirectory(tools)
   endif()
 endif(TOOLS)
@@ -24,3 +24,4 @@ endif(TOOLS)
 if (UPDATER)
   add_subdirectory(updater)
 endif()
+

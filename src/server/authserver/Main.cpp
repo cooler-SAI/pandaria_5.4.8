@@ -26,52 +26,42 @@
 #include <ace/Dev_Poll_Reactor.h>
 #include <ace/TP_Reactor.h>
 #include <ace/ACE.h>
-#include <ace/Sig_Handler.h>
 #include <openssl/opensslv.h>
 #include <openssl/crypto.h>
-
+#include "AppenderDB.h"
+#include "Banner.h"
 #include "Common.h"
-#include "Database/DatabaseEnv.h"
 #include "Configuration/Config.h"
+#include "DatabaseEnv.h"
+#include "DatabaseLoader.h"
+#include "GitRevision.h"
 #include "Log.h"
-#include "SystemConfig.h"
-#include "Util.h"
-#include "SignalHandler.h"
+#include "MySQLThreading.h"
+#include "OpenSSLCrypto.h"
+#include "ProcessPriority.h"
 #include "RealmList.h"
 #include "RealmAcceptor.h"
-#include "AppenderDB.h"
+#include "SignalHandler.h"
+#include "SystemConfig.h"
+#include "Util.h"
+#include <boost/program_options.hpp>
+#include <boost/dll/runtime_symbol_info.hpp>
+#include <boost/filesystem/operations.hpp>
+#include <iostream>
+#include <csignal>
 
-#ifdef __linux__
-#include <sched.h>
-#include <sys/resource.h>
-#define PROCESS_HIGH_PRIORITY -15 // [-20, 19], default is 0
-#endif
+using namespace boost::program_options;
+namespace fs = boost::filesystem;
 
 #ifndef _TRINITY_REALM_CONFIG
 # define _TRINITY_REALM_CONFIG  "authserver.conf"
 #endif
 
-void AppenderDB::_write(LogMessage const& message)
-{
-    // Avoid infinite loop, PExecute triggers Logging with "sql.sql" type
-    if (!enabled || !message.type.find("sql"))
-        return;
-
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_LOG);
-    stmt->setUInt64(0, message.mtime);
-    stmt->setUInt32(1, realmId);
-    stmt->setString(2, message.type);
-    //stmt->setUInt8(3, uint8(message.level));
-    stmt->setString(3, message.text);
-    LoginDatabase.Execute(stmt);
-}
-
 bool StartDB();
 void StopDB();
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService);
 
 bool stopEvent = false;                                     // Setting it to true stops the server
-
-LoginDatabaseWorkerPool LoginDatabase;                      // Accessor to the authserver database
 
 /// Handle authserver's termination signals
 class AuthServerSignalHandler : public Trinity::SignalHandler
@@ -98,67 +88,50 @@ void usage(const char* prog)
 }
 
 /// Launch the auth server
-extern int main(int argc, char** argv)
+int main(int argc, char** argv)
 {
+    signal(SIGABRT, &Trinity::AbortHandler);
     // Command line parsing to get the configuration file name
-    char const* configFile = _TRINITY_REALM_CONFIG;
-    int count = 1;
-    while (count < argc)
-    {
-        if (strcmp(argv[count], "-c") == 0)
-        {
-            if (++count >= argc)
-            {
-                printf("Runtime-Error: -c option requires an input argument\n");
-                usage(argv[0]);
-                return 1;
-            }
-            else
-                configFile = argv[count];
-        }
-        ++count;
-    }
+    auto configFile = fs::absolute(_TRINITY_REALM_CONFIG);
+    std::string configService;
+    auto vm = GetConsoleArguments(argc, argv, configFile, configService);
+    // exit if help or version is enabled
+    if (vm.count("help") || vm.count("version"))
+        return 0;
 
-    if (!sConfigMgr->LoadInitial(configFile))
+    std::string configError;
+    if (!sConfigMgr->LoadInitial(configFile.generic_string(),
+                                 std::vector<std::string>(argv, argv + argc),
+                                 configError))
     {
-        printf("Invalid or missing configuration file : %s\n", configFile);
-        printf("Verify that the file exists and has \'[authserver]\' written in the top of the file!\n");
+        printf("Error in config file: %s\n", configError.c_str());
         return 1;
     }
 
-    TC_LOG_INFO("server.authserver", "%s (authserver)", _FULLVERSION);
-    TC_LOG_INFO("server.authserver", "<Ctrl-C> to stop.\n");
+    std::vector<std::string> overriddenKeys = sConfigMgr->OverrideWithEnvVariablesIfAny();
 
-    TC_LOG_INFO("server.authserver", "    ─╔═══╗╔═══╗╔═╗─╔╗╔═══╗╔═══╗╔═══╗╔══╗╔═══╗─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╔═╗║║╔═╗║║║╚╗║║╚╗╔╗║║╔═╗║║╔═╗║╚╣─╝║╔═╗║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╚═╝║║║─║║║╔╗╚╝║─║║║║║║─║║║╚═╝║─║║─║║─║║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║╔══╝║╚═╝║║║╚╗║║─║║║║║╚═╝║║╔╗╔╝─║║─║╚═╝║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─║║───║╔═╗║║║─║║║╔╝╚╝║║╔═╗║║║║╚╗╔╣─╗║╔═╗║─                          ");
-    TC_LOG_INFO("server.authserver", "    ─╚╝───╚╝─╚╝╚╝─╚═╝╚═══╝╚╝─╚╝╚╝╚═╝╚══╝╚╝─╚╝─                          ");
-    TC_LOG_INFO("server.authserver", "                                                                        ");
-    TC_LOG_INFO("server.authserver", "             ─╔═══╗───╔╗─╔╗────╔═══╗─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─║╔══╝───║║─║║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─║╚══╗───║╚═╝║────║╚═╝║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╚══╗║───╚══╗║────║╔═╗║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╔══╝║──╔╗──║║─╔╗─║╚═╝║─                                   ");
-    TC_LOG_INFO("server.authserver", "             ─╚═══╝──╚╝──╚╝─╚╝─╚═══╝─                                   ");
-    TC_LOG_INFO("server.authserver", "                                                                        ");
-    TC_LOG_INFO("server.authserver", "                  PANDARIA 5.4.8                                        ");
-    TC_LOG_INFO("server.authserver", "                     Based on:                                          ");
-    TC_LOG_INFO("server.authserver", "                Project SkyFireEmu                                      ");
-    TC_LOG_INFO("server.authserver", "         <http://www.projectskyfire.org/> \n                            ");
+    sLog->RegisterAppender<AppenderDB>();
+    sLog->Initialize(nullptr);
 
-    TC_LOG_INFO("server.authserver", "Using configuration file %s.", configFile);
+    Trinity::Banner::Show("authserver",
+        [](char const* text)
+        {
+            TC_LOG_INFO("server.authserver", "%s", text);
+        },
+        []()
+        {
+            TC_LOG_INFO("server.authserver", "Using configuration file %s.", sConfigMgr->GetFilename().c_str());
+            TC_LOG_INFO("server.authserver", "Using SSL version: %s (library: %s)", OPENSSL_VERSION_TEXT, OpenSSL_version(OPENSSL_VERSION));
+            TC_LOG_INFO("server.authserver", "Using Boost version: %i.%i.%i", BOOST_VERSION / 100000, BOOST_VERSION / 100 % 1000, BOOST_VERSION % 100);
+        }
+    );
 
-    TC_LOG_WARN("server.authserver", "%s (Library: %s)", OPENSSL_VERSION_TEXT, SSLeay_version(SSLEAY_VERSION));
+    for (std::string const& key : overriddenKeys)
+        TC_LOG_INFO("server.authserver", "Configuration field '%s' was overridden with environment variable.", key.c_str());
 
-#if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
-    ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);
-#else
-    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor(), true), true);
-#endif
+    OpenSSLCrypto::threadsSetup(boost::dll::program_location().remove_filename());
 
-    TC_LOG_DEBUG("server.authserver", "Max allowed open files is %d", ACE::max_handles());
+    std::shared_ptr<void> opensslHandle(nullptr, [](void*) { OpenSSLCrypto::threadsCleanup(); });
 
     // authserver PID file creation
     std::string pidFile = sConfigMgr->GetStringDefault("PidFile", "");
@@ -173,13 +146,21 @@ extern int main(int argc, char** argv)
         }
     }
 
+#if defined (ACE_HAS_EVENT_POLL) || defined (ACE_HAS_DEV_POLL)
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_Dev_Poll_Reactor(ACE::max_handles(), 1), 1), true);
+#else
+    ACE_Reactor::instance(new ACE_Reactor(new ACE_TP_Reactor(), true), true);
+#endif
+
+    TC_LOG_DEBUG("server.authserver", "Max allowed open files is %d", ACE::max_handles());
+
     // Initialize the database connection
     if (!StartDB())
         return 1;
 
     // Get the list of realms for the server
     sRealmList->Initialize(sConfigMgr->GetIntDefault("RealmsStateUpdateDelay", 20));
-    if (sRealmList->size() == 0)
+    if (sRealmList->GetRealms().empty())
     {
         TC_LOG_ERROR("server.authserver", "No valid realms specified.");
         return 1;
@@ -206,81 +187,28 @@ extern int main(int argc, char** argv)
     }
 
     // Initialize the signal handlers
-    AuthServerSignalHandler SignalINT, SignalTERM;
+    Trinity::SignalHandler signalHandler;
+    auto const _handler = [](int) { stopEvent = true; };
 
     // Register authservers's signal handlers
-    ACE_Sig_Handler Handler;
-    Handler.register_handler(SIGINT, &SignalINT);
-    Handler.register_handler(SIGTERM, &SignalTERM);
-
-#if defined(_WIN32) || defined(__linux__)
-
-    ///- Handle affinity for multiple processors and process priority
-    uint32 affinity = sConfigMgr->GetIntDefault("UseProcessors", 0);
-    bool highPriority = sConfigMgr->GetBoolDefault("ProcessPriority", false);
-
-#ifdef _WIN32 // Windows
-    HANDLE hProcess = GetCurrentProcess();
-    if (affinity > 0)
-    {
-        ULONG_PTR appAff;
-        ULONG_PTR sysAff;
-
-        if (GetProcessAffinityMask(hProcess, &appAff, &sysAff))
-        {
-            ULONG_PTR currentAffinity = affinity & appAff;            // remove non accessible processors
-
-            if (!currentAffinity)
-                TC_LOG_ERROR("server.authserver", "Processors marked in UseProcessors bitmask (hex) %x are not accessible for the authserver. Accessible processors bitmask (hex): %x", affinity, appAff);
-            else if (SetProcessAffinityMask(hProcess, currentAffinity))
-                TC_LOG_INFO("server.authserver", "Using processors (bitmask, hex): %x", currentAffinity);
-            else
-                TC_LOG_ERROR("server.authserver", "Can't set used processors (hex): %x", currentAffinity);
-        }
-    }
-
-    if (highPriority)
-    {
-        if (SetPriorityClass(hProcess, HIGH_PRIORITY_CLASS))
-            TC_LOG_INFO("server.authserver", "authserver process priority class set to HIGH");
-        else
-            TC_LOG_ERROR("server.authserver", "Can't set authserver process priority class.");
-    }
-#else // Linux
-
-    if (affinity > 0)
-    {
-        cpu_set_t mask;
-        CPU_ZERO(&mask);
-
-        for (unsigned int i = 0; i < sizeof(affinity) * 8; ++i)
-            if (affinity & (1 << i))
-                CPU_SET(i, &mask);
-
-        if (sched_setaffinity(0, sizeof(mask), &mask))
-            TC_LOG_ERROR("server.authserver", "Can't set used processors (hex): %x, error: %s", affinity, strerror(errno));
-        else
-        {
-            CPU_ZERO(&mask);
-            sched_getaffinity(0, sizeof(mask), &mask);
-            TC_LOG_INFO("server.authserver", "Using processors (bitmask, hex): %lx", *(__cpu_mask*)(&mask));
-        }
-    }
-
-    if (highPriority)
-    {
-        if (setpriority(PRIO_PROCESS, 0, PROCESS_HIGH_PRIORITY))
-            TC_LOG_ERROR("server.authserver", "Can't set authserver process priority class, error: %s", strerror(errno));
-        else
-            TC_LOG_INFO("server.authserver", "authserver process priority class set to %i", getpriority(PRIO_PROCESS, 0));
-    }
-
+    signalHandler.handle_signal(SIGINT, _handler);
+    signalHandler.handle_signal(SIGTERM, _handler);
+#if defined(_WIN32)
+    signalHandler.handle_signal(SIGBREAK, _handler);
 #endif
-#endif
+
+    // Set process priority according to configuration settings
+    SetProcessPriority("server.authserver", sConfigMgr->GetIntDefault(CONFIG_PROCESSOR_AFFINITY, 0), sConfigMgr->GetBoolDefault(CONFIG_HIGH_PRIORITY, false));
 
     // maximum counter for next ping
     uint32 numLoops = (sConfigMgr->GetIntDefault("MaxPingTime", 30) * (MINUTE * 1000000 / 100000));
     uint32 loopCounter = 0;
+
+    // Enabled a timed callback for handling the database keep alive ping
+    // int32 dbPingInterval = sConfigMgr->GetIntDefault("MaxPingTime", 30);
+    // std::shared_ptr<Trinity::Asio::DeadlineTimer> dbPingTimer = std::make_shared<Trinity::Asio::DeadlineTimer>(*ioContext);
+    // dbPingTimer->expires_from_now(boost::posix_time::minutes(dbPingInterval));
+    // dbPingTimer->async_wait(std::bind(&KeepDatabaseAliveHandler, std::weak_ptr<Trinity::Asio::DeadlineTimer>(dbPingTimer), dbPingInterval, std::placeholders::_1));
 
     // Wait for termination signal
     while (!stopEvent)
@@ -332,12 +260,21 @@ bool StartDB()
         synch_threads = 1;
     }
 
-    // NOTE: While authserver is singlethreaded you should keep synch_threads == 1. Increasing it is just silly since only 1 will be used ever.
-    if (!LoginDatabase.Open(dbstring, uint8(worker_threads), uint8(synch_threads)))
-    {
-        TC_LOG_ERROR("server.authserver", "Cannot connect to database");
+    DatabaseLoader loader("server.authserver", DatabaseLoader::DATABASE_NONE);
+    loader
+        .AddDatabase(LoginDatabase, "Login");
+
+    if (!loader.Load())
         return false;
-    }
+
+    TC_LOG_INFO("server.authserver", "Started auth database connection pool.");        
+
+    // // NOTE: While authserver is singlethreaded you should keep synch_threads == 1. Increasing it is just silly since only 1 will be used ever.
+    // if (!LoginDatabase.Open(dbstring, uint8(worker_threads), uint8(synch_threads)))
+    // {
+    //     TC_LOG_ERROR("server.authserver", "Cannot connect to database");
+    //     return false;
+    // }
 
     TC_LOG_INFO("server.authserver", "Started auth database connection pool.");
     sLog->SetRealmId(0); // Enables DB appenders when realm is set.
@@ -349,4 +286,42 @@ void StopDB()
 {
     LoginDatabase.Close();
     MySQL::Library_End();
+}
+
+variables_map GetConsoleArguments(int argc, char** argv, fs::path& configFile, std::string& configService)
+{
+    options_description all("Allowed options");
+    all.add_options()
+        ("help,h", "print usage message")
+        ("version,v", "print version build info")
+        ("config,c", value<fs::path>(&configFile)->default_value(fs::absolute(_TRINITY_REALM_CONFIG)),
+                     "use <arg> as configuration file")
+        ;
+#if TRINITY_PLATFORM == TRINITY_PLATFORM_WINDOWS
+    options_description win("Windows platform specific options");
+    win.add_options()
+        ("service,s", value<std::string>(&configService)->default_value(""), "Windows service options: [install | uninstall]")
+        ;
+
+    all.add(win);
+#else
+    (void)configService;
+#endif
+    variables_map variablesMap;
+    try
+    {
+        store(command_line_parser(argc, argv).options(all).allow_unregistered().run(), variablesMap);
+        notify(variablesMap);
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+    }
+
+    if (variablesMap.count("help"))
+        std::cout << all << "\n";
+    else if (variablesMap.count("version"))
+        std::cout << GitRevision::GetFullVersion() << "\n";
+
+    return variablesMap;
 }

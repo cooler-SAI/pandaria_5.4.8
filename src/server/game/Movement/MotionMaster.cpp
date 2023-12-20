@@ -76,6 +76,29 @@ MotionMaster::~MotionMaster()
     }
 }
 
+// MovementGenerator* MotionMaster::GetCurrentMovementGenerator() const
+// {
+//     if (!_generators.empty())
+//         return *_generators.begin();
+
+//     if (_defaultGenerator)
+//         return _defaultGenerator.get();
+
+//     return nullptr;
+// }
+
+// MovementGeneratorType MotionMaster::GetCurrentMovementGeneratorType() const
+// {
+//     if (Empty())
+//         return MAX_MOTION_TYPE;
+
+//     MovementGenerator const* movement = GetCurrentMovementGenerator();
+//     if (!movement)
+//         return MAX_MOTION_TYPE;
+
+//     return movement->GetMovementGeneratorType();
+// }
+
 void MotionMaster::UpdateMotion(uint32 diff)
 {
     if (!_owner)

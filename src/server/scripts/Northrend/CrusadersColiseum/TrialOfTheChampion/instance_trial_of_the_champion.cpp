@@ -285,7 +285,7 @@ class instance_trial_of_the_champion : public InstanceMapScript
                                 boss->GetMotionMaster()->MovePoint(0, 746.88f, 618.74f, 411.06f);
                                 boss->RemoveFlag(UNIT_FIELD_FLAGS,UNIT_FLAG_NON_ATTACKABLE);
                                 boss->SetReactState(REACT_AGGRESSIVE);
-                                boss->setFaction(16);
+                                boss->SetFaction(16);
                             }
                         }
                         break;

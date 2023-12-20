@@ -31,6 +31,7 @@
 #include "MapManager.h"
 #include "Config.h"
 #include "Group.h"
+#include "Realm.h"
 
 void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 {
@@ -61,7 +62,7 @@ void WorldSession::SendNameQueryOpcode(ObjectGuid guid)
 
     if (nameData)
     {
-        data << uint32(realmID); // realmIdSecond
+        data << uint32(realm.Id.Realm); // realmIdSecond
         data << uint32(1); // AccID
         data << uint8(nameData->m_class);
         data << uint8(nameData->m_race);
@@ -185,7 +186,7 @@ void WorldSession::SendRealmNameQueryOpcode(uint32 realmId)
     if (found)
     {
         data.WriteBits(realmName.length(), 8);
-        data.WriteBit(realmId == realmID);
+        data.WriteBit(realmId == realm.Id.Realm);
         data.WriteBits(realmName.length(), 8);
         data.FlushBits();
 
@@ -296,10 +297,10 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
 
     if (creatureInfo)
     {
-        std::string Name, FemaleName, SubName;
+        std::string Name, FemaleName, Title;
         Name = creatureInfo->Name;
         FemaleName = creatureInfo->FemaleName;
-        SubName = creatureInfo->SubName;
+        Title = creatureInfo->SubName;
 
         uint8 qItemsSize = 0;
 
@@ -315,13 +316,13 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
             {
                 ObjectMgr::GetLocaleString(creatureLocale->Name, locale, Name);
                 ObjectMgr::GetLocaleString(creatureLocale->FemaleName, locale, FemaleName);
-                ObjectMgr::GetLocaleString(creatureLocale->SubName, locale, SubName);
+                ObjectMgr::GetLocaleString(creatureLocale->Title, locale, Title);
             }
         }
 
         TC_LOG_DEBUG("network", "WORLD: CMSG_CREATURE_QUERY '%s' - Entry: %u.", creatureInfo->Name.c_str(), entry);
 
-        data.WriteBits(SubName.length() ? SubName.length() + 1 : 0, 11);
+        data.WriteBits(Title.length() ? Title.length() + 1 : 0, 11);
         data.WriteBits(qItemsSize, 22);                       // Quest items
         data.WriteBits(0, 11);
 
@@ -347,8 +348,8 @@ void WorldSession::HandleCreatureQueryOpcode(WorldPacket& recvData)
         data << uint32(creatureInfo->movementId);                     // CreatureMovementInfo.dbc
         data << Name;
 
-        if (SubName != "")
-            data << SubName;                                          // Subname
+        if (Title != "")
+            data << Title;                                            // Subname
 
         data << uint32(creatureInfo->Modelid1);                       // Modelid1
         data << uint32(creatureInfo->Modelid3);                       // Modelid3
@@ -425,8 +426,8 @@ void WorldSession::HandleGameObjectQueryOpcode(WorldPacket& recvData)
         {
             if (GameObjectLocale const* gl = sObjectMgr->GetGameObjectLocale(entry))
             {
-                ObjectMgr::GetLocaleString(gl->Name, loc_idx, Name);
-                ObjectMgr::GetLocaleString(gl->CastBarCaption, loc_idx, CastBarCaption);
+                ObjectMgr::GetLocaleStringOld(gl->Name, loc_idx, Name);
+                ObjectMgr::GetLocaleStringOld(gl->CastBarCaption, loc_idx, CastBarCaption);
             }
         }
 
@@ -536,6 +537,7 @@ void WorldSession::HandleCorpseQueryOpcode(WorldPacket& /*recvData*/)
     SendPacket(&data);
 }
 
+// hack fix
 void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
 {
     uint32 textID;
@@ -573,8 +575,9 @@ void WorldSession::HandleNpcTextQueryOpcode(WorldPacket& recvData)
     for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
         data << float(0);
 
-    data << textID;                                     // should be a broadcast id
-
+    //data << textID;    // should be a broadcast id   
+    data << pGossip->Options[0].BroadcastTextID;
+                        
     for (int i = 0; i < MAX_GOSSIP_TEXT_OPTIONS - 1; i++)
         data << uint32(0);
 
@@ -628,7 +631,7 @@ void WorldSession::HandlePageTextQueryOpcode(WorldPacket& recvData)
             int loc_idx = GetSessionDbLocaleIndex();
             if (loc_idx >= 0)
                 if (PageTextLocale const* player = sObjectMgr->GetPageTextLocale(pageID))
-                    ObjectMgr::GetLocaleString(player->Text, loc_idx, Text);
+                    ObjectMgr::GetLocaleStringOld(player->Text, loc_idx, Text);
 
             data.WriteBits(Text.size(), 12);
 

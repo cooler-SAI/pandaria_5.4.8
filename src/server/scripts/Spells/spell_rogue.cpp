@@ -26,6 +26,7 @@
 #include "SpellAuraEffects.h"
 #include "SpellHistory.h"
 #include "spell_common.h"
+#include "Random.h"
 
 enum RogueSpells
 {
@@ -2647,7 +2648,7 @@ class spell_rog_cloak_and_dagger : public SpellScript
 
     void HandleHit()
     {
-        if ((GetCaster()->HasAura(SPELL_ROGUE_CLOAK_AND_DAGGER)) || (GetCaster()->HasSpell(SPELL_ROGUE_SUBTERFUGE_TALENT)))
+        if (GetCaster()->HasAura(SPELL_ROGUE_CLOAK_AND_DAGGER))
             if (((GetCaster()->HasAura(SPELL_ROGUE_SHADOW_DANCE) || GetCaster()->HasAura(SPELL_ROGUE_SUBTERFUGE_STEALTH)) || !GetCaster()->HasAuraType(SPELL_AURA_MOD_STEALTH)))
                 GetCaster()->CastSpell(GetHitUnit(), SPELL_ROGUE_CLOAK_AND_DAGGER_TELEPORT, true);
     }

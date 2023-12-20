@@ -208,7 +208,7 @@ public:
     BattlegroundBFG();
 
     /* inherited from BattlegroundClass */
-    void AddPlayer(Player* player);
+    void AddPlayer(Player* player) override;
     void RemovePlayer(Player* player, uint64 guid, uint32 team);
     void StartingEventCloseDoors() override;
     void StartingEventOpenDoors() override;

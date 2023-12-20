@@ -20,7 +20,6 @@
 
 #include "Define.h"
 #include "Errors.h"
-#include <ace/Singleton.h>
 #include <list>
 #include <map>
 
@@ -83,8 +82,15 @@ enum ConditionTypes
     CONDITION_TAXI                     = 46,                   // 0                0              0                  true if player is on taxi
     CONDITION_QUESTSTATE               = 47,                   // quest_id         state_mask     0                  true if player is in any of the provided quest states for the quest (1 = not taken, 2 = completed, 8 = in progress, 32 = failed, 64 = rewarded)
     CONDITION_QUEST_OBJECTIVE_COMPLETE = 48,                   // ID               0              0                  true if player has ID objective complete, but quest not yet rewarded
-    CONDITION_MAX                      = 49,                   // MAX
-
+    CONDITION_DIFFICULTY_ID            = 49,                   // Difficulty       0              0                  true is map has difficulty id
+    CONDITION_GAMEMASTER               = 50,                   // canBeGM          0              0                  true if player is gamemaster (or can be gamemaster)
+    CONDITION_OBJECT_ENTRY_GUID_MASTER = 51,                   // TypeID                 entry          guid               true if object is type TypeID and the entry is 0 or matches entry of the object or matches guid of the object using master branch TypeID
+    CONDITION_TYPE_MASK_MASTER         = 52,                   // TypeMask               0              0                  true if object is type object's TypeMask matches provided TypeMask using master branch TypeMask
+    CONDITION_BATTLE_PET_COUNT         = 53,                   // SpecieId               count          ComparisonType     true if player has `count` of battle pet species
+    CONDITION_SCENARIO_STEP            = 54,                   // ScenarioStepId         0              0                  true if player is at scenario with current step equal to ScenarioStepID
+    CONDITION_SCENE_IN_PROGRESS        = 55,                   // SceneScriptPackageId   0              0                  true if player is playing a scene with ScriptPackageId equal to given value
+    CONDITION_PLAYER_CONDITION         = 56,                   // PlayerConditionId      0              0                  true if player satisfies PlayerCondition
+    
     CONDITION_project_NONE             = 100,
     CONDITION_SAI_PHASE                = 101,                  // phase            0              0                  true if object sai phase = value1
     CONDITION_PLAYER_SPEC              = 102,                  // spec             0              0                  true if player spec = value1
@@ -94,6 +100,7 @@ enum ConditionTypes
     CONDITION_MONTHLY_QUEST_DONE       = 106,                  // quest            0              0                  true if monthly quest has been completed for the month
     CONDITION_REPUTATION_VALUE         = 107,                  // faction_id       rep_value      0                  true if reputation value more or equal than rep_value
     CONDITION_project_MAX              = 108,                  // MAX
+    CONDITION_MAX
 };
 
 /*! Documentation on implementing a new ConditionSourceType:
@@ -236,6 +243,7 @@ struct Condition
 };
 
 typedef std::list<Condition*> ConditionList;
+//typedef std::vector<Condition*> ConditionContainer; // from TC
 typedef std::map<uint32, ConditionList> ConditionTypeContainer;
 typedef std::map<ConditionSourceType, ConditionTypeContainer> ConditionContainer;
 typedef std::map<uint32, ConditionTypeContainer> CreatureSpellConditionContainer;
@@ -247,13 +255,14 @@ typedef std::map<uint32, ConditionList> ConditionReferenceContainer;//only used 
 
 class ConditionMgr
 {
-    friend class ACE_Singleton<ConditionMgr, ACE_Null_Mutex>;
 
     private:
         ConditionMgr();
         ~ConditionMgr();
 
     public:
+        static ConditionMgr* instance();
+
         void LoadConditions(bool isReload = false);
         bool isConditionTypeValid(Condition* cond);
         ConditionList GetConditionReferences(uint32 refId);
@@ -297,6 +306,6 @@ class ConditionMgr
         std::unordered_set<VehicleAIBase*> m_vehicleAIs;
 };
 
-#define sConditionMgr ACE_Singleton<ConditionMgr, ACE_Null_Mutex>::instance()
+#define sConditionMgr ConditionMgr::instance()
 
 #endif

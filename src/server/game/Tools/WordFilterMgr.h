@@ -20,18 +20,15 @@
 
 #include <string>
 #include <map>
-#include <ace/Singleton.h>
 
 class WordFilterMgr
 {
     private:
-        friend class ACE_Singleton<WordFilterMgr, ACE_Null_Mutex>;
-
         WordFilterMgr();
         ~WordFilterMgr();
 
     public:
-		
+        static WordFilterMgr* instance();
         /// Note for 0.6v : Will used std::map instead of std::unordered_map, because of problems with cross-platform compilation.
         // [letter][analogs] 
         typedef std::map<char, std::string> LetterAnalogMap; 
@@ -40,17 +37,17 @@ class WordFilterMgr
         typedef std::map<std::string, std::string> BadWordMapMail;
 
         void LoadLetterAnalogs();
-        void LoadBadWords();	
-		
+        void LoadBadWords();    
+        
         inline void ConvertLettersToAnalogs(std::string& text);
         std::string FindBadWord(const std::string& text, bool mail = false);
-		
+        
         // manipulations with container 
         bool AddBadWord(const std::string& badWord, bool toDB = false);
         bool AddBadWordMail(const std::string& badWord, bool toDB = false);
         bool RemoveBadWord(const std::string& badWord, bool fromDB = false);
 
-		// element (const) accessor 
+        // element (const) accessor 
         BadWordMap GetBadWords() const { return m_badWords; }
 
     private:
@@ -59,6 +56,6 @@ class WordFilterMgr
         BadWordMapMail m_badWordsMail;
 };
 
-#define sWordFilterMgr ACE_Singleton<WordFilterMgr, ACE_Null_Mutex>::instance()
+#define sWordFilterMgr WordFilterMgr::instance()
 
 #endif

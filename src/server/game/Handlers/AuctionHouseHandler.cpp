@@ -28,7 +28,6 @@
 #include "UpdateMask.h"
 #include "Util.h"
 #include "AccountMgr.h"
-#include "CustomLogs.h"
 #include "ServiceMgr.h"
 
 //void called when player click on auctioneer npc
@@ -73,13 +72,13 @@ void WorldSession::HandleAuctionHelloOpcode(WorldPacket& recvData)
 //this void causes that auction window is opened
 void WorldSession::SendAuctionHello(ObjectGuid guid, Creature* unit)
 {
-    if (GetPlayer()->getLevel() < sWorld->getIntConfig(CONFIG_AUCTION_LEVEL_REQ))
+    if (GetPlayer()->GetLevel() < sWorld->getIntConfig(CONFIG_AUCTION_LEVEL_REQ))
     {
         SendNotification(GetTrinityString(LANG_AUCTION_REQ), sWorld->getIntConfig(CONFIG_AUCTION_LEVEL_REQ));
         return;
     }
 
-    AuctionHouseEntry const* ahEntry = AuctionHouseMgr::GetAuctionHouseEntry(unit->getFaction(), true);
+    AuctionHouseEntry const* ahEntry = AuctionHouseMgr::GetAuctionHouseEntry(unit->GetFaction(), true);
     if (!ahEntry)
         return;
 
@@ -214,14 +213,15 @@ void WorldSession::SendAuctionOwnerNotification(AuctionEntry* auction)
     SendPacket(&data);
 }
 
-void WorldSession::SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId)
-{
-    WorldPacket data(SMSG_AUCTION_REMOVED_NOTIFICATION, (4+4+4));
-    data << uint32(auctionId);
-    data << uint32(itemEntry);
-    data << uint32(randomPropertyId);
-    SendPacket(&data);
-}
+// not in 5.4.8
+// void WorldSession::SendAuctionRemovedNotification(uint32 auctionId, uint32 itemEntry, int32 randomPropertyId)
+// {
+//     WorldPacket data(SMSG_AUCTION_REMOVED_NOTIFICATION, (4+4+4)); 
+//     data << uint32(auctionId);
+//     data << uint32(itemEntry);
+//     data << uint32(randomPropertyId);
+//     SendPacket(&data);
+// }
 
 //this void creates new auction and adds auction to some auctionhouse
 void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
@@ -314,11 +314,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-        {
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
-            auctioneer = creature ? creature->GetGUID() : 0;
-        }
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionSellItem - Unit (GUID: %u) not found or you can't interact with him.", GUID_LOPART(auctioneer));
@@ -326,8 +321,8 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         }
     }
 
-    AuctionHouseEntry const* auctionHouseEntry = AuctionHouseMgr::GetAuctionHouseEntry(creature->getFaction());
-    AuctionHouseEntry const* auctionHouseEntryClient = AuctionHouseMgr::GetAuctionHouseEntry(creature->getFaction(), true);
+    AuctionHouseEntry const* auctionHouseEntry = AuctionHouseMgr::GetAuctionHouseEntry(creature->GetFaction());
+    AuctionHouseEntry const* auctionHouseEntryClient = AuctionHouseMgr::GetAuctionHouseEntry(creature->GetFaction(), true);
 
     if (!auctionHouseEntry || !auctionHouseEntryClient)
     {
@@ -415,7 +410,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
     Item* item = items[0];
 
     uint32 auctionTime = uint32(etime * sWorld->getRate(RATE_AUCTION_TIME));
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     uint32 deposit = sAuctionMgr->GetAuctionDeposit(auctionHouseEntryClient, etime, item, finalCount);
     if (!_player->HasEnoughMoney((uint64)deposit))
@@ -453,9 +448,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         AH->deposit = deposit;
         AH->auctionHouseEntry = auctionHouseEntry;
 
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, item, item->GetCount(), "To auction");
-
         TC_LOG_INFO("network", "CMSG_AUCTION_SELL_ITEM: Player %s (guid %d) is selling item %s entry %u (guid %d) "
             "to auctioneer %u with count %u with initial bid " UI64FMTD " with buyout " UI64FMTD " and with time %u (in sec) in auctionhouse %u",
             _player->GetName().c_str(), _player->GetGUIDLow(), item->GetTemplate()->Name1.c_str(), item->GetEntry(), item->GetGUIDLow(),
@@ -465,7 +457,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
 
         _player->MoveItemFromInventory(item->GetBagSlot(), item->GetSlot(), true);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
         item->DeleteFromInventoryDB(trans);
         item->SaveToDB(trans);
         AH->SaveToDB(trans);
@@ -506,9 +498,6 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         AH->deposit = deposit;
         AH->auctionHouseEntry = auctionHouseEntry;
 
-        if (HasFlag(ACC_FLAG_ITEM_LOG))
-            logs::ItemLog(_player, newItem, newItem->GetCount(), "To auction");
-
         TC_LOG_INFO("network", "CMSG_AUCTION_SELL_ITEM: Player %s (guid %d) is selling item %s entry %u (guid %d) to "
              "auctioneer %u with count %u with initial bid " UI64FMTD " with buyout " UI64FMTD " and with time %u (in sec) in auctionhouse %u",
              _player->GetName().c_str(), _player->GetGUIDLow(), newItem->GetTemplate()->Name1.c_str(), newItem->GetEntry(),
@@ -516,7 +505,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
         sAuctionMgr->AddAItem(newItem);
         auctionHouse->AddAuction(AH);
 
-        SQLTransaction trans = CharacterDatabase.BeginTransaction();
+        CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
         for (uint32 j = 0; j < itemCount; ++j)
         {
@@ -540,7 +529,7 @@ void WorldSession::HandleAuctionSellItem(WorldPacket& recvData)
 
                 if (item2->GetState() == ITEM_NEW)
                 {
-                    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_INVENTORY_ITEM);
+                    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_INVENTORY_ITEM);
                     stmt->setUInt32(0, _player->GetGUIDLow());
                     stmt->setUInt32(1, item2->GetContainer() ? item2->GetContainer()->GetGUIDLow() : 0);
                     stmt->setUInt8 (2, item2->GetSlot());
@@ -600,8 +589,6 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionPlaceBid - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -613,7 +600,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     AuctionEntry* auction = auctionHouse->GetAuction(auctionId);
     Player* player = GetPlayer();
@@ -654,7 +641,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
         return;
     }
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
 
     if (price < auction->buyout || auction->buyout == 0)
     {
@@ -676,7 +663,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
         auction->bid = price;
         GetPlayer()->UpdateAchievementCriteria(ACHIEVEMENT_CRITERIA_TYPE_HIGHEST_AUCTION_BID, price);
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_AUCTION_BID);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_AUCTION_BID);
         stmt->setUInt32(0, auction->bidder);
         stmt->setUInt32(1, auction->bid);
         stmt->setUInt32(2, auction->Id);
@@ -710,7 +697,7 @@ void WorldSession::HandleAuctionPlaceBid(WorldPacket& recvData)
 
         uint32 itemEntry = auction->itemEntry;
         sAuctionMgr->RemoveAItem(auction->itemGUIDLow);
-        auctionHouse->RemoveAuction(auction, itemEntry);
+        auctionHouse->RemoveAuction(auction);
     }
     player->SaveInventoryAndGoldToDB(trans);
     CharacterDatabase.CommitTransaction(trans);
@@ -747,8 +734,6 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionRemoveItem - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -760,12 +745,12 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     AuctionEntry* auction = auctionHouse->GetAuction(auctionId);
     Player* player = GetPlayer();
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     if (auction && auction->owner == player->GetGUIDLow())
     {
         Item* pItem = sAuctionMgr->GetAItem(auction->itemGUIDLow);
@@ -811,7 +796,7 @@ void WorldSession::HandleAuctionRemoveItem(WorldPacket& recvData)
 
     uint32 itemEntry = auction->itemEntry;
     sAuctionMgr->RemoveAItem(auction->itemGUIDLow);
-    auctionHouse->RemoveAuction(auction, itemEntry);
+    auctionHouse->RemoveAuction(auction);
 }
 
 //called when player lists his bids
@@ -858,8 +843,6 @@ void WorldSession::HandleAuctionListBidderItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListBidderItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -872,7 +855,7 @@ void WorldSession::HandleAuctionListBidderItems(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     uint32 count = 0;
     uint32 totalcount = 0;
@@ -928,8 +911,6 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListOwnerItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -941,7 +922,7 @@ void WorldSession::HandleAuctionListOwnerItems(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     uint32 count = 0;
     uint32 totalcount = 0;
@@ -1010,8 +991,6 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recvData)
     Creature* creature = GetPlayer()->GetNPCIfCanInteractWith(auctioneer, UNIT_NPC_FLAG_AUCTIONEER);
     if (!creature)
     {
-        if (IsPremium() && auctioneer == _player->GetGUID())    // for premium auc command
-            creature = sServiceMgr->GetPremiumAuc(GetPlayer());
         if (!creature)
         {
             TC_LOG_DEBUG("network", "WORLD: HandleAuctionListItems - Unit (GUID: %u) not found or you can't interact with him.", uint32(GUID_LOPART(auctioneer)));
@@ -1023,7 +1002,7 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recvData)
     if (GetPlayer()->HasUnitState(UNIT_STATE_DIED))
         GetPlayer()->RemoveAurasByType(SPELL_AURA_FEIGN_DEATH);
 
-    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->getFaction());
+    AuctionHouseObject* auctionHouse = sAuctionMgr->GetAuctionsMap(creature->GetFaction());
 
     //TC_LOG_DEBUG("misc", "Auctionhouse search (GUID: %u TypeId: %u)",, list from: %u, searchedname: %s, levelmin: %u, levelmax: %u, auctionSlotID: %u, auctionMainCategory: %u, auctionSubCategory: %u, quality: %u, usable: %u",
     //  GUID_LOPART(guid), GuidHigh2TypeId(GUID_HIPART(guid)), listfrom, searchedname.c_str(), levelmin, levelmax, auctionSlotID, auctionMainCategory, auctionSubCategory, quality, usable);
@@ -1035,7 +1014,7 @@ void WorldSession::HandleAuctionListItems(WorldPacket& recvData)
 
     wstrToLower(wsearchedname);
 
-    sAuctionMgr->QueryAuctionItems(creature->getFaction(), _player,
+    sAuctionMgr->QueryAuctionItems(creature->GetFaction(), _player,
         searchString, listFrom, levelMin, levelMax, usableItems,
         auctionSlotId, auctionMainCategory, auctionSubCategory, quality, getAll, sortOrder);
 }

@@ -472,13 +472,13 @@ class BattlegroundSA : public Battleground
 
         /* inherited from BattlegroundClass */
         /// Called when a player join battle
-        void AddPlayer(Player* player);
+        void AddPlayer(Player* player) override;
         /// Called when battle start
         void StartingEventCloseDoors();
         void StartingEventOpenDoors();
         /// Called for ini battleground, after that the first player be entered
         bool SetupBattleground();
-        void Reset();
+        void Reset() override;
         /// Called for generate packet contain worldstate data
         void FillInitialWorldStates(WorldStateBuilder& builder);
         /// Called when a player deal damage to building (door)

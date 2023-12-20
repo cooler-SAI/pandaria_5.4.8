@@ -91,10 +91,10 @@ public:
 
     static bool HandleResetStatsOrLevelHelper(Player* player)
     {
-        ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(player->getClass());
+        ChrClassesEntry const* classEntry = sChrClassesStore.LookupEntry(player->GetClass());
         if (!classEntry)
         {
-            TC_LOG_ERROR("misc", "Class %u not found in DBC (Wrong DBC files?)", player->getClass());
+            TC_LOG_ERROR("misc", "Class %u not found in DBC (Wrong DBC files?)", player->GetClass());
             return false;
         }
 
@@ -104,11 +104,11 @@ public:
         if (!player->HasAuraType(SPELL_AURA_MOD_SHAPESHIFT))
             player->SetShapeshiftForm(FORM_NONE);
 
-        player->setFactionForRace(player->getRace());
+        player->setFactionForRace(player->GetRace());
 
-        player->SetRace(player->getRace());
-        player->SetClass(player->getClass());
-        player->SetGender(player->getGender());
+        player->SetRace(player->GetRace());
+        player->SetClass(player->GetClass());
+        player->SetGender(player->GetGender());
 
         player->SetFieldPowerType(powerType);
 
@@ -134,10 +134,10 @@ public:
         if (!HandleResetStatsOrLevelHelper(target))
             return false;
 
-        uint8 oldLevel = target->getLevel();
+        uint8 oldLevel = target->GetLevel();
 
         // set starting level
-        uint32 startLevel = target->getClass() != CLASS_DEATH_KNIGHT
+        uint32 startLevel = target->GetClass() != CLASS_DEATH_KNIGHT
             ? sWorld->getIntConfig(CONFIG_START_PLAYER_LEVEL)
             : sWorld->getIntConfig(CONFIG_START_HEROIC_PLAYER_LEVEL);
 
@@ -179,7 +179,7 @@ public:
         }
         else
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
             stmt->setUInt16(0, uint16(AT_LOGIN_RESET_SPELLS));
             stmt->setUInt32(1, GUID_LOPART(targetGuid));
             CharacterDatabase.Execute(stmt);
@@ -246,7 +246,7 @@ public:
         }
         else if (targetGuid)
         {
-            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
+            CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ADD_AT_LOGIN_FLAG);
             stmt->setUInt16(0, uint16(AT_LOGIN_NONE | AT_LOGIN_RESET_PET_TALENTS));
             stmt->setUInt32(1, GUID_LOPART(targetGuid));
             CharacterDatabase.Execute(stmt);
@@ -292,11 +292,11 @@ public:
             return false;
         }
 
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_AT_LOGIN_FLAGS);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ALL_AT_LOGIN_FLAGS);
         stmt->setUInt16(0, uint16(atLogin));
         CharacterDatabase.Execute(stmt);
 
-        TRINITY_READ_GUARD(HashMapHolder<Player>::LockType, *HashMapHolder<Player>::GetLock());
+        std::shared_lock<std::shared_mutex> lock(*HashMapHolder<Player>::GetLock());
         HashMapHolder<Player>::MapType const& plist = sObjectAccessor->GetPlayers();
         for (HashMapHolder<Player>::MapType::const_iterator itr = plist.begin(); itr != plist.end(); ++itr)
             itr->second->SetAtLoginFlag(atLogin);

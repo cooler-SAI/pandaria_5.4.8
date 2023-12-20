@@ -38,6 +38,7 @@
 #include "adt.h"
 #include "wdt.h"
 #include <fcntl.h>
+#include <filesystem>
 
 #if defined( __GNUC__ )
     #define _open   open
@@ -135,30 +136,14 @@ TCHAR const* LocalesT[] =
 
 #define LOCALES_COUNT 15
 
-void CreateDir(std::string const& path)
+void CreateDir(std::filesystem::path const& path)
 {
-    if (chdir(path.c_str()) == 0)
-    {
-        chdir("../");
+    namespace fs = std::filesystem;
+    if (fs::exists(path))
         return;
-    }
-#ifdef _WIN32
-    _mkdir(path.c_str());
-#else
-    mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO); // 0777
-#endif
-}
 
-bool FileExists(TCHAR const* fileName)
-{
-    int fp = _open(fileName, OPEN_FLAGS);
-    if(fp != -1)
-    {
-        _close(fp);
-        return true;
-    }
-
-    return false;
+    if (!fs::create_directory(path))
+        throw std::runtime_error("Unable to create directory" + path.string());
 }
 
 void Usage(char const* prg)
@@ -334,7 +319,7 @@ void ReadLiquidTypeTableDBC()
         LiqType[dbc.getRecord(x).getUInt(0)] = dbc.getRecord(x).getUInt(3);
 
     SFileCloseFile(dbcFile);
-    printf("Done! (%lu LiqTypes loaded)\n", LiqType_count);
+    printf("Done! (%zu LiqTypes loaded)\n", LiqType_count);
 }
 
 //
@@ -1102,9 +1087,13 @@ void ExtractDBCFiles(int l, bool basicLocale)
             }
 
             filename = foundFile.cFileName;
-            filename = outputPath + filename.substr(filename.rfind('\\'));
-            if (ExtractFile(dbcFile, filename.c_str()))
-                ++count;
+            size_t path_sper_pos_found = filename.rfind('\\');
+            if (path_sper_pos_found != std::string::npos)
+            {
+                filename = outputPath + filename.substr(path_sper_pos_found + 1);
+                if (ExtractFile(dbcFile, filename.c_str()))
+                    ++count;
+            }
 
             SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));
@@ -1145,9 +1134,13 @@ void ExtractDB2Files(int l, bool basicLocale)
             }
 
             filename = foundFile.cFileName;
-            filename = outputPath + filename.substr(filename.rfind('\\'));
-            if (ExtractFile(dbcFile, filename.c_str()))
-                ++count;
+            size_t path_sper_pos_found = filename.rfind('\\');
+            if (path_sper_pos_found != std::string::npos)
+            {
+                filename = outputPath + filename.substr(path_sper_pos_found + 1);
+                if (ExtractFile(dbcFile, filename.c_str()))
+                    ++count;
+            }
 
             SFileCloseFile(dbcFile);
         } while (SFileFindNextFile(listFile, &foundFile));

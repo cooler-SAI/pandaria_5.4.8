@@ -145,10 +145,10 @@ void GmTicket::LoadFromDB(Field* fields)
     _haveTicket = fields[++index].GetBool();
 }
 
-void GmTicket::SaveToDB(SQLTransaction& trans) const
+void GmTicket::SaveToDB(CharacterDatabaseTransaction trans) const
 {
     uint8 index = 0;
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GM_TICKET);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GM_TICKET);
     stmt->setUInt32(index, _ticketId);
     stmt->setUInt64(++index, GUID_LOPART(_playerGuid));
     stmt->setString(++index, _playerName);
@@ -173,7 +173,7 @@ void GmTicket::SaveToDB(SQLTransaction& trans) const
 
 void GmTicket::DeleteFromDB()
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GM_TICKET);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GM_TICKET);
     stmt->setUInt32(0, _ticketId);
     CharacterDatabase.Execute(stmt);
 }
@@ -201,7 +201,7 @@ std::string GmTicket::FormatMessageString(ChatHandler& handler, bool detailed) c
 
     std::stringstream ss;
     ss << handler.PGetParseString(LANG_COMMAND_TICKETLISTGUID, _ticketId);
-	ss << handler.PGetParseString(LANG_COMMAND_TICKETLISTNAME, _playerName.c_str());
+    ss << handler.PGetParseString(LANG_COMMAND_TICKETLISTNAME, _playerName.c_str());
     ss << handler.PGetParseString(LANG_COMMAND_TICKETLISTAGECREATE, (secsToTimeString(curTime - _ticketCreateTime, true, false)).c_str());
     ss << handler.PGetParseString(LANG_COMMAND_TICKETLISTAGE, (secsToTimeString(curTime - _lastModifiedTime, true, false)).c_str());
 
@@ -284,10 +284,10 @@ void BugTicket::LoadFromDB(Field* fields)
     _comment = fields[++index].GetString();
 }
 
-void BugTicket::SaveToDB(SQLTransaction& trans) const
+void BugTicket::SaveToDB(CharacterDatabaseTransaction trans) const
 {
     uint8 index = 0;
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GM_BUG);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_GM_BUG);
     stmt->setUInt32(index, _ticketId);
     stmt->setUInt32(++index, GUID_LOPART(_playerGuid));
     stmt->setString(++index, _bugnote);
@@ -305,7 +305,7 @@ void BugTicket::SaveToDB(SQLTransaction& trans) const
 
 void BugTicket::DeleteFromDB()
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GM_BUG);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GM_BUG);
     stmt->setUInt32(0, _ticketId);
     CharacterDatabase.Execute(stmt);
 }

@@ -20,6 +20,7 @@
 #include "BattlePayMgr.h"
 #include "Player.h"
 #include "ServiceMgr.h"
+#include "Realm.h"
 
 void LoadBoostItems()
 {
@@ -68,20 +69,14 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
 
     if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION) && !boost)
     {
-        uint32 memberId = sWorld->GetprojectMemberID(accountId);
-        auto promoted = LoginDatabase.PQuery("SELECT member_id FROM boost_promotion_executed WHERE member_id = '%d'", memberId);
-        if (!promoted)
-        {
-            LoginDatabase.PExecute("INSERT INTO boost_promotion_executed (member_id) VALUES ('%d')", memberId);
-            return;
-        }
+        // to be impl new here
     }
 
     uint32 counter = 0;
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BOOST);
+    LoginDatabasePreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_BOOST);
     stmt->setUInt32(0, accountId);
-    stmt->setUInt32(1, realmID);
+    stmt->setUInt32(1, realm.Id.Realm);
     if (PreparedQueryResult result = LoginDatabase.Query(stmt))
     {
         Field* fields = result->Fetch();
@@ -106,14 +101,14 @@ void SetBoosting(WorldSession* session, uint32 accountId, bool boost)
     {
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT_BOOST);
         stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realmID);
+        stmt->setUInt32(1, realm.Id.Realm);
         stmt->setUInt32(2, counter);
     }
     else
     {
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_DEL_ACCOUNT_BOOST);
         stmt->setUInt32(0, accountId);
-        stmt->setUInt32(1, realmID);
+        stmt->setUInt32(1, realm.Id.Realm);
     }
     LoginDatabase.Execute(stmt);
 }
@@ -166,9 +161,9 @@ void CharacterBooster::SendCharBoostPacket(PreparedItemsMap items) const
     GetSession()->SendPacket(&data);
 }
 
-void CharacterBooster::LearnNonExistedSpell(SQLTransaction& trans, uint32 spell) const
+void CharacterBooster::LearnNonExistedSpell(CharacterDatabaseTransaction trans, uint32 spell) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_SPELL);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
     stmt->setUInt32(1, spell);
     if (!CharacterDatabase.Query(stmt))
@@ -182,9 +177,9 @@ void CharacterBooster::LearnNonExistedSpell(SQLTransaction& trans, uint32 spell)
     }
 }
 
-void CharacterBooster::LearnNonExistedSkill(SQLTransaction& trans, uint32 skill) const
+void CharacterBooster::LearnNonExistedSkill(CharacterDatabaseTransaction trans, uint32 skill) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILL_BOOST);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
     stmt->setUInt32(1, skill);
 
@@ -199,9 +194,9 @@ void CharacterBooster::LearnNonExistedSkill(SQLTransaction& trans, uint32 skill)
     }
 }
 
-uint32 CharacterBooster::_PrepareMail(SQLTransaction& trans, std::string const subject, std::string const body) const
+uint32 CharacterBooster::_PrepareMail(CharacterDatabaseTransaction trans, std::string const subject, std::string const body) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_MAIL);
     uint32 mailId = sObjectMgr->GenerateMailID();
 
     stmt->setUInt32(0, mailId);
@@ -223,7 +218,7 @@ uint32 CharacterBooster::_PrepareMail(SQLTransaction& trans, std::string const s
     return mailId;
 }
 
-void CharacterBooster::_SendMail(SQLTransaction& trans, PreparedItemsMap items) const
+void CharacterBooster::_SendMail(CharacterDatabaseTransaction trans, PreparedItemsMap items) const
 {
     if (items.empty())
         return;
@@ -233,7 +228,7 @@ void CharacterBooster::_SendMail(SQLTransaction& trans, PreparedItemsMap items) 
         return;
 
     uint32 mailId = _PrepareMail(trans, mailTemplateEntry->subject[GetSession()->GetSessionDbcLocale()], mailTemplateEntry->content[GetSession()->GetSessionDbcLocale()]);
-    PreparedStatement* stmt = NULL;
+    CharacterDatabasePreparedStatement* stmt = NULL;
 
     for (auto&& itr : items)
     {
@@ -252,9 +247,9 @@ void CharacterBooster::_SendMail(SQLTransaction& trans, PreparedItemsMap items) 
     }
 }
 
-void CharacterBooster::_PrepareInventory(SQLTransaction& trans) const
+void CharacterBooster::_PrepareInventory(CharacterDatabaseTransaction trans) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_INVENTORY_BOOST);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_INVENTORY_BOOST);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
     PreparedQueryResult result = CharacterDatabase.Query(stmt);
 
@@ -348,9 +343,9 @@ void CharacterBooster::_PrepareInventory(SQLTransaction& trans) const
     }
 }
 
-std::string CharacterBooster::_SetSpecialization(SQLTransaction& trans, uint8 const classId) const
+std::string CharacterBooster::_SetSpecialization(CharacterDatabaseTransaction trans, uint8 const classId) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_TALENT);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_TALENT);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
     if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
     {
@@ -386,7 +381,7 @@ std::string CharacterBooster::_SetSpecialization(SQLTransaction& trans, uint8 co
     return talentTree.str();
 }
 
-void CharacterBooster::_LearnSpells(SQLTransaction& trans) const
+void CharacterBooster::_LearnSpells(CharacterDatabaseTransaction trans) const
 {
     std::vector<uint32> spellsToLearn = { SPELL_ARTISAN_RIDING, SPELL_COLD_WHEATHER_FLYING, SPELL_FLIGHT_MASTER_LICENSE, SPELL_WISDOM_OF_FOUR_WINDS };
     spellsToLearn.push_back(m_charBoostInfo.allianceFaction ? SPELL_SWIFT_PURPLE_GRYPGON : SPELL_SWIFT_PURPLE_WIND_RIDER);
@@ -397,7 +392,7 @@ void CharacterBooster::_LearnSpells(SQLTransaction& trans) const
 
 void CharacterBooster::_GetBoostedCharacterData(uint8& raceId, uint8& classId, uint8& level) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_RACE);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHAR_RACE);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
 
     if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
@@ -420,10 +415,10 @@ void CharacterBooster::_GetBoostedCharacterData(uint8& raceId, uint8& classId, u
         level = (*result)[0].GetUInt8();
 }
 
-std::string CharacterBooster::_EquipItems(SQLTransaction& trans, PreparedItemsMap itemsToEquip) const
+std::string CharacterBooster::_EquipItems(CharacterDatabaseTransaction trans, PreparedItemsMap itemsToEquip) const
 {
     std::ostringstream items;
-    PreparedStatement* stmt;
+    CharacterDatabasePreparedStatement* stmt;
     for (uint32 i = 0; i < EQUIPMENT_SLOT_END; ++i)
     {
         auto itr = itemsToEquip.find(i);
@@ -459,11 +454,11 @@ std::string CharacterBooster::_EquipItems(SQLTransaction& trans, PreparedItemsMa
     return items.str();
 }
 
-void CharacterBooster::_SaveBoostedChar(SQLTransaction& trans, std::string items, uint8 const raceId, uint8 const classId) const
+void CharacterBooster::_SaveBoostedChar(CharacterDatabaseTransaction trans, std::string items, uint8 const raceId, uint8 const classId) const
 {
     float const* position = m_charBoostInfo.allianceFaction ? startPosition[1] : startPosition[0];
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_FOR_BOOST);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_FOR_BOOST);
     stmt->setUInt8(0, raceId);
     stmt->setFloat(1, position[0]);
     stmt->setFloat(2, position[1]);
@@ -477,9 +472,9 @@ void CharacterBooster::_SaveBoostedChar(SQLTransaction& trans, std::string items
     trans->Append(stmt);
 }
 
-void CharacterBooster::_LearnVeteranBonuses(SQLTransaction& trans, uint8 const classId) const
+void CharacterBooster::_LearnVeteranBonuses(CharacterDatabaseTransaction trans, uint8 const classId) const
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILLS_BOOST);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_SKILLS_BOOST);
     stmt->setUInt32(0, GUID_LOPART(m_charBoostInfo.charGuid));
 
     std::vector<uint32> primarySkills;
@@ -643,9 +638,8 @@ void CharacterBooster::_HandleCharacterBoost() const
 
     if (sWorld->getBoolConfig(CONFIG_BOOST_PROMOTION))
     {
-        auto promoted = LoginDatabase.PQuery("SELECT member_id FROM boost_promotion_executed WHERE member_id = '%d'", sWorld->GetprojectMemberID(GetSession()->GetAccountId()));
-        auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realmID);
-        if (promoted && !paid)
+        auto paid = LoginDatabase.PQuery("SELECT counter FROM account_boost WHERE id = '%d' AND realmid = '%d' AND counter > 0", GetSession()->GetAccountId(), realm.Id.Realm);
+        if (!paid)
             return;
     }
 
@@ -663,7 +657,7 @@ void CharacterBooster::_HandleCharacterBoost() const
     if (itemsToEquip.empty())
         return;
 
-    SQLTransaction trans = CharacterDatabase.BeginTransaction();
+    CharacterDatabaseTransaction trans = CharacterDatabase.BeginTransaction();
     _PrepareInventory(trans);
     _SendMail(trans, itemsToMail);
     _LearnSpells(trans);

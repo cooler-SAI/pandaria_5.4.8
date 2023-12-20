@@ -35,7 +35,6 @@
 #include "SpellScript.h"
 #include "Vehicle.h"
 #include "SpellHistory.h"
-#include <ace/Stack_Trace.h>
 
 bool AFDRoyaleIsSpecialAuraHook(Aura const* aura, Unit const* target);
 
@@ -535,9 +534,8 @@ Aura* Aura::Create(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
 
     if (caster && caster->FindMap() != owner->FindMap())
     {
-        ACE_Stack_Trace st;
-        TC_LOG_ERROR("shitlog", "Aura::Create caster->FindMap() != owner->FindMap() main thread: %u, aura: %u, caster: " UI64FMTD " (entry: %u), owner: " UI64FMTD " (entry: %u)\n%s",
-            CurrentMap ? 0 : 1, spellproto->Id, caster->GetGUID(), caster->GetEntry(), owner->GetGUID(), owner->GetEntry(), st.c_str());
+        TC_LOG_ERROR("shitlog", "Aura::Create caster->FindMap() != owner->FindMap() main thread: %u, aura: %u, caster: " UI64FMTD " (entry: %u), owner: " UI64FMTD " (entry: %u)\n",
+            CurrentMap ? 0 : 1, spellproto->Id, caster->GetGUID(), caster->GetEntry(), owner->GetGUID(), owner->GetEntry());
         if (CurrentMap) // Not main thread, it's 146% unsafe
             return nullptr;
     }
@@ -566,7 +564,7 @@ Aura::Aura(SpellInfo const* spellproto, WorldObject* owner, Unit* caster, Item* 
 m_spellInfo(spellproto), m_casterGuid(casterGUID ? casterGUID : caster->GetGUID()),
 m_castItemGuid(castItem ? castItem->GetGUID() : 0), m_applyTime(time(NULL)),
 m_owner(owner), m_powerTakeTimer(0), m_updateTargetMapInterval(0),
-m_casterLevel(caster ? caster->getLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),
+m_casterLevel(caster ? caster->GetLevel() : m_spellInfo->SpellLevel), m_procCharges(0), m_stackAmount(1),
 m_isRemoved(false), m_isBoundToCaster(false), m_isUsingCharges(false)
 {
     // Before effects construction
@@ -2719,6 +2717,8 @@ UnitAura::UnitAura(SpellInfo const* spellproto, uint32 effMask, WorldObject* own
     : Aura(spellproto, owner, caster, castItem, casterGUID, effMask, baseAmount)
 {
     m_AuraDRGroup = DIMINISHING_NONE;
+    // LoadScripts();
+    // _InitEffects(effMask, caster, baseAmount);
     GetUnitOwner()->_AddAura(this, caster);
 }
 

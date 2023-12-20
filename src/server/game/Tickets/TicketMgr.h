@@ -19,7 +19,6 @@
 #define SF_TICKETMGR_H
 
 #include <string>
-#include <ace/Singleton.h>
 
 #include "ObjectMgr.h"
 #include "TicketInfo.h"
@@ -29,18 +28,13 @@ typedef std::map<uint32, GmTicket*> GmTicketList;
 
 class TicketMgr
 {
-    friend class ACE_Singleton<TicketMgr, ACE_Null_Mutex>;
 
 private:
     TicketMgr();
     ~TicketMgr();
 
 public:
-    static TicketMgr* instance()
-    {
-        static TicketMgr instance;
-        return &instance;
-    }
+    static TicketMgr* instance();
 
     void Initialize();
 
@@ -116,6 +110,6 @@ private:
     uint32 _openBugTicketCount;
 };
 
-#define sTicketMgr ACE_Singleton<TicketMgr, ACE_Null_Mutex>::instance()
+#define sTicketMgr TicketMgr::instance()
 
 #endif // SF_TICKETMGR_H

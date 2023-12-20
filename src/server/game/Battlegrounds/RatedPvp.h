@@ -105,8 +105,8 @@ private:
     void RecalcuateRank(RatedPvpInfoMap const& map);
     void GetSeasonPrizewinners(std::vector<RatedPvpInfo*>& two, std::vector<RatedPvpInfo*>& three, std::vector<RatedPvpInfo*>& five);
     bool RewardTeams(std::ostream& log, RewardMap& map, std::vector<RatedPvpInfo*> const& teams, ArenaType type, uint32 season);
-    bool SendRewards(std::ostream& log, RewardMap& map, SQLTransaction& trans);
-    void SeasonCleanup(SQLTransaction& trans);
+    bool SendRewards(std::ostream& log, RewardMap& map, CharacterDatabaseTransaction trans);
+    void SeasonCleanup(CharacterDatabaseTransaction trans);
     void CheckSeasonEnd();
     void RewardSeason();
 

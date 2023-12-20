@@ -50,6 +50,7 @@
 #include "AchievementMgr.h"
 #include "ServiceBoost.h"
 #include "BattlePayMgr.h"
+#include "QueryHolder.h"
 
 namespace
 {
@@ -135,10 +136,7 @@ WorldSession::WorldSession(uint32 id, WorldSocket* sock, AccountTypes sec, uint8
         LoginDatabase.PExecute("UPDATE account SET online = 1 WHERE id = %u;", GetAccountId());     // One-time query
     }
 
-    InitializeQueryCallbackParameters();
-
     // At current time it will never be removed from container, so pointer must be valid all of the session life time.
-    UpdateprojectMemberInfo();
 
     _compressionStream = new z_stream();
     _compressionStream->zalloc = (alloc_func)NULL;
@@ -303,9 +301,9 @@ void WorldSession::LogUnprocessedTail(WorldPacket* packet)
 
 struct OpcodeInfo
 {
-	OpcodeInfo(uint32 nb, uint32 time) : nbPkt(nb), totalTime(time) {}
-	uint32 nbPkt;
-	uint32 totalTime;
+    OpcodeInfo(uint32 nb, uint32 time) : nbPkt(nb), totalTime(time) {}
+    uint32 nbPkt;
+    uint32 totalTime;
 };
 
 /// Update the WorldSession (triggered by World update)
@@ -313,7 +311,7 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 {
     /// Update Timeout timer.
     UpdateTimeOutTime(diff);
-	std::unordered_map<uint16, OpcodeInfo> pktHandle;
+    std::unordered_map<uint16, OpcodeInfo> pktHandle;
     // Services timers
     GetBoost()->Update(diff);
     sBattlePayMgr->Update(diff);
@@ -335,9 +333,9 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
     //! delayed packets that were re-enqueued due to improper timing. To prevent an infinite
     //! loop caused by re-enqueueing the same packets over and over again, we stop updating this session
     //! and continue updating others. The re-enqueued packets will be handled in the next Update call for this session.
-	uint32 _startMSTime = getMSTime();
+    uint32 _startMSTime = getMSTime();
     uint32 processedPackets = 0;
-	time_t currentTime = time(nullptr);
+    time_t currentTime = time(nullptr);
 
     while (m_Socket && !m_Socket->IsClosed() &&
             !_recvQueue.empty() && _recvQueue.peek(true) != firstDelayedPacket &&
@@ -369,10 +367,10 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                                     "Player is currently not in world yet.", GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str());
                         }
                     }
-					else if (_player->IsInWorld() && AntiDOS.EvaluateOpcode(*packet, currentTime))
+                    else if (_player->IsInWorld() && AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
                         auto start = TimeValue::Now();
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                         sWorld->RecordTimeDiffLocal(start, "WorldSession::Update %s %s", opHandle->Name, GetPlayerInfo().c_str());
@@ -383,10 +381,10 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                     if (!_player && !m_playerRecentlyLogout && !m_playerLogout) // There's a short delay between _player = null and m_playerRecentlyLogout = true during logout
                         LogUnexpectedOpcode(packet, "STATUS_LOGGEDIN_OR_RECENTLY_LOGGOUT",
                             "the player has not logged in yet and not recently logout");
-					else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
+                    else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
                         // not expected _player or must checked in packet hanlder
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                     }
@@ -396,9 +394,9 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player has not logged in yet");
                     else if (_player->IsInWorld())
                         LogUnexpectedOpcode(packet, "STATUS_TRANSFER", "the player is still in world");
-					else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
+                    else if (AntiDOS.EvaluateOpcode(*packet, currentTime))
                     {
-                        sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                        sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                         (this->*opHandle->Handler)(*packet);
                         LogUnprocessedTail(packet);
                     }
@@ -417,13 +415,13 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
                         m_playerRecentlyLogout = false;
 
 
-					if (AntiDOS.EvaluateOpcode(*packet, currentTime))
-					{
-                          sScriptMgr->OnPacketReceive(m_Socket, WorldPacket(*packet));
+                    if (AntiDOS.EvaluateOpcode(*packet, currentTime))
+                    {
+                          sScriptMgr->OnPacketReceive(this, WorldPacket(*packet));
                           (this->*opHandle->Handler)(*packet);
                            LogUnprocessedTail(packet);
                               break;
-					}
+                    }
                 case STATUS_NEVER:
                         TC_LOG_ERROR("network.opcode", "Received not allowed opcode %s from %s", GetOpcodeNameForLogging(packet->GetOpcode(), false).c_str(),
                             GetPlayerInfo().c_str());
@@ -451,33 +449,33 @@ bool WorldSession::Update(uint32 diff, PacketFilter& updater)
 
         //process only a max amout of packets in 1 Update() call.
         //Any leftover will be processed in next update
-		if (++processedPackets >= 100) // limit (by count) packets processed in one update, prevent DDoS
-			break;
+        if (++processedPackets >= 100) // limit (by count) packets processed in one update, prevent DDoS
+            break;
 
-		if (getMSTimeDiff(_startMSTime, getMSTime()) >= 3) // limit (by time) packets processed in one update, prevent DDoS
-			break;
+        if (getMSTimeDiff(_startMSTime, getMSTime()) >= 3) // limit (by time) packets processed in one update, prevent DDoS
+            break;
     }
 
     if (m_Socket && !m_Socket->IsClosed() && _warden)
         _warden->Update();
 
     ProcessQueryCallbacks();
-	uint32 sessionDiff = getMSTime();
+    uint32 sessionDiff = getMSTime();
 
 
-	sessionDiff = getMSTime() - sessionDiff;
-	if (sessionDiff > 20 && !pktHandle.empty())
-	{
-		auto itr = pktHandle.find(CMSG_ADD_FRIEND);
-		if (itr != pktHandle.end())
-		{
-			if ((*itr).second.nbPkt > 7)
-			{
-				KickPlayer();
-				return false;
-			}
-		}
-	}
+    sessionDiff = getMSTime() - sessionDiff;
+    if (sessionDiff > 20 && !pktHandle.empty())
+    {
+        auto itr = pktHandle.find(CMSG_ADD_FRIEND);
+        if (itr != pktHandle.end())
+        {
+            if ((*itr).second.nbPkt > 7)
+            {
+                KickPlayer();
+                return false;
+            }
+        }
+    }
     //check if we are safe to proceed with logout
     //logout procedure should happen only in World::UpdateSessions() method!!!
     if (updater.ProcessLogout())
@@ -514,7 +512,6 @@ void WorldSession::LogoutPlayer(bool save)
     // Wait until all async auction queries are processed.
     while (_player)
     {
-        TRINITY_READ_GUARD(ACE_RW_Thread_Mutex, _player->m_activeAuctionQueriesLock);
         if (_player->m_activeAuctionQueries.empty())
             break;
     }
@@ -579,8 +576,8 @@ void WorldSession::LogoutPlayer(bool save)
             _player->SetPendingBind(0, 0);
         }
 
-		if (_player->HasAuraType(SPELL_AURA_MOD_SPEED_ALWAYS))
-			_player->RemoveAurasByType(SPELL_AURA_MOD_SPEED_ALWAYS);
+        if (_player->HasAuraType(SPELL_AURA_MOD_SPEED_ALWAYS))
+            _player->RemoveAurasByType(SPELL_AURA_MOD_SPEED_ALWAYS);
 
         //drop a flag if player is carrying it
         if (Battleground* bg = _player->GetBattleground())
@@ -665,7 +662,7 @@ void WorldSession::LogoutPlayer(bool save)
         // calls to GetMap in this case may cause crashes
         _player->CleanupsBeforeDelete();
         TC_LOG_INFO("entities.player.character", "Account: %d (IP: %s) Logout Character:[%s] (GUID: %u) Level: %d",
-            GetAccountId(), GetRemoteAddress().c_str(), _player->GetName().c_str(), _player->GetGUIDLow(), _player->getLevel());
+            GetAccountId(), GetRemoteAddress().c_str(), _player->GetName().c_str(), _player->GetGUIDLow(), _player->GetLevel());
         if (Map* _map = _player->FindMap())
             _map->RemovePlayerFromMap(_player, true);
 
@@ -702,7 +699,7 @@ void WorldSession::LogoutPlayer(bool save)
         TC_LOG_DEBUG("network", "SESSION: Sent SMSG_LOGOUT_COMPLETE Message");
 
         //! Since each account can only have one online character at any given time, ensure all characters for active account are marked as offline
-        PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ONLINE);
+        CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_ACCOUNT_ONLINE);
         stmt->setUInt32(0, GetAccountId());
         CharacterDatabase.Execute(stmt);
     }
@@ -723,11 +720,11 @@ void WorldSession::KickPlayer()
 
 void WorldSession::KickPlayerOP(std::string const& reason)
 {
-	if (m_Socket)
-	{
-		m_Socket->CloseSocket();
-		forceExit = true;
-	}
+    if (m_Socket)
+    {
+        m_Socket->CloseSocket();
+        forceExit = true;
+    }
 }
 
 void WorldSession::SendNotification(const char *format, ...)
@@ -779,29 +776,13 @@ const char *WorldSession::GetTrinityString(int32 entry) const
 void WorldSession::AddFlag(AccountFlags flag)
 {
     m_flags |= flag;
-    if (_projectMemberInfo)
-    {
-        LoginDatabase.PExecute("UPDATE account SET flags = flags | %u WHERE project_member_id = %u", flag, _projectMemberInfo->MemberID);
-        for (auto&& it : _projectMemberInfo->GameAccountIDs)
-            if (WorldSession* sess = sWorld->FindSession(it))
-                sess->m_flags |= flag;
-    }
-    else
-        LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
+    LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
 }
 
 void WorldSession::RemoveFlag(AccountFlags flag)
 {
     m_flags &= ~flag;
-    if (_projectMemberInfo)
-    {
-        LoginDatabase.PExecute("UPDATE account SET flags = flags & ~%u WHERE project_member_id = %u", flag, _projectMemberInfo->MemberID);
-        for (auto&& it : _projectMemberInfo->GameAccountIDs)
-            if (WorldSession* sess = sWorld->FindSession(it))
-                sess->m_flags &= ~flag;
-    }
-    else
-        LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
+    LoginDatabase.PExecute("UPDATE account SET flags = %u WHERE id = %u", m_flags, _accountId);
 }
 
 void WorldSession::Handle_NULL(WorldPacket& recvPacket)
@@ -848,7 +829,7 @@ void WorldSession::SendAuthWaitQue(uint32 position)
 
 void WorldSession::LoadGlobalAccountData()
 {
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_DATA);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_ACCOUNT_DATA);
     stmt->setUInt32(0, GetAccountId());
     LoadAccountData(CharacterDatabase.Query(stmt), GLOBAL_CACHE_MASK);
 
@@ -869,8 +850,8 @@ void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)
         if (mask & (1 << i))
             m_accountData[i] = AccountData();
 
-	if (!m_accountData)
-		return;
+    if (!m_accountData)
+        return;
 
     if (!result)
         return;
@@ -902,11 +883,11 @@ void WorldSession::LoadAccountData(PreparedQueryResult result, uint32 mask)
 void WorldSession::SetAccountData(AccountDataType type, time_t tm, std::string const& data)
 {
     uint32 id = 0;
-    uint32 index = 0;
+    CharacterDatabasePreparedStatement* stmt = nullptr;
     if ((1 << type) & GLOBAL_CACHE_MASK)
     {
         id = GetAccountId();
-        index = CHAR_REP_ACCOUNT_DATA;
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_ACCOUNT_DATA);
     }
     else
     {
@@ -915,10 +896,9 @@ void WorldSession::SetAccountData(AccountDataType type, time_t tm, std::string c
             return;
 
         id = m_GUIDLow;
-        index = CHAR_REP_PLAYER_ACCOUNT_DATA;
+        stmt = CharacterDatabase.GetPreparedStatement(CHAR_REP_PLAYER_ACCOUNT_DATA);
     }
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(index);
     stmt->setUInt32(0, id);
     stmt->setUInt8 (1, type);
     stmt->setUInt32(2, uint32(tm));
@@ -949,7 +929,7 @@ void WorldSession::LoadTutorialsData()
 {
     memset(m_Tutorials, 0, sizeof(uint32) * MAX_ACCOUNT_TUTORIAL_VALUES);
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_TUTORIALS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_TUTORIALS);
     stmt->setUInt32(0, GetAccountId());
     if (PreparedQueryResult result = CharacterDatabase.Query(stmt))
         for (uint8 i = 0; i < MAX_ACCOUNT_TUTORIAL_VALUES; ++i)
@@ -966,12 +946,12 @@ void WorldSession::SendTutorialsData()
     SendPacket(&data);
 }
 
-void WorldSession::SaveTutorialsData(SQLTransaction &trans)
+void WorldSession::SaveTutorialsData(CharacterDatabaseTransaction trans)
 {
     if (!m_TutorialsChanged)
         return;
 
-    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_HAS_TUTORIALS);
+    CharacterDatabasePreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_HAS_TUTORIALS);
     stmt->setUInt32(0, GetAccountId());
     bool hasTutorials = CharacterDatabase.Query(stmt) != nullptr;
     // Modify data in DB
@@ -1229,83 +1209,21 @@ void WorldSession::SetPlayer(Player* player)
     GetAchievementMgr().SetCurrentPlayer(player);
 }
 
-void WorldSession::InitializeQueryCallbackParameters()
-{
-    // Callback parameters that have pointers in them should be properly
-    // initialized to NULL here.
-    _charCreateCallback.SetParam(NULL);
-}
-
 void WorldSession::ProcessQueryCallbacks()
 {
-    PreparedQueryResult result;
+    _queryProcessor.ProcessReadyCallbacks();
+    _transactionCallbacks.ProcessReadyCallbacks();
+    _queryHolderProcessor.ProcessReadyCallbacks();
+}
 
-    //! HandleCharEnumOpcode
-    if (_charEnumCallback.ready())
-    {
-        _charEnumCallback.get(result);
-        HandleCharEnum(result);
-        _charEnumCallback.cancel();
-    }
+TransactionCallback& WorldSession::AddTransactionCallback(TransactionCallback&& callback)
+{
+    return _transactionCallbacks.AddCallback(std::move(callback));
+}
 
-    if (_charCreateCallback.IsReady())
-    {
-        _charCreateCallback.GetResult(result);
-        HandleCharCreateCallback(result, _charCreateCallback.GetParam());
-        // Don't call FreeResult() here, the callback handler will do that depending on the events in the callback chain
-    }
-
-    //! HandleAddFriendOpcode
-    if (_addFriendCallback.IsReady())
-    {
-        std::string param = _addFriendCallback.GetParam();
-        _addFriendCallback.GetResult(result);
-        HandleAddFriendOpcodeCallBack(result, param);
-        _addFriendCallback.FreeResult();
-    }
-
-    //- HandleCharRenameOpcode
-    if (_charRenameCallback.IsReady())
-    {
-        std::string param = _charRenameCallback.GetParam();
-        _charRenameCallback.GetResult(result);
-        HandleChangePlayerNameOpcodeCallBack(result, param);
-        _charRenameCallback.FreeResult();
-    }
-
-    //- HandleCharAddIgnoreOpcode
-    if (_addIgnoreCallback.ready())
-    {
-        _addIgnoreCallback.get(result);
-        HandleAddIgnoreOpcodeCallBack(result);
-        _addIgnoreCallback.cancel();
-    }
-
-    //- HandleSetPetSlot
-    if (_stablePetCallback.ready())
-    {
-        _stablePetCallback.get(result);
-        HandleStablePetCallback(result);
-        _stablePetCallback.cancel();
-    }
-
-    //- HandleUnstablePet
-    if (_unstablePetCallback.IsReady())
-    {
-        uint32 param = _unstablePetCallback.GetParam();
-        _unstablePetCallback.GetResult(result);
-        HandleUnstablePetCallback(result, param);
-        _unstablePetCallback.FreeResult();
-    }
-
-    //- HandleStableSwapPet
-    if (_stableSwapCallback.IsReady())
-    {
-        uint32 param = _stableSwapCallback.GetParam();
-        _stableSwapCallback.GetResult(result);
-        HandleStableSwapPetCallback(result, param);
-        _stableSwapCallback.FreeResult();
-    }
+SQLQueryHolderCallback& WorldSession::AddQueryHolderCallback(SQLQueryHolderCallback&& callback)
+{
+    return _queryHolderProcessor.AddCallback(std::move(callback));
 }
 
 void WorldSession::InitWarden(BigNumber* k, std::string const& os)
@@ -1325,22 +1243,22 @@ void WorldSession::InitWarden(BigNumber* k, std::string const& os)
 
 bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) const
 {
-	uint32 maxPacketCounterAllowed = GetMaxPacketCounterAllowed(p.GetOpcode());
+    uint32 maxPacketCounterAllowed = GetMaxPacketCounterAllowed(p.GetOpcode());
 
-	// Return true if there no limit for the opcode
-	if (!maxPacketCounterAllowed)
-		 return true;
+    // Return true if there no limit for the opcode
+    if (!maxPacketCounterAllowed)
+         return true;
 
-	PacketCounter& packetCounter = _PacketThrottlingMap[p.GetOpcode()];
-	if (packetCounter.lastReceiveTime != time)
-	{
-		packetCounter.lastReceiveTime = time;
-		packetCounter.amountCounter = 0;
-	}
+    PacketCounter& packetCounter = _PacketThrottlingMap[p.GetOpcode()];
+    if (packetCounter.lastReceiveTime != time)
+    {
+        packetCounter.lastReceiveTime = time;
+        packetCounter.amountCounter = 0;
+    }
 
-	// Check if player is flooding some packets
-	if (++packetCounter.amountCounter <= maxPacketCounterAllowed)
-		return true;
+    // Check if player is flooding some packets
+    if (++packetCounter.amountCounter <= maxPacketCounterAllowed)
+        return true;
 
 
     switch (_policy)
@@ -1349,7 +1267,7 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
             return true;
         case POLICY_KICK:
             TC_LOG_INFO("network", "AntiDOS: Player kicked!");
-			Session->KickPlayerOP("WorldSession::DosProtection::EvaluateOpcode AntiDOS");
+            Session->KickPlayerOP("WorldSession::DosProtection::EvaluateOpcode AntiDOS");
             return false;
         case POLICY_BAN:
         {
@@ -1372,216 +1290,199 @@ bool WorldSession::DosProtection::EvaluateOpcode(WorldPacket& p, time_t time) co
     }
 }
 
-void WorldSession::UpdateprojectMemberInfo()
-{
-    uint32 memberId = sWorld->GetprojectMemberID(GetAccountId());
-    _projectMemberInfo = memberId ? sWorld->GetprojectMemberInfo(memberId) : nullptr;
-}
-
-void WorldSession::HandlePingUpdate(uint32 latency)
-{
-    ENSURE_WORLD_THREAD();
-
-    if (latency >= sWorld->getIntConfig(CONFIG_ICORE_ARENA_HIGH_LATENCY_THRESHOLD))
-        if (Player* player = GetPlayer())
-            if (Battleground* bg = player->GetBattleground())
-                bg->UpdatePlayerScore(player, SCORE_HIGH_LATENCY_TIMES, 1);
-}
-
-
 
 uint32 WorldSession::DosProtection::GetMaxPacketCounterAllowed(uint16 opcode) const
 {
-	uint32 maxPacketCounterAllowed;
-	switch (opcode)
-	{
-		// CPU usage sending 2000 packets/second on a 3.70 GHz 4 cores on Win x64
-		//                                              [% CPU mysqld]   [%CPU worldserver RelWithDebInfo]
-	case CMSG_PLAYER_LOGIN:                         //   0               0.5
-	case CMSG_QUERY_TIME:                           //   0               1
-	case CMSG_MOVE_TIME_SKIPPED:                    //   0               1
-	case CMSG_LOGOUT_REQUEST:                       //   0               1
-	case CMSG_PET_RENAME:                           //   0               1
-	case CMSG_COMPLETE_CINEMATIC:                   //   0               1
-	case CMSG_BANKER_ACTIVATE:                      //   0               1
-	case CMSG_BUY_BANK_SLOT:                        //   0               1
-	case CMSG_OPT_OUT_OF_LOOT:                      //   0               1
-	case CMSG_DUEL_RESPONSE:                        //   0               1
-	case CMSG_CALENDAR_COMPLAIN:                    //   0               1
-	case CMSG_TAXI_NODE_STATUS_QUERY:               //   0               1.5
-	case CMSG_TAXI_QUERY_AVAILABLE_NODES:           //   0               1.5
-	case CMSG_REQUEST_PARTY_MEMBER_STATS:           //   0               1.5
-	case CMSG_SET_ACTION_BUTTON:                    //   0               1.5
-	case CMSG_RESET_INSTANCES:                      //   0               1.5
-	case CMSG_HEARTH_AND_RESURRECT:                 //   0               1.5
-	case CMSG_TOGGLE_PVP:                           //   0               1.5
-	case CMSG_PET_ABANDON:                          //   0               1.5
-	case CMSG_ACTIVATE_TAXI:                        //   0               1.5
-	case CMSG_SELF_RES:                             //   0               1.5
-	case CMSG_UNLEARN_SKILL:                        //   0               1.5
-	case CMSG_DISMISS_CRITTER:                      //   0               1.5
-	case CMSG_REPOP_REQUEST:                        //   0               1.5
-	case CMSG_BATTLEMASTER_JOIN_ARENA:              //   0               1.5
-	case CMSG_BATTLEFIELD_LEAVE:                    //   0               1.5
-	case CMSG_GUILD_BANK_LOG_QUERY:                 //   0               2
-	case CMSG_LOGOUT_CANCEL:                        //   0               2
-	case CMSG_ALTER_APPEARANCE:                     //   0               2
-	case CMSG_QUEST_CONFIRM_ACCEPT:                 //   0               2
-	case CMSG_GUILD_EVENT_LOG_QUERY:                //   0               2.5
-	case CMSG_BEGIN_TRADE:                          //   0               2.5
-	case CMSG_INITIATE_TRADE:                       //   0               3
-	case CMSG_AREA_SPIRIT_HEALER_QUERY:             // not profiled                  // not profiled
-	case CMSG_RANDOM_ROLL:                          // not profiled               // not profiled
-	case CMSG_MOVE_FORCE_RUN_SPEED_CHANGE_ACK:      // not profiled
-	case MSG_MOVE_HEARTBEAT:                        // Should not have limit to make player movement feel less laggy
-	case MSG_MOVE_JUMP:                             // Same as above
-	case MSG_MOVE_WORLDPORT_ACK:                    // Run as soon as we get it no cpu usage.
-	case CMSG_GUILD_BANK_QUERY_TAB:                 //   0               3.5       medium upload bandwidth usage (non important uses too much bandwith)
-	{
-		// "0" is a magic number meaning there's no limit for the opcode.
-		// All the opcodes above must cause little CPU usage and no sync/async database queries at all
-		maxPacketCounterAllowed = 0;
-		break;
-	}
+    uint32 maxPacketCounterAllowed;
+    switch (opcode)
+    {
+        // CPU usage sending 2000 packets/second on a 3.70 GHz 4 cores on Win x64
+        //                                              [% CPU mysqld]   [%CPU worldserver RelWithDebInfo]
+    case CMSG_PLAYER_LOGIN:                         //   0               0.5
+    case CMSG_QUERY_TIME:                           //   0               1
+    case CMSG_MOVE_TIME_SKIPPED:                    //   0               1
+    case CMSG_LOGOUT_REQUEST:                       //   0               1
+    case CMSG_PET_RENAME:                           //   0               1
+    case CMSG_COMPLETE_CINEMATIC:                   //   0               1
+    case CMSG_BANKER_ACTIVATE:                      //   0               1
+    case CMSG_BUY_BANK_SLOT:                        //   0               1
+    case CMSG_OPT_OUT_OF_LOOT:                      //   0               1
+    case CMSG_DUEL_RESPONSE:                        //   0               1
+    case CMSG_CALENDAR_COMPLAIN:                    //   0               1
+    case CMSG_TAXI_NODE_STATUS_QUERY:               //   0               1.5
+    case CMSG_TAXI_QUERY_AVAILABLE_NODES:           //   0               1.5
+    case CMSG_REQUEST_PARTY_MEMBER_STATS:           //   0               1.5
+    case CMSG_SET_ACTION_BUTTON:                    //   0               1.5
+    case CMSG_RESET_INSTANCES:                      //   0               1.5
+    //case CMSG_HEARTH_AND_RESURRECT:                 //   0               1.5
+    case CMSG_TOGGLE_PVP:                           //   0               1.5
+    case CMSG_PET_ABANDON:                          //   0               1.5
+    case CMSG_ACTIVATE_TAXI:                        //   0               1.5
+    case CMSG_SELF_RES:                             //   0               1.5
+    case CMSG_UNLEARN_SKILL:                        //   0               1.5
+    case CMSG_DISMISS_CRITTER:                      //   0               1.5
+    case CMSG_REPOP_REQUEST:                        //   0               1.5
+    case CMSG_BATTLEMASTER_JOIN_ARENA:              //   0               1.5
+    case CMSG_BATTLEFIELD_LEAVE:                    //   0               1.5
+    case CMSG_GUILD_BANK_LOG_QUERY:                 //   0               2
+    case CMSG_LOGOUT_CANCEL:                        //   0               2
+    case CMSG_ALTER_APPEARANCE:                     //   0               2
+    case CMSG_QUEST_CONFIRM_ACCEPT:                 //   0               2
+    case CMSG_GUILD_EVENT_LOG_QUERY:                //   0               2.5
+    case CMSG_BEGIN_TRADE:                          //   0               2.5
+    case CMSG_INITIATE_TRADE:                       //   0               3
+    case CMSG_AREA_SPIRIT_HEALER_QUERY:             // not profiled                  // not profiled
+    case CMSG_RANDOM_ROLL:                          // not profiled               // not profiled
+    case CMSG_MOVE_FORCE_RUN_SPEED_CHANGE_ACK:      // not profiled
+    case MSG_MOVE_HEARTBEAT:                        // Should not have limit to make player movement feel less laggy
+    case MSG_MOVE_JUMP:                             // Same as above
+    case MSG_MOVE_WORLDPORT_ACK:                    // Run as soon as we get it no cpu usage.
+    case CMSG_GUILD_BANK_QUERY_TAB:                 //   0               3.5       medium upload bandwidth usage (non important uses too much bandwith)
+    {
+        // "0" is a magic number meaning there's no limit for the opcode.
+        // All the opcodes above must cause little CPU usage and no sync/async database queries at all
+        maxPacketCounterAllowed = 0;
+        break;
+    }
 
-	case CMSG_QUESTGIVER_ACCEPT_QUEST:             //   0               4
-	case CMSG_QUESTLOG_REMOVE_QUEST:               //   0               4
-	case CMSG_QUESTGIVER_CHOOSE_REWARD:            //   0               4
-	case CMSG_AUTOBANK_ITEM:                        //   0               6
-	case CMSG_AUTOSTORE_BANK_ITEM:                  //   0               6    
-	case CMSG_WHO:                                  //  0                0
-	{
-		maxPacketCounterAllowed = 0;
-		break;
-	}
+    case CMSG_QUESTGIVER_ACCEPT_QUEST:             //   0               4
+    case CMSG_QUESTLOG_REMOVE_QUEST:               //   0               4
+    case CMSG_QUESTGIVER_CHOOSE_REWARD:            //   0               4
+    case CMSG_AUTOBANK_ITEM:                        //   0               6
+    case CMSG_AUTOSTORE_BANK_ITEM:                  //   0               6    
+    case CMSG_WHO:                                  //  0                0
+    {
+        maxPacketCounterAllowed = 0;
+        break;
+    }
 
-	case CMSG_CALENDAR_EVENT_INVITE:
-	case CMSG_CALENDAR_EVENT_STATUS:
-	case CMSG_CALENDAR_GET_CALENDAR:
-	case CMSG_GAMEOBJ_REPORT_USE:                  // not profiled
-	case CMSG_GAMEOBJ_USE:                         // not profiled
-	case CMSG_PETITION_DECLINE:                     // not profiled
-	{
-		maxPacketCounterAllowed = 50;
-		break;
-	}
+    case CMSG_CALENDAR_EVENT_INVITE:
+    case CMSG_CALENDAR_EVENT_STATUS:
+    case CMSG_CALENDAR_GET_CALENDAR:
+    case CMSG_GAMEOBJ_REPORT_USE:                  // not profiled
+    case CMSG_GAMEOBJ_USE:                         // not profiled
+    case CMSG_PETITION_DECLINE:                     // not profiled
+    {
+        maxPacketCounterAllowed = 50;
+        break;
+    }
 
-	case CMSG_QUEST_POI_QUERY:                      //   0              25         very high upload bandwidth usage
-	{
-		maxPacketCounterAllowed = MAX_QUEST_LOG_SIZE;
-		break;
-	}
+    case CMSG_QUEST_POI_QUERY:                      //   0              25         very high upload bandwidth usage
+    {
+        maxPacketCounterAllowed = MAX_QUEST_LOG_SIZE;
+        break;
+    }
 
-	case CMSG_SPELLCLICK:                          // not profiled
-	case CMSG_DISMISS_CONTROLLED_VEHICLE:                 // not profiled
-	{
-		maxPacketCounterAllowed = 20;
-		break;
-	}
+    case CMSG_SPELLCLICK:                          // not profiled
+    case CMSG_DISMISS_CONTROLLED_VEHICLE:                 // not profiled
+    {
+        maxPacketCounterAllowed = 20;
+        break;
+    }
 
-	case CMSG_PETITION_SIGN:                        //   9               4         2 sync 1 async db queries
-	case CMSG_TURN_IN_PETITION:                     //   8               5.5       2 sync db query
-	case CMSG_GROUP_CHANGE_SUB_GROUP:
-	case CMSG_GROUP_SWAP_SUB_GROUP:
-	case CMSG_PETITION_QUERY:                       //   4               3.5       1 sync db query
-	case CMSG_CHAR_CUSTOMIZE:                       //   5               5         1 sync db query
-	case CMSG_CHAR_FACTION_OR_RACE_CHANGE:          //   5               5         1 sync db query
-	case CMSG_CHAR_DELETE:                          //   4               4         1 sync db query
-	case CMSG_DEL_FRIEND:                           //   7               5         1 async db query
-	case CMSG_ADD_FRIEND:                           //   6               4         1 async db query
-	case CMSG_GUILD_CHANGE_NAME_REQUEST:             //   5               3         1 async db query
-	case CMSG_SUBMIT_BUG:                           //   1               1         1 async db query
-	case CMSG_GROUP_SET_LEADER:                     //   1               2         1 async db query
-	case CMSG_GROUP_RAID_CONVERT:                         //   1               5         1 async db query
-	case CMSG_GROUP_ASSISTANT_LEADER:                 //   1               2         1 async db query
-	case CMSG_CALENDAR_ADD_EVENT:                   //  21              10         2 async db query
-	case CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE:            // not profiled
-	case CMSG_PETITION_BUY:                         // not profiled                1 sync 1 async db queries
-	case CMSG_REQUEST_VEHICLE_PREV_SEAT:            // not profiled
-	case CMSG_REQUEST_VEHICLE_NEXT_SEAT:            // not profiled
-	case CMSG_REQUEST_VEHICLE_SWITCH_SEAT:          // not profiled
-	case CMSG_REQUEST_VEHICLE_EXIT:                 // not profiled
-	case CMSG_EJECT_PASSENGER:                      // not profiled
-	case CMSG_ITEM_REFUND:                 // not profiled
-	case CMSG_SOCKET_GEMS:                          // not profiled
-	case CMSG_WRAP_ITEM:                            // not profiled
-	case CMSG_REPORT_PVP_AFK:                // not profiled
-	case CMSG_QUERY_INSPECT_ACHIEVEMENTS:           //   0              13         high upload bandwidth usage (non important uses too much bandwith)
-	case SMSG_GUILD_MEMBER_UPDATE_NOTE:                //   1               2         1 async db query (non important uses too much bandwith)
-	case CMSG_SET_CONTACT_NOTES:                    //   1               2.5       1 async db query    (non important uses too much bandwith)
-	case CMSG_INSPECT:                              //   0               3.5 (non important uses too much bandwith)
-	case CMSG_CONTACT_LIST:                         //   0               5
-	{
-		maxPacketCounterAllowed = 50;
-		break;
-	}
+    case CMSG_PETITION_SIGN:                        //   9               4         2 sync 1 async db queries
+    case CMSG_TURN_IN_PETITION:                     //   8               5.5       2 sync db query
+    case CMSG_GROUP_CHANGE_SUB_GROUP:
+    //case CMSG_GROUP_SWAP_SUB_GROUP:
+    case CMSG_PETITION_QUERY:                       //   4               3.5       1 sync db query
+    case CMSG_CHAR_CUSTOMIZE:                       //   5               5         1 sync db query
+    case CMSG_CHAR_FACTION_OR_RACE_CHANGE:          //   5               5         1 sync db query
+    case CMSG_CHAR_DELETE:                          //   4               4         1 sync db query
+    case CMSG_DEL_FRIEND:                           //   7               5         1 async db query
+    case CMSG_ADD_FRIEND:                           //   6               4         1 async db query
+    //case CMSG_GUILD_CHANGE_NAME_REQUEST:             //   5               3         1 async db query
+    case CMSG_SUBMIT_BUG:                           //   1               1         1 async db query
+    case CMSG_GROUP_SET_LEADER:                     //   1               2         1 async db query
+    case CMSG_GROUP_RAID_CONVERT:                         //   1               5         1 async db query
+    case CMSG_GROUP_ASSISTANT_LEADER:                 //   1               2         1 async db query
+    case CMSG_CALENDAR_ADD_EVENT:                   //  21              10         2 async db query
+    case CMSG_CHANGE_SEATS_ON_CONTROLLED_VEHICLE:            // not profiled
+    case CMSG_PETITION_BUY:                         // not profiled                1 sync 1 async db queries
+    case CMSG_REQUEST_VEHICLE_PREV_SEAT:            // not profiled
+    case CMSG_REQUEST_VEHICLE_NEXT_SEAT:            // not profiled
+    case CMSG_REQUEST_VEHICLE_SWITCH_SEAT:          // not profiled
+    case CMSG_REQUEST_VEHICLE_EXIT:                 // not profiled
+    case CMSG_EJECT_PASSENGER:                      // not profiled
+    case CMSG_ITEM_REFUND:                 // not profiled
+    case CMSG_SOCKET_GEMS:                          // not profiled
+    case CMSG_WRAP_ITEM:                            // not profiled
+    case CMSG_REPORT_PVP_AFK:                // not profiled
+    case CMSG_QUERY_INSPECT_ACHIEVEMENTS:           //   0              13         high upload bandwidth usage (non important uses too much bandwith)
+    case SMSG_GUILD_MEMBER_UPDATE_NOTE:                //   1               2         1 async db query (non important uses too much bandwith)
+    case CMSG_SET_CONTACT_NOTES:                    //   1               2.5       1 async db query    (non important uses too much bandwith)
+    case CMSG_INSPECT:                              //   0               3.5 (non important uses too much bandwith)
+    case CMSG_CONTACT_LIST:                         //   0               5
+    {
+        maxPacketCounterAllowed = 50;
+        break;
+    }
 
-	case CMSG_CHAR_CREATE:                     //   7               5         3 async db queries
-	case CMSG_CHAR_ENUM:                      //  22               3         2 async db queries
-	case CMSG_SUGGESTION_SUBMIT:     // not profiled                1 async db query
-	case CMSG_SUBMIT_COMPLAIN:      // not profiled                1 async db query
-	case CMSG_CALENDAR_UPDATE_EVENT:                // not profiled
-	case CMSG_CALENDAR_REMOVE_EVENT:                // not profiled
-	case CMSG_CALENDAR_COPY_EVENT:                  // not profiled
-	case CMSG_CALENDAR_EVENT_SIGNUP:               // not profiled
-	case CMSG_CALENDAR_EVENT_RSVP:                  // not profiled
-	case CMSG_CALENDAR_EVENT_MODERATOR_STATUS:      // not profiled
-	case CMSG_CALENDAR_EVENT_REMOVE_INVITE:               // not profiled
-	case CMSG_LOOT_METHOD:                      // not profiled
-	case CMSG_GUILD_INVITE:                 // not profiled
-	case CMSG_GUILD_ACCEPT:                  // not profiled
-	case CMSG_GUILD_DECLINE:             // not profiled
-	case CMSG_GUILD_LEAVE:                          // not profiled
-	case CMSG_GUILD_DISBAND:                         // not profiled
-	case CMSG_GUILD_SET_GUILD_MASTER:               // not profiled
-	case CMSG_GUILD_MOTD:               // not profiled
-	case CMSG_GUILD_SET_RANK_PERMISSIONS:           // not profiled
-	case CMSG_GUILD_ADD_RANK:                       // not profiled
-	case CMSG_GUILD_DEL_RANK:                    // not profiled
-	case CMSG_GUILD_INFO_TEXT:               // not profiled
-	case CMSG_GUILD_BANK_DEPOSIT_MONEY:             // not profiled
-	case CMSG_GUILD_BANK_WITHDRAW_MONEY:            // not profiled
-	case CMSG_GUILD_BANK_BUY_TAB:                   // not profiled
-	case CMSG_GUILD_BANK_UPDATE_TAB:                // not profiled
-	case CMSG_GUILD_BANK_QUERY_TEXT:              // not profiled
-	case CMSG_SAVE_GUILD_EMBLEM:                    // not profiled
-	case CMSG_PETITION_RENAME:                // not profiled
-	case CMSG_CONFIRM_RESPEC_WIPE:                  // not profiled
-	case CMSG_SET_DUNGEON_DIFFICULTY:               // not profiled
-	case CMSG_SET_RAID_DIFFICULTY:                  // not profiled
-	case MSG_PARTY_ASSIGNMENT:                 // not profiled
-	case CMSG_RAID_READY_CHECK:                       // not profiled
-	case CMSG_JOIN_CHANNEL:
-	case CMSG_LEAVE_CHANNEL:
-	case CMSG_CHANNEL_LIST:
-	case CMSG_CHANNEL_INVITE:
-	case CMSG_GUILD_ACHIEVEMENT_PROGRESS_QUERY:
-	case CMSG_PLAYER_LOGOUT:
-	case SMSG_AUTH_RESPONSE:
-	case SMSG_AUTH_CHALLENGE:
-	case CMSG_PING:
-	case CMSG_AUTH_SESSION:
-	case CMSG_AUTH_CONTINUED_SESSION:
-	case CMSG_KEEP_ALIVE:
-	case CMSG_LOG_DISCONNECT:
-	case CMSG_ENABLE_NAGLE:
-	case CMSG_CONNECT_TO_FAILED:
-	{
-		maxPacketCounterAllowed = 25;
-		break;
-	}
+    case CMSG_CHAR_CREATE:                     //   7               5         3 async db queries
+    case CMSG_CHAR_ENUM:                      //  22               3         2 async db queries
+    case CMSG_SUGGESTION_SUBMIT:     // not profiled                1 async db query
+    case CMSG_SUBMIT_COMPLAIN:      // not profiled                1 async db query
+    case CMSG_CALENDAR_UPDATE_EVENT:                // not profiled
+    case CMSG_CALENDAR_REMOVE_EVENT:                // not profiled
+    case CMSG_CALENDAR_COPY_EVENT:                  // not profiled
+    case CMSG_CALENDAR_EVENT_SIGNUP:               // not profiled
+    case CMSG_CALENDAR_EVENT_RSVP:                  // not profiled
+    case CMSG_CALENDAR_EVENT_MODERATOR_STATUS:      // not profiled
+    case CMSG_CALENDAR_EVENT_REMOVE_INVITE:               // not profiled
+    case CMSG_LOOT_METHOD:                      // not profiled
+    case CMSG_GUILD_INVITE:                 // not profiled
+    case CMSG_GUILD_ACCEPT:                  // not profiled
+    case CMSG_GUILD_DECLINE:             // not profiled
+    case CMSG_GUILD_LEAVE:                          // not profiled
+    case CMSG_GUILD_DISBAND:                         // not profiled
+    case CMSG_GUILD_SET_GUILD_MASTER:               // not profiled
+    case CMSG_GUILD_MOTD:               // not profiled
+    case CMSG_GUILD_SET_RANK_PERMISSIONS:           // not profiled
+    case CMSG_GUILD_ADD_RANK:                       // not profiled
+    case CMSG_GUILD_DEL_RANK:                    // not profiled
+    case CMSG_GUILD_INFO_TEXT:               // not profiled
+    case CMSG_GUILD_BANK_DEPOSIT_MONEY:             // not profiled
+    case CMSG_GUILD_BANK_WITHDRAW_MONEY:            // not profiled
+    case CMSG_GUILD_BANK_BUY_TAB:                   // not profiled
+    case CMSG_GUILD_BANK_UPDATE_TAB:                // not profiled
+    case CMSG_GUILD_BANK_QUERY_TEXT:              // not profiled
+    case CMSG_SAVE_GUILD_EMBLEM:                    // not profiled
+    case CMSG_PETITION_RENAME:                // not profiled
+    case CMSG_CONFIRM_RESPEC_WIPE:                  // not profiled
+    case CMSG_SET_DUNGEON_DIFFICULTY:               // not profiled
+    case CMSG_SET_RAID_DIFFICULTY:                  // not profiled
+    //case MSG_PARTY_ASSIGNMENT:                 // not profiled
+    case CMSG_RAID_READY_CHECK:                       // not profiled
+    case CMSG_JOIN_CHANNEL:
+    case CMSG_LEAVE_CHANNEL:
+    case CMSG_CHANNEL_LIST:
+    case CMSG_CHANNEL_INVITE:
+    case CMSG_GUILD_ACHIEVEMENT_PROGRESS_QUERY:
+    //case CMSG_PLAYER_LOGOUT:
+    case SMSG_AUTH_RESPONSE:
+    case SMSG_AUTH_CHALLENGE:
+    case CMSG_PING:
+    case CMSG_AUTH_SESSION:
+    case CMSG_AUTH_CONTINUED_SESSION:
+    case CMSG_KEEP_ALIVE:
+    case CMSG_LOG_DISCONNECT:
+    //case CMSG_ENABLE_NAGLE:
+    //case CMSG_CONNECT_TO_FAILED:
+    {
+        maxPacketCounterAllowed = 25;
+        break;
+    }
 
-	case CMSG_REQUEST_HOTFIX:                       // not profiled
-	{
-		maxPacketCounterAllowed = 1;
-		break;
-	}
-	default:
-	{
-		maxPacketCounterAllowed = 200; // Increase the number of packets , because with more than 100 players can cause issues.
-		break;
-	}
-	}
+    case CMSG_REQUEST_HOTFIX:                       // not profiled
+    {
+        maxPacketCounterAllowed = 1;
+        break;
+    }
+    default:
+    {
+        maxPacketCounterAllowed = 200; // Increase the number of packets , because with more than 100 players can cause issues.
+        break;
+    }
+    }
 
-	return maxPacketCounterAllowed;
+    return maxPacketCounterAllowed;
 }

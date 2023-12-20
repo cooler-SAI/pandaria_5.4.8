@@ -20,8 +20,6 @@
 
 // For static or at-server-startup loaded spell data
 
-#include <ace/Singleton.h>
-
 #include "DBCStructure.h"
 #include "SharedDefines.h"
 #include "Util.h"
@@ -621,7 +619,6 @@ bool IsDiminishingReturnsGroupDurationLimited(DiminishingGroup group);
 
 class SpellMgr
 {
-    friend class ACE_Singleton<SpellMgr, ACE_Null_Mutex>;
     friend class ConditionMgr;
 
     // Constructors
@@ -631,11 +628,8 @@ class SpellMgr
 
     // Accessors (const or static functions)
     public:
-        static SpellMgr* instance()
-        {
-            static SpellMgr _instance;
-            return &_instance;
-        }
+        
+        static SpellMgr* instance();
 
         // Spell correctness for client using
         static bool IsSpellValid(SpellInfo const* spellInfo, Player* player = NULL, bool msg = true);
